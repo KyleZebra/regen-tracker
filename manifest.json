@@ -1,6 +1,6 @@
 {
   "name": "Regenerations-Tracker",
-  "short_name": "Regen-Tracker",
+  "short_name": "ReTrack",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#f8f9fa",

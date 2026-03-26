@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Regenerations-Tracker 7.1</title>
+  <title>ReTrack 7.2</title>
   
   <!-- PWA Setup -->
   <link rel="manifest" href="./manifest.json" />
@@ -302,8 +302,8 @@
   </div>
 
   <header>
-    <h1>🧪 Regenerations<wbr>Tracker</h1>
-    <div class="version">Version 7.1 – PWA & Journaling</div>
+    <h1>🧪 ReTrack</h1>
+    <div class="version">Version 7.2 – PWA & Journaling</div>
   </header>
 
   <div class="tabs">
@@ -312,12 +312,20 @@
     <button class="tab-btn" onclick="switchTab('archiv')">🏛️ Archiv</button>
   </div>
 
+  <!-- Global File Input for Import -->
+  <input type="file" id="fileInput" accept=".json" onchange="importData(this)">
+
   <!-- ================= TAB 1: DASHBOARD ================= -->
   <div id="tab-dashboard" class="tab-content active">
+    
+    <!-- Empty State / Setup Warning -->
     <div id="setup-warning" class="setup-overlay">
-        <h3>Willkommen bei Version 7.1! 👋</h3>
-        <p>Um zu starten, lege deinen ersten Zyklus (Initiale T-Phase) an.</p>
-        <button class="btn-tool" style="background:var(--header-bg); border:none; margin: 0 auto;" onclick="switchTab('historie')">Zum Planer wechseln</button>
+        <h3>Willkommen bei ReTrack (v7.2)! 👋</h3>
+        <p>Lege deinen ersten Zyklus an oder lade ein bestehendes Backup.</p>
+        <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 15px;">
+            <button class="btn-tool" style="background:var(--header-bg); border:none; color:white;" onclick="switchTab('historie')">✏️ Neuen Zyklus starten</button>
+            <button class="btn-tool" onclick="document.getElementById('fileInput').click()">📂 Backup importieren</button>
+        </div>
     </div>
 
     <div id="dashboard-main" style="display:none;">
@@ -457,8 +465,6 @@
   </div>
 
   <!-- ================= CUSTOM MODALS ================= -->
-  <input type="file" id="fileInput" accept=".json" onchange="importData(this)">
-  
   <!-- Alert Modal -->
   <div id="modal-alert" class="modal-overlay">
     <div class="modal-card" style="text-align:center;">
@@ -594,13 +600,15 @@
 
 <script>
   let appData = {
-      version: 7.1,
+      version: 7.2,
       cycles: [] 
   };
   
+  // Sandbox Control Variables
   let isSandbox = false;
   let sandboxData = null;
 
+  // Global Engine Accessor
   const getApp = () => isSandbox ? sandboxData : appData;
   const getActiveCycle = () => getApp().cycles.find(c => c.status === 'active');
   
@@ -704,10 +712,10 @@
           try { 
               let data = JSON.parse(saved); 
               if (data.version >= 5) {
-                  data.version = 7.1; 
+                  data.version = 7.2; 
                   appData = data;
               } else if (!data.cycles && data.base) { 
-                  appData = { version: 7.1, cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }] };
+                  appData = { version: 7.2, cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }] };
               }
           } catch(e) { console.error("Save data corrupted."); }
       }
@@ -738,7 +746,7 @@
 
   function saveData(silent = false) {
       if (!isSandbox) {
-          localStorage.setItem('regenAppData_v6', JSON.stringify(appData)); // Keep V6 key for continuity
+          localStorage.setItem('regenAppData_v6', JSON.stringify(appData)); 
       }
       if(!silent) runAllSimulations(); 
   }
@@ -1625,13 +1633,13 @@
                   customAlert("Simulation erfolgreich in die Sandbox geladen!");
               } else {
                   if (data.version >= 5) { 
-                      data.version = 7.1; appData = data; 
+                      data.version = 7.2; appData = data; 
                   } else if (data.base && !data.cycles) { 
-                      appData = { version: 7.1, cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }] };
+                      appData = { version: 7.2, cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }] };
                   } else if (data.tDays !== undefined && !data.base) {
                       let base = { start: data.startDate, end: data.endDate, tDays: parseInt(data.tDays)||0, sLevel: parseInt(data.stress)||0, aLevel: parseInt(data.alcohol)||0, isOpen: false };
                       let logs = {}; if(data.interruptions) { data.interruptions.forEach(int => { logs[int.start] = { type: 'ausrutscher', t: parseInt(int.t)||1, s: parseInt(int.s)||0, a: parseInt(int.a)||0 }; }); }
-                      appData = { version: 7.1, cycles: [{ id: Date.now(), status: 'active', base: base, logs: logs }] };
+                      appData = { version: 7.2, cycles: [{ id: Date.now(), status: 'active', base: base, logs: logs }] };
                   } else { appData = data; }
                   
                   saveData(true); 
@@ -1652,7 +1660,7 @@
       const sLevels = ['Kein', 'Moderat', 'Hoch'];
       const aLevels = ['Kein', 'Moderat', 'Hoch'];
       
-      let desc = isSandbox ? `Regenerations-Tracker SIMULATION\n\n` : `Regenerations-Tracker V7.1\n\n`;
+      let desc = isSandbox ? `ReTrack SIMULATION\n\n` : `ReTrack V7.2\n\n`;
       desc += `--- Basis-Phase ---\n`;
       desc += `Start: ${parseLocal(activeCycle.base.start).toLocaleDateString('de-DE')}\n`;
       desc += `T-Tage: ${activeCycle.base.tDays}d\n`;
