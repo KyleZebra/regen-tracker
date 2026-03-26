@@ -3,7 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>ReTrack 7.3</title>
+  
+  <!-- Anti-Cache Meta Tags für den Browser -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+
+  <title>ReTrack 7.4</title>
   
   <!-- PWA Setup -->
   <link rel="manifest" href="./manifest.json" />
@@ -81,6 +87,22 @@
       font-weight: bold;
       box-shadow: 0 4px 15px rgba(0,0,0,0.2);
     }
+    
+    /* Update Banner Styles */
+    #update-banner {
+      display: none;
+      background: #3498db;
+      color: white;
+      padding: 15px;
+      border-radius: var(--border-radius);
+      margin-bottom: 1rem;
+      text-align: center;
+      font-weight: bold;
+      box-shadow: 0 4px 15px rgba(52, 152, 219, 0.4);
+      animation: slideDown 0.5s ease-out;
+    }
+    @keyframes slideDown { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
     .sandbox-actions { display: flex; gap: 10px; margin-top: 10px; justify-content: center; }
     .btn-sandbox { background: white; color: #2c3e50; border: none; padding: 6px 12px; border-radius: 8px; font-weight: 700; cursor: pointer; }
     .btn-sandbox.danger { background: #e74c3c; color: white; }
@@ -293,6 +315,14 @@
 </head>
 <body>
 
+  <!-- PWA UPDATE BANNER -->
+  <div id="update-banner">
+      🚀 Eine neue App-Version ist verfügbar!
+      <div class="sandbox-actions">
+          <button class="btn-sandbox" onclick="applyPwaUpdate()">Jetzt aktualisieren</button>
+      </div>
+  </div>
+
   <div id="sandbox-banner">
       🧪 SIMULATIONS-MODUS AKTIV
       <div class="sandbox-actions">
@@ -303,7 +333,7 @@
 
   <header>
     <h1>🧪 ReTrack</h1>
-    <div class="version">Version 7.3 – PWA & Journaling</div>
+    <div class="version">Version 7.4 – PWA Auto-Update</div>
   </header>
 
   <div class="tabs">
@@ -320,7 +350,7 @@
     
     <!-- Empty State / Setup Warning -->
     <div id="setup-warning" class="setup-overlay">
-        <h3>Willkommen bei ReTrack (v7.3)! 👋</h3>
+        <h3>Willkommen bei ReTrack (v7.4)! 👋</h3>
         <p>Lege deinen ersten Zyklus an oder lade ein bestehendes Backup.</p>
         <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 15px;">
             <button class="btn-tool" style="background:var(--header-bg); border:none; color:white;" onclick="switchTab('historie')">✏️ Neuen Zyklus starten</button>
@@ -601,7 +631,7 @@
 
 <script>
   let appData = {
-      version: 7.3,
+      version: 7.4,
       cycles: [] 
   };
   
@@ -719,10 +749,10 @@
           try { 
               let data = JSON.parse(saved); 
               if (data.version >= 5) {
-                  data.version = 7.3; 
+                  data.version = 7.4; 
                   appData = data;
               } else if (!data.cycles && data.base) { 
-                  appData = { version: 7.3, cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }] };
+                  appData = { version: 7.4, cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }] };
               }
           } catch(e) { console.error("Save data corrupted."); }
       }
@@ -764,7 +794,7 @@
           localStorage.removeItem('regenAppData_v5'); 
           localStorage.removeItem('regenAppData_v6'); 
           localStorage.removeItem('regenAppData_v7');
-          appData = { version: 7.3, cycles: [] };
+          appData = { version: 7.4, cycles: [] };
           
           customAlert("Alle Daten wurden erfolgreich gelöscht. Die App startet nun sauber neu.", () => {
               // Harter Reload für PWA um Caches zu leeren
@@ -1231,7 +1261,7 @@
                   if (state === 'BEWAEHRUNG') {
                       debt -= 0.5; withheldBonus += 0.5; bewaehrungTimer--; history.b.push(new Date(simDate));
                       if (bewaehrungTimer <= 0) { 
-                          if (dStr <= todayStr) { // Pessimistic ETA
+                          if (dStr <= todayStr) { // Pessimistic ETA applies to both reality and sandbox
                               debt -= withheldBonus; if(debt<0) debt=0; withheldBonus=0; state='REGEN'; clusterTDays = 0;
                           } else {
                               state='REGEN'; clusterTDays = 0;
@@ -1630,132 +1660,36 @@
       }
   }
 
-  function exportData() {
-      let exportObj = JSON.parse(JSON.stringify(getApp()));
-      if (isSandbox) exportObj.isSandbox = true;
-      const blob = new Blob([JSON.stringify(exportObj, null, 2)], {type: "application/json"});
-      const fileName = isSandbox ? "lifetracker_simulation.json" : "lifetracker_backup.json";
-      const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = fileName; link.click();
-  }
-
-  function importData(input) {
-      const file = input.files[0]; if (!file) return;
-      const reader = new FileReader();
-      reader.onload = function(e) {
-          try {
-              let data = JSON.parse(e.target.result);
-              
-              if (!isSandbox && data.isSandbox) {
-                  return customAlert("Achtung: Dies ist eine Simulations-Datei. Du kannst sie nur im Labor (Ring klicken) laden!");
-              }
-
-              if (isSandbox) {
-                  sandboxData = data; 
-                  runAllSimulations();
-                  customAlert("Simulation erfolgreich in die Sandbox geladen!");
-              } else {
-                  if (data.version >= 5) { 
-                      data.version = 7.3; appData = data; 
-                  } else if (data.base && !data.cycles) { 
-                      appData = { version: 7.3, cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }] };
-                  } else if (data.tDays !== undefined && !data.base) {
-                      let base = { start: data.startDate, end: data.endDate, tDays: parseInt(data.tDays)||0, sLevel: parseInt(data.stress)||0, aLevel: parseInt(data.alcohol)||0, isOpen: false };
-                      let logs = {}; if(data.interruptions) { data.interruptions.forEach(int => { logs[int.start] = { type: 'ausrutscher', t: parseInt(int.t)||1, s: parseInt(int.s)||0, a: parseInt(int.a)||0 }; }); }
-                      appData = { version: 7.3, cycles: [{ id: Date.now(), status: 'active', base: base, logs: logs }] };
-                  } else { appData = data; }
-                  
-                  saveData(true); 
-                  customAlert("Daten erfolgreich geladen! Die Seite wird nun aktualisiert.", () => {
-                      if (!isSandbox) window.location.href = window.location.href.split('?')[0];
-                  });
-              }
-          } catch(err) { customAlert("Fehler beim Laden: " + err); }
-      };
-      reader.readAsText(file); input.value = ''; 
-  }
-  
-  function downloadICS() {
-      if(!activeSimResult) return;
-      const res = activeSimResult; 
-      const activeCycle = getActiveCycle();
-      
-      const sLevels = ['Kein', 'Moderat', 'Hoch'];
-      const aLevels = ['Kein', 'Moderat', 'Hoch'];
-      
-      let desc = isSandbox ? `ReTrack SIMULATION\n\n` : `ReTrack V7.3\n\n`;
-      desc += `--- Basis-Phase ---\n`;
-      desc += `Start: ${parseLocal(activeCycle.base.start).toLocaleDateString('de-DE')}\n`;
-      desc += `T-Tage: ${activeCycle.base.tDays}d\n`;
-      desc += `Stress (Max): ${sLevels[activeCycle.base.sLevel]}\n`;
-      desc += `Alkohol (Max): ${aLevels[activeCycle.base.aLevel]}\n`;
-      desc += `Basis-Schulden (Start): ${res.initialDebtTotal} Tage\n`;
-      
-      if(res.history.logDetails.length > 0) {
-          desc += `\n--- Ausrutscher / Logs ---\n`;
-          const sortedLogs = [...res.history.logDetails].sort((a,b) => parseLocal(a.date) - parseLocal(b.date));
-          sortedLogs.forEach(l => {
-              desc += `[${parseLocal(l.date).toLocaleDateString('de-DE')}] Dauer: ${l.t}d | S: ${sLevels[l.s]} | A: ${aLevels[l.a]} -> Strafe: +${l.p} Tage\n`;
-          });
+  // --- SW UPDATE LOGIC ---
+  let newWorker;
+  function applyPwaUpdate() {
+      if (newWorker) {
+          newWorker.postMessage({ action: 'skipWaiting' });
       }
-
-      const totalT = res.totalTDaysEver;
-      const totalRegenDebt = res.totalDebtEver;
-      const aufschlag = totalRegenDebt - (totalT * 3);
-
-      desc += `\n--- Gesamtbilanz ---\n`;
-      desc += `T-Tage (Konsum) gesamt: ${totalT}\n`;
-      desc += `x3 Schuld: ${totalT * 3} Tage\n`;
-      desc += `Zusätzlicher Aufschlag: +${aufschlag} Tage\n`;
-      desc += `Regenerationsschuld gesamt: ${totalRegenDebt} Tage\n`;
-
-      const mFree = Math.min(res.totalTDaysEver * 2, 14);
-      desc += `\nEmpfohlene M-freie Tage: ${mFree}\n`;
-      desc += `Prognostiziertes Ziel: ${res.finalEnd.toLocaleDateString('de-DE')}\n`;
-
-      const exportDates = [...res.history.b, ...res.history.r].sort((a,b) => a-b);
-      if(exportDates.length === 0) return customAlert("Keine Erholungstage zum Exportieren gefunden.");
-
-      const start = exportDates[0]; 
-      const end = addDays(exportDates[exportDates.length - 1], 1); 
-      const formatDate = d => `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
-
-      const ics = `BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nUID:${Date.now()}@regenrechner\nDTSTAMP:${formatDate(new Date())}T000000Z\nDTSTART;VALUE=DATE:${formatDate(start)}\nDTEND;VALUE=DATE:${formatDate(end)}\nSUMMARY:${isSandbox ? 'Simulation:' : ''} Regenerationsphase (${exportDates.length} Tage)\nDESCRIPTION:${desc.replace(/\n/g, '\\n')}\nEND:VEVENT\nEND:VCALENDAR`;
-
-      const blob = new Blob([ics], { type: "text/calendar" });
-      const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = isSandbox ? "simulation.ics" : "regeneration.ics"; link.click();
   }
 
-  function downloadImage() {
-      const exportCard = document.getElementById("export-card");
-      const wrapper = exportCard.querySelector('.calendar-wrapper');
-
-      const oldOverflow = wrapper.style.overflowX;
-      const oldWidth = exportCard.style.width;
-      
-      wrapper.style.overflowX = 'visible';
-      exportCard.style.width = wrapper.scrollWidth + 40 + 'px'; 
-
-      html2canvas(exportCard, { 
-          scale: 2, 
-          backgroundColor: isSandbox ? "#f5eef8" : "#ffffff"
-      }).then(canvas => {
-          wrapper.style.overflowX = oldOverflow;
-          exportCard.style.width = oldWidth;
-
-          const link = document.createElement("a"); 
-          link.download = isSandbox ? "simulation_zyklus.png" : "aktueller_zyklus.png"; 
-          link.href = canvas.toDataURL("image/png"); 
-          link.click();
-      });
-  }
-  
-  // --- Service Worker Registrierung (PWA) ---
   if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js')
-        .then(reg => console.log('Service Worker registriert'))
-        .catch(err => console.error('Service Worker Fehler', err));
-    });
+      window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js').then(reg => {
+              reg.addEventListener('updatefound', () => {
+                  newWorker = reg.installing;
+                  newWorker.addEventListener('statechange', () => {
+                      // Hat der Worker sich neu installiert und wartet auf Übernahme?
+                      if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                          document.getElementById('update-banner').style.display = 'block';
+                      }
+                  });
+              });
+          }).catch(err => console.error('Service Worker Fehler', err));
+
+          // Lauscht darauf, ob der Worker ausgetauscht wurde (nach Klick auf den Button)
+          let refreshing;
+          navigator.serviceWorker.addEventListener('controllerchange', () => {
+              if (refreshing) return;
+              refreshing = true;
+              window.location.reload();
+          });
+      });
   }
 </script>
 </body>
