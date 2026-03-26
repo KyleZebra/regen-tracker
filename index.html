@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>ReTrack 7.2</title>
+  <title>ReTrack 7.3</title>
   
   <!-- PWA Setup -->
   <link rel="manifest" href="./manifest.json" />
@@ -303,7 +303,7 @@
 
   <header>
     <h1>🧪 ReTrack</h1>
-    <div class="version">Version 7.2 – PWA & Journaling</div>
+    <div class="version">Version 7.3 – PWA & Journaling</div>
   </header>
 
   <div class="tabs">
@@ -320,7 +320,7 @@
     
     <!-- Empty State / Setup Warning -->
     <div id="setup-warning" class="setup-overlay">
-        <h3>Willkommen bei ReTrack (v7.2)! 👋</h3>
+        <h3>Willkommen bei ReTrack (v7.3)! 👋</h3>
         <p>Lege deinen ersten Zyklus an oder lade ein bestehendes Backup.</p>
         <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 15px;">
             <button class="btn-tool" style="background:var(--header-bg); border:none; color:white;" onclick="switchTab('historie')">✏️ Neuen Zyklus starten</button>
@@ -465,23 +465,24 @@
   </div>
 
   <!-- ================= CUSTOM MODALS ================= -->
+  
   <!-- Alert Modal -->
   <div id="modal-alert" class="modal-overlay">
     <div class="modal-card" style="text-align:center;">
       <h3>ℹ️ Hinweis</h3>
       <p id="alert-message" style="margin-bottom: 20px; color: #555;"></p>
-      <button class="btn-quick btn-pausiert" style="width:100%;" id="alert-ok-btn">OK</button>
+      <button class="btn-quick btn-pausiert" style="width:100%;" id="alert-ok-btn" onclick="closeModal('modal-alert')">OK</button>
     </div>
   </div>
 
-  <!-- Confirm Modal -->
+  <!-- Confirm Modal (Robust Inline Handler) -->
   <div id="modal-confirm" class="modal-overlay">
     <div class="modal-card" style="text-align:center;">
       <h3 style="color:var(--danger)">⚠️ Achtung</h3>
       <p id="confirm-message" style="margin-bottom: 20px; color: #555;"></p>
       <div class="modal-actions-row">
         <button class="btn-tool" onclick="closeModal('modal-confirm')">Abbrechen</button>
-        <button class="btn-quick btn-ausrutscher" id="confirm-yes-btn">Bestätigen</button>
+        <button class="btn-quick btn-ausrutscher" id="confirm-yes-btn" onclick="executeConfirm()">Bestätigen</button>
       </div>
     </div>
   </div>
@@ -600,15 +601,13 @@
 
 <script>
   let appData = {
-      version: 7.2,
+      version: 7.3,
       cycles: [] 
   };
   
-  // Sandbox Control Variables
   let isSandbox = false;
   let sandboxData = null;
 
-  // Global Engine Accessor
   const getApp = () => isSandbox ? sandboxData : appData;
   const getActiveCycle = () => getApp().cycles.find(c => c.status === 'active');
   
@@ -623,7 +622,7 @@
   const addDays = (date, days) => { const r = new Date(date); r.setDate(r.getDate() + days); return r; };
   const diffDays = (d1, d2) => Math.round((d2 - d1) / (24 * 60 * 60 * 1000));
 
-  // --- CUSTOM MODALS LOGIC ---
+  // --- CUSTOM MODALS LOGIC (Robust PWA Version) ---
   function customAlert(msg, callback) {
       document.getElementById('alert-message').textContent = msg;
       document.getElementById('modal-alert').classList.add('active');
@@ -639,11 +638,18 @@
       pendingConfirmAction = action;
       document.getElementById('modal-confirm').classList.add('active');
   }
-  document.getElementById('confirm-yes-btn').addEventListener('click', () => {
-      closeModal('modal-confirm');
-      if(pendingConfirmAction) pendingConfirmAction();
-  });
 
+  function executeConfirm() {
+      closeModal('modal-confirm');
+      if(pendingConfirmAction) {
+          pendingConfirmAction();
+          pendingConfirmAction = null;
+      }
+  }
+
+  function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+  // --- STARTUP ---
   document.addEventListener("DOMContentLoaded", () => { 
       lastRenderDateStr = toIsoString(new Date());
       loadData(); 
@@ -706,16 +712,17 @@
       customAlert("Zielvorgabe (" + parseLocal(targetStr).toLocaleDateString('de-DE') + ") wurde erfolgreich in deine Realität übertragen!");
   }
 
+  // --- DATA MANAGEMENT ---
   function loadData() {
       const saved = localStorage.getItem('regenAppData_v6') || localStorage.getItem('regenAppData_v5');
       if (saved) {
           try { 
               let data = JSON.parse(saved); 
               if (data.version >= 5) {
-                  data.version = 7.2; 
+                  data.version = 7.3; 
                   appData = data;
               } else if (!data.cycles && data.base) { 
-                  appData = { version: 7.2, cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }] };
+                  appData = { version: 7.3, cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }] };
               }
           } catch(e) { console.error("Save data corrupted."); }
       }
@@ -749,6 +756,21 @@
           localStorage.setItem('regenAppData_v6', JSON.stringify(appData)); 
       }
       if(!silent) runAllSimulations(); 
+  }
+
+  function hardReset() {
+      if (isSandbox) return customAlert("Im Simulations-Modus kannst du keinen Hard-Reset durchführen.");
+      customConfirm("ACHTUNG: Möchtest du wirklich ALLE Daten, deine Historie und alle Zyklen unwiderruflich löschen? (Werkseinstellungen)", () => {
+          localStorage.removeItem('regenAppData_v5'); 
+          localStorage.removeItem('regenAppData_v6'); 
+          localStorage.removeItem('regenAppData_v7');
+          appData = { version: 7.3, cycles: [] };
+          
+          customAlert("Alle Daten wurden erfolgreich gelöscht. Die App startet nun sauber neu.", () => {
+              // Harter Reload für PWA um Caches zu leeren
+              window.location.href = window.location.href.split('?')[0];
+          });
+      });
   }
 
   function switchTab(tabId) {
@@ -1091,8 +1113,9 @@
 
   function exportDiaryTxt() {
       const active = getActiveCycle();
-      if(!active) return;
-      let txt = `Tagebuch - Regenerations-Tracker\nZyklus Start: ${active.base.start}\n=====================================\n\n`;
+      if(!active || !active.base || !active.base.start) return customAlert("Es gibt noch keinen aktiven Zyklus zum Exportieren.");
+      
+      let txt = `Tagebuch - ReTrack\nZyklus Start: ${active.base.start}\n=====================================\n\n`;
 
       const sLevels = ['Kein', 'Moderat', 'Hoch'];
       const aLevels = ['Kein', 'Moderat', 'Hoch'];
@@ -1124,8 +1147,7 @@
       link.click();
   }
 
-  function closeModal(id) { document.getElementById(id).classList.remove('active'); }
-
+  // --- ENGINE ---
   function runAllSimulations() {
       globalSimResults = getApp().cycles.map(cycle => simulateCycle(cycle));
       activeSimResult = globalSimResults[globalSimResults.length - 1];
@@ -1209,7 +1231,7 @@
                   if (state === 'BEWAEHRUNG') {
                       debt -= 0.5; withheldBonus += 0.5; bewaehrungTimer--; history.b.push(new Date(simDate));
                       if (bewaehrungTimer <= 0) { 
-                          if (dStr <= todayStr) { // Pessimistic ETA applies to both reality and sandbox
+                          if (dStr <= todayStr) { // Pessimistic ETA
                               debt -= withheldBonus; if(debt<0) debt=0; withheldBonus=0; state='REGEN'; clusterTDays = 0;
                           } else {
                               state='REGEN'; clusterTDays = 0;
@@ -1633,18 +1655,18 @@
                   customAlert("Simulation erfolgreich in die Sandbox geladen!");
               } else {
                   if (data.version >= 5) { 
-                      data.version = 7.2; appData = data; 
+                      data.version = 7.3; appData = data; 
                   } else if (data.base && !data.cycles) { 
-                      appData = { version: 7.2, cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }] };
+                      appData = { version: 7.3, cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }] };
                   } else if (data.tDays !== undefined && !data.base) {
                       let base = { start: data.startDate, end: data.endDate, tDays: parseInt(data.tDays)||0, sLevel: parseInt(data.stress)||0, aLevel: parseInt(data.alcohol)||0, isOpen: false };
                       let logs = {}; if(data.interruptions) { data.interruptions.forEach(int => { logs[int.start] = { type: 'ausrutscher', t: parseInt(int.t)||1, s: parseInt(int.s)||0, a: parseInt(int.a)||0 }; }); }
-                      appData = { version: 7.2, cycles: [{ id: Date.now(), status: 'active', base: base, logs: logs }] };
+                      appData = { version: 7.3, cycles: [{ id: Date.now(), status: 'active', base: base, logs: logs }] };
                   } else { appData = data; }
                   
                   saveData(true); 
                   customAlert("Daten erfolgreich geladen! Die Seite wird nun aktualisiert.", () => {
-                      if (!isSandbox) location.reload();
+                      if (!isSandbox) window.location.href = window.location.href.split('?')[0];
                   });
               }
           } catch(err) { customAlert("Fehler beim Laden: " + err); }
@@ -1660,7 +1682,7 @@
       const sLevels = ['Kein', 'Moderat', 'Hoch'];
       const aLevels = ['Kein', 'Moderat', 'Hoch'];
       
-      let desc = isSandbox ? `ReTrack SIMULATION\n\n` : `ReTrack V7.2\n\n`;
+      let desc = isSandbox ? `ReTrack SIMULATION\n\n` : `ReTrack V7.3\n\n`;
       desc += `--- Basis-Phase ---\n`;
       desc += `Start: ${parseLocal(activeCycle.base.start).toLocaleDateString('de-DE')}\n`;
       desc += `T-Tage: ${activeCycle.base.tDays}d\n`;
