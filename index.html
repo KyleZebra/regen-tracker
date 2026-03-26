@@ -9,7 +9,7 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
 
-  <title>ReTrack 7.5</title>
+  <title>ReTrack 8.0</title>
   
   <!-- PWA Setup -->
   <link rel="manifest" href="./manifest.json" />
@@ -72,7 +72,9 @@
       margin-bottom: 1rem;
       box-shadow: 0 4px 15px rgba(0,0,0,0.1);
       transition: background 0.3s ease, color 0.3s ease;
+      cursor: pointer; /* Signalisiert, dass der Header (für das Easter Egg) klickbar ist */
     }
+    header:active { transform: scale(0.98); } /* Kleines Klick-Feedback */
     header h1 { margin: 0; font-size: 1.6rem; font-weight: 800; text-transform: uppercase; letter-spacing: -0.5px; }
     header .version { font-weight: 600; opacity: 0.8; font-size: 0.85rem; margin-top: 0.2rem; }
 
@@ -311,6 +313,55 @@
     .archive-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.85rem; color: #555;}
     
     #fileInput { display: none; }
+
+    /* ================= EASTER EGG: BREATHE MODULE STYLES (Strictly Isolated) ================= */
+    .br-overlay {
+        display: none;
+        position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+        background-color: #1a252f; /* Beruhigendes, tiefes Blau */
+        z-index: 9999;
+        flex-direction: column; align-items: center; justify-content: center;
+        color: #ecf0f1; font-family: inherit;
+        animation: fadeIn 0.4s ease;
+    }
+    .br-close-btn {
+        position: absolute; top: 20px; right: 20px;
+        background: rgba(255,255,255,0.1); border: none; color: white;
+        padding: 8px 15px; border-radius: 20px; font-weight: bold; cursor: pointer;
+        transition: background 0.2s;
+    }
+    .br-close-btn:hover { background: rgba(255,255,255,0.2); }
+    
+    .br-setup-card { text-align: center; max-width: 300px; padding: 20px; }
+    .br-setup-card h2 { margin-top: 0; font-size: 1.8rem; color: #3498db; }
+    .br-setup-card p { opacity: 0.8; font-size: 0.9rem; margin-bottom: 20px; }
+    .br-setup-input {
+        width: 100px; padding: 10px; font-size: 1.5rem; text-align: center;
+        background: rgba(255,255,255,0.05); color: white; border: 2px solid #3498db;
+        border-radius: 12px; margin-bottom: 20px; outline: none;
+    }
+    .br-start-btn {
+        width: 100%; padding: 15px; background: #3498db; color: white; border: none;
+        border-radius: 12px; font-size: 1.1rem; font-weight: 800; cursor: pointer;
+    }
+    
+    .br-active-area { display: none; text-align: center; flex-direction: column; align-items: center;}
+    .br-circle-container {
+        position: relative; width: 250px; height: 250px;
+        display: flex; align-items: center; justify-content: center; margin-bottom: 40px;
+    }
+    .br-circle {
+        position: absolute;
+        width: 100px; height: 100px;
+        border-radius: 50%;
+        background: rgba(52, 152, 219, 0.2);
+        border: 4px solid #3498db;
+        box-shadow: 0 0 30px rgba(52, 152, 219, 0.4);
+        /* Animation wird via JS `transform: scale()` gesteuert für butterweiche 60fps */
+    }
+    .br-text { position: relative; z-index: 2; font-size: 1.5rem; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+    .br-timer { font-size: 1.2rem; font-weight: bold; opacity: 0.5; font-variant-numeric: tabular-nums; }
+    .br-done-msg { display: none; text-align: center; animation: fadeIn 0.5s; }
   </style>
 </head>
 <body>
@@ -331,9 +382,10 @@
       </div>
   </div>
 
-  <header>
+  <!-- EASTER EGG ENTRY: Klick auf den Header öffnet die Atemübung -->
+  <header onclick="openBreatheOverlay()" title="Geheime Atem-Übung öffnen">
     <h1>🧪 ReTrack</h1>
-    <div class="version">Version 7.5 – PWA Auto-Update</div>
+    <div class="version">Version 8.0 – Journaling & Therapie</div>
   </header>
 
   <div class="tabs">
@@ -350,7 +402,7 @@
     
     <!-- Empty State / Setup Warning -->
     <div id="setup-warning" class="setup-overlay">
-        <h3>Willkommen bei ReTrack (v7.5)! 👋</h3>
+        <h3>Willkommen bei ReTrack (v8.0)! 👋</h3>
         <p>Lege deinen ersten Zyklus an oder lade ein bestehendes Backup.</p>
         <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 15px;">
             <button class="btn-tool" style="background:var(--header-bg); border:none; color:white;" onclick="switchTab('historie')">✏️ Neuen Zyklus starten</button>
@@ -369,7 +421,7 @@
                 <div id="dash-sub" class="eta-subtext"></div>
             </div>
 
-            <!-- Easter Egg: onclick triggers the Sandbox -->
+            <!-- Sandbox Trigger (Ring Klick) -->
             <div class="ring-wrapper" onclick="openSandbox()" title="Geheimes Labor öffnen">
                 <svg viewBox="0 0 36 36" class="circular-chart">
                     <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
@@ -629,9 +681,40 @@
     </div>
   </div>
 
+  <!-- ================= EASTER EGG: BREATHE OVERLAY ================= -->
+  <div id="breathe-overlay" class="br-overlay">
+      <button class="br-close-btn" onclick="abortBreathe()">❌ Beenden</button>
+      
+      <!-- Setup Phase -->
+      <div id="br-setup" class="br-setup-card">
+          <h2>Atem-Meditation</h2>
+          <p>Beruhige dein Nervensystem mit der 4-4-4-4 Box-Breathing Methode.</p>
+          <label style="display:block; margin-bottom:10px; color:#bdc3c7;">Dauer (Minuten):</label>
+          <input type="number" id="br-duration" class="br-setup-input" value="3" min="1" max="60">
+          <button class="br-start-btn" onclick="startBreathe()">Starten</button>
+      </div>
+
+      <!-- Active Phase -->
+      <div id="br-active" class="br-active-area">
+          <div class="br-circle-container">
+              <div id="br-circle" class="br-circle"></div>
+              <div id="br-text" class="br-text">Bereit...</div>
+          </div>
+          <div id="br-timer" class="br-timer">--:--</div>
+      </div>
+
+      <!-- Done Phase -->
+      <div id="br-done" class="br-done-msg">
+          <div style="font-size:4rem; margin-bottom:10px;">🧘‍♂️</div>
+          <h2 style="color:#27ae60; margin:0 0 10px 0;">Sehr gut gemacht.</h2>
+          <p style="opacity:0.8; margin-bottom:20px;">Dein Nervensystem ist nun kalibriert.</p>
+          <button class="br-start-btn" onclick="abortBreathe()">Zurück zur App</button>
+      </div>
+  </div>
+
 <script>
   let appData = {
-      version: 7.5,
+      version: 8.0,
       cycles: [] 
   };
   
@@ -684,7 +767,6 @@
       lastRenderDateStr = toIsoString(new Date());
       loadData(); 
       
-      // UX Fix: Nach Import ohne aktiven Zyklus direkt ins Archiv springen
       const targetTab = sessionStorage.getItem('retrack_target_tab');
       if (targetTab) {
           sessionStorage.removeItem('retrack_target_tab');
@@ -692,8 +774,15 @@
       }
   });
   
+  // --- VISIBILITY & BACKGROUND HANDLING (Erweitert für Breathe-Feature) ---
   document.addEventListener("visibilitychange", () => {
-      if (document.visibilityState === 'visible' && !isSandbox) {
+      // 1. Wenn die App in den Hintergrund geht und die Atemübung läuft -> Abbrechen!
+      if (document.visibilityState === 'hidden' && isBreatheActive) {
+          abortBreathe(); // Sichert Akku, Audio und Timing
+      }
+      
+      // 2. Normale Reload-Logik beim Wiederkehren (wenn nicht in Sandbox)
+      if (document.visibilityState === 'visible' && !isSandbox && !isBreatheActive) {
           const nowStr = toIsoString(new Date());
           if (nowStr !== lastRenderDateStr) {
               lastRenderDateStr = nowStr;
@@ -756,10 +845,10 @@
           try { 
               let data = JSON.parse(saved); 
               if (data.version >= 5) {
-                  data.version = 7.5; 
+                  data.version = 8.0; 
                   appData = data;
               } else if (!data.cycles && data.base) { 
-                  appData = { version: 7.5, cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }] };
+                  appData = { version: 8.0, cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }] };
               }
           } catch(e) { console.error("Save data corrupted."); }
       }
@@ -814,7 +903,7 @@
           localStorage.removeItem('regenAppData_v5'); 
           localStorage.removeItem('regenAppData_v6'); 
           localStorage.removeItem('regenAppData_v7');
-          appData = { version: 7.5, cycles: [] };
+          appData = { version: 8.0, cycles: [] };
           
           customAlert("Alle Daten wurden erfolgreich gelöscht. Die App startet nun sauber neu.", () => {
               window.location.href = window.location.href.split('?')[0];
@@ -1708,25 +1797,24 @@
                   customAlert("Simulation erfolgreich in die Sandbox geladen!");
               } else {
                   if (data.version >= 5) { 
-                      data.version = 7.5; appData = data; 
+                      data.version = 8.0; appData = data; 
                   } else if (data.base && !data.cycles) { 
-                      appData = { version: 7.5, cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }] };
+                      appData = { version: 8.0, cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }] };
                   } else if (data.tDays !== undefined && !data.base) {
                       let base = { start: data.startDate, end: data.endDate, tDays: parseInt(data.tDays)||0, sLevel: parseInt(data.stress)||0, aLevel: parseInt(data.alcohol)||0, isOpen: false };
                       let logs = {}; if(data.interruptions) { data.interruptions.forEach(int => { logs[int.start] = { type: 'ausrutscher', t: parseInt(int.t)||1, s: parseInt(int.s)||0, a: parseInt(int.a)||0 }; }); }
-                      appData = { version: 7.5, cycles: [{ id: Date.now(), status: 'active', base: base, logs: logs }] };
+                      appData = { version: 8.0, cycles: [{ id: Date.now(), status: 'active', base: base, logs: logs }] };
                   } else { appData = data; }
                   
                   saveData(true); 
                   
-                  // UX Fix: Tab Route speichern, falls kein aktiver Zyklus existiert
                   const hasActive = appData.cycles.some(c => c.status === 'active');
                   if (!hasActive && appData.cycles.length > 0) {
                       sessionStorage.setItem('retrack_target_tab', 'archiv');
                   }
 
                   customAlert("Daten erfolgreich geladen! Die Seite wird nun aktualisiert.", () => {
-                      input.value = ''; // Input erst hier leeren, wenn alles 100% gelesen wurde
+                      input.value = ''; 
                       if (!isSandbox) window.location.href = window.location.href.split('?')[0];
                   });
               }
@@ -1752,7 +1840,7 @@
       const sLevels = ['Kein', 'Moderat', 'Hoch'];
       const aLevels = ['Kein', 'Moderat', 'Hoch'];
       
-      let desc = isSandbox ? `ReTrack SIMULATION\n\n` : `ReTrack V7.5\n\n`;
+      let desc = isSandbox ? `ReTrack SIMULATION\n\n` : `ReTrack V8.0\n\n`;
       desc += `--- Basis-Phase ---\n`;
       desc += `Start: ${parseLocal(activeCycle.base.start).toLocaleDateString('de-DE')}\n`;
       desc += `T-Tage: ${activeCycle.base.tDays}d\n`;
@@ -1817,6 +1905,221 @@
           link.href = canvas.toDataURL("image/png"); 
           link.click();
       });
+  }
+
+  // =========================================================================
+  // EASTER EGG: BREATHE MODULE (Isoliert von restlicher App)
+  // =========================================================================
+  
+  let isBreatheActive = false;
+  let brAnimationId = null;
+  let brStartTime = 0;
+  let brTotalDuration = 0; // In Millisekunden
+  let brCurrentPhase = -1;
+  let brWakeLock = null;
+  let audioCtx = null;
+
+  // Öffnet das Overlay
+  function openBreatheOverlay() {
+      if (isBreatheActive) return;
+      document.getElementById('breathe-overlay').style.display = 'flex';
+      document.getElementById('br-setup').style.display = 'block';
+      document.getElementById('br-active').style.display = 'none';
+      document.getElementById('br-done').style.display = 'none';
+      document.getElementById('br-duration').value = 3; // Reset auf 3 Min
+  }
+
+  // Wake Lock anfragen (Display anlassen)
+  async function requestWakeLock() {
+      try {
+          if ('wakeLock' in navigator) {
+              brWakeLock = await navigator.wakeLock.request('screen');
+          }
+      } catch (err) {
+          console.log('Wake Lock konnte nicht aktiviert werden:', err);
+      }
+  }
+
+  function releaseWakeLock() {
+      if (brWakeLock !== null) {
+          brWakeLock.release();
+          brWakeLock = null;
+      }
+  }
+
+  // Audio Context initialisieren (Muss durch User-Klick passieren)
+  function initAudio() {
+      if (!audioCtx) {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+          audioCtx.resume();
+      }
+  }
+
+  // Sound-Engine für die 4 Phasen
+  function playPhaseSound(phase) {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      const now = audioCtx.currentTime;
+
+      if (phase === 0) { 
+          // Phase 1: Einatmen (Heller, ansteigender Gong)
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(261.63, now); // C4
+          osc.frequency.linearRampToValueAtTime(329.63, now + 4); // E4
+          gain.gain.setValueAtTime(0, now);
+          gain.gain.linearRampToValueAtTime(0.3, now + 1);
+          gain.gain.setValueAtTime(0.3, now + 3);
+          gain.gain.linearRampToValueAtTime(0, now + 4);
+          osc.start(now);
+          osc.stop(now + 4);
+      } else if (phase === 1) { 
+          // Phase 2: Halten Oben (Heller Triangel-Ping)
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(659.25, now); // E5
+          gain.gain.setValueAtTime(0, now);
+          gain.gain.linearRampToValueAtTime(0.15, now + 0.05); // Harter Attack
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 2); // Sanftes Ausklingen
+          osc.start(now);
+          osc.stop(now + 2);
+      } else if (phase === 2) { 
+          // Phase 3: Ausatmen (Tiefer, absteigender Gong)
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(329.63, now); // E4
+          osc.frequency.linearRampToValueAtTime(196.00, now + 4); // G3
+          gain.gain.setValueAtTime(0, now);
+          gain.gain.linearRampToValueAtTime(0.3, now + 1);
+          gain.gain.setValueAtTime(0.3, now + 3);
+          gain.gain.linearRampToValueAtTime(0, now + 4);
+          osc.start(now);
+          osc.stop(now + 4);
+      } else if (phase === 3) { 
+          // Phase 4: Halten Unten (Tiefer, hölzerner Block)
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(130.81, now); // C3
+          gain.gain.setValueAtTime(0, now);
+          gain.gain.linearRampToValueAtTime(0.4, now + 0.02); // Sehr harter Attack
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 1); // Schnelles Ausklingen
+          osc.start(now);
+          osc.stop(now + 1);
+      }
+  }
+
+  // Start der Übung
+  function startBreathe() {
+      const minutes = parseInt(document.getElementById('br-duration').value);
+      if (isNaN(minutes) || minutes < 1 || minutes > 60) return customAlert("Bitte eine Dauer zwischen 1 und 60 Minuten wählen.");
+      
+      brTotalDuration = minutes * 60 * 1000;
+      isBreatheActive = true;
+      brStartTime = 0;
+      brCurrentPhase = -1;
+
+      // UI Umschalten
+      document.getElementById('br-setup').style.display = 'none';
+      document.getElementById('br-active').style.display = 'flex';
+      
+      initAudio();
+      requestWakeLock();
+      
+      // Starte die 60FPS Animationsschleife
+      brAnimationId = requestAnimationFrame(breatheLoop);
+  }
+
+  // Die Haupt-Animationsschleife (Hochpräzise)
+  function breatheLoop(timestamp) {
+      if (!isBreatheActive) return; // Sicherheits-Abbruch
+      if (!brStartTime) brStartTime = timestamp;
+      
+      const elapsed = timestamp - brStartTime;
+      const timeLeft = brTotalDuration - elapsed;
+
+      // Ist die Zeit abgelaufen?
+      if (timeLeft <= 0) {
+          finishBreathe();
+          return;
+      }
+
+      // 1. Timer UI aktualisieren
+      const secsLeft = Math.ceil(timeLeft / 1000);
+      const m = String(Math.floor(secsLeft / 60)).padStart(2, '0');
+      const s = String(secsLeft % 60).padStart(2, '0');
+      document.getElementById('br-timer').textContent = `${m}:${s}`;
+
+      // 2. Phasen-Logik (Ein kompletter Box-Zyklus hat 16000ms)
+      const cycleTime = elapsed % 16000;
+      let phase = Math.floor(cycleTime / 4000); // Ergibt 0, 1, 2 oder 3
+      let phaseProgress = (cycleTime % 4000) / 4000; // Fortschritt innerhalb der Phase (0.0 bis 1.0)
+
+      // Phase hat sich geändert -> Sound abspielen & Text anpassen
+      if (phase !== brCurrentPhase) {
+          brCurrentPhase = phase;
+          playPhaseSound(phase);
+          
+          const textEl = document.getElementById('br-text');
+          if (phase === 0) { textEl.textContent = "Einatmen"; textEl.style.color = "#ecf0f1"; }
+          else if (phase === 1) { textEl.textContent = "Halten"; textEl.style.color = "#f1c40f"; }
+          else if (phase === 2) { textEl.textContent = "Ausatmen"; textEl.style.color = "#ecf0f1"; }
+          else if (phase === 3) { textEl.textContent = "Halten"; textEl.style.color = "#95a5a6"; }
+      }
+
+      // 3. Kreis visualisieren (sanfte Skalierung)
+      const circle = document.getElementById('br-circle');
+      let scale = 1;
+      
+      if (phase === 0) {
+          // Wächst sanft (EaseInOut)
+          const ease = phaseProgress < 0.5 ? 2 * phaseProgress * phaseProgress : 1 - Math.pow(-2 * phaseProgress + 2, 2) / 2;
+          scale = 1 + ease * 1.8; // Skaliert von 1 bis 2.8
+      } else if (phase === 1) {
+          scale = 2.8; // Bleibt groß
+      } else if (phase === 2) {
+          // Schrumpft sanft (EaseInOut)
+          const ease = phaseProgress < 0.5 ? 2 * phaseProgress * phaseProgress : 1 - Math.pow(-2 * phaseProgress + 2, 2) / 2;
+          scale = 2.8 - ease * 1.8; // Skaliert von 2.8 bis 1
+      } else if (phase === 3) {
+          scale = 1; // Bleibt klein
+      }
+      
+      circle.style.transform = `scale(${scale})`;
+
+      // Nächster Frame
+      brAnimationId = requestAnimationFrame(breatheLoop);
+  }
+
+  // Erfolgreiches Ende
+  function finishBreathe() {
+      isBreatheActive = false;
+      cancelAnimationFrame(brAnimationId);
+      releaseWakeLock();
+      
+      // Abschluss-Ton (Doppel-Gong)
+      if (audioCtx) {
+          const now = audioCtx.currentTime;
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.connect(gain); gain.connect(audioCtx.destination);
+          osc.type = 'sine'; osc.frequency.setValueAtTime(440, now); osc.frequency.setValueAtTime(523.25, now + 1);
+          gain.gain.setValueAtTime(0, now); gain.gain.linearRampToValueAtTime(0.3, now + 0.1); gain.gain.exponentialRampToValueAtTime(0.001, now + 3);
+          osc.start(now); osc.stop(now + 3);
+      }
+
+      document.getElementById('br-active').style.display = 'none';
+      document.getElementById('br-done').style.display = 'block';
+  }
+
+  // Harter Abbruch (z.B. durch Button oder Wechsel in Hintergrund)
+  function abortBreathe() {
+      isBreatheActive = false;
+      if (brAnimationId) cancelAnimationFrame(brAnimationId);
+      releaseWakeLock();
+      
+      // Overlay komplett verstecken
+      document.getElementById('breathe-overlay').style.display = 'none';
   }
   
   // --- SW UPDATE LOGIC ---
