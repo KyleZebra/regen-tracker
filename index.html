@@ -1,0 +1,1732 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Regenerations-Tracker 7.1</title>
+  
+  <!-- PWA Setup -->
+  <link rel="manifest" href="./manifest.json" />
+  <meta name="theme-color" content="#f1c40f" />
+  <link rel="apple-touch-icon" href="./icon-192x192.png" />
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <style>
+    :root {
+      --bg-body: #f8f9fa; 
+      --header-bg: #f1c40f; 
+      --header-text: #2c3e50;
+      --card-bg: #ffffff;
+      --text-main: #2c3e50;
+      --text-light: #7f8c8d;
+      
+      --accent: #f39c12;
+      --btn-calc: #27ae60;
+      --btn-calc-hover: #219150;
+      --danger: #e74c3c;
+      --nirvana-blue: #3498db;
+      
+      --border-radius: 16px;
+      --shadow: 0 10px 20px rgba(0,0,0,0.05);
+      --input-bg: #f4f6f7;
+    }
+
+    /* Sandbox Mode Overrides */
+    body.sandbox-mode {
+      --bg-body: #f5eef8;
+      --header-bg: #8e44ad;
+      --header-text: #ffffff;
+      --accent: #9b59b6;
+      --btn-calc: #9b59b6;
+      --btn-calc-hover: #8e44ad;
+      --nirvana-blue: #8e44ad;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg-body);
+      color: var(--text-main);
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 15px; 
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      transition: background 0.3s ease;
+    }
+
+    /* Header & Tabs */
+    header {
+      background: var(--header-bg);
+      padding: 1.5rem;
+      border-radius: var(--border-radius);
+      color: var(--header-text);
+      text-align: center;
+      margin-bottom: 1rem;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+    header h1 { margin: 0; font-size: 1.6rem; font-weight: 800; text-transform: uppercase; letter-spacing: -0.5px; }
+    header .version { font-weight: 600; opacity: 0.8; font-size: 0.85rem; margin-top: 0.2rem; }
+
+    #sandbox-banner {
+      display: none;
+      background: #2c3e50;
+      color: white;
+      padding: 12px;
+      border-radius: var(--border-radius);
+      margin-bottom: 1rem;
+      text-align: center;
+      font-weight: bold;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+    .sandbox-actions { display: flex; gap: 10px; margin-top: 10px; justify-content: center; }
+    .btn-sandbox { background: white; color: #2c3e50; border: none; padding: 6px 12px; border-radius: 8px; font-weight: 700; cursor: pointer; }
+    .btn-sandbox.danger { background: #e74c3c; color: white; }
+
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 1.5rem;
+      overflow-x: auto;
+      padding-bottom: 5px;
+    }
+    .tab-btn {
+      flex: 1;
+      min-width: 80px;
+      padding: 12px 8px;
+      border: none;
+      background: #e9ecef;
+      border-radius: 12px;
+      font-weight: 700;
+      color: var(--text-light);
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 0.9rem;
+      white-space: nowrap;
+    }
+    .tab-btn.active {
+      background: var(--text-main);
+      color: #fff;
+      box-shadow: 0 4px 10px rgba(44, 62, 80, 0.2);
+    }
+
+    .tab-content { display: none; animation: fadeIn 0.3s ease; }
+    .tab-content.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Cards */
+    .card {
+      background: var(--card-bg);
+      padding: 1.5rem;
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+      margin-bottom: 1.5rem;
+      border: 1px solid rgba(0,0,0,0.02);
+    }
+
+    h3 {
+      margin-top: 0;
+      font-size: 1.1rem;
+      border-bottom: 2px solid #fcf3cf;
+      padding-bottom: 0.8rem;
+      margin-bottom: 1.2rem;
+      font-weight: 700;
+    }
+
+    /* --- DASHBOARD STYLES --- */
+    .dashboard-header { text-align: center; margin-bottom: 1.5rem; }
+    .today-date { font-size: 0.95rem; color: var(--text-light); font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+    
+    .streak-badge { display: inline-block; background: #fff3cd; color: #856404; font-weight: 800; padding: 4px 12px; border-radius: 12px; font-size: 0.85rem; margin-bottom: 15px; border: 1px solid #ffeeba;}
+    .streak-badge.nirvana { background: #d0ebff; color: #0056b3; border-color: #a5d8ff; font-size: 1rem; padding: 6px 16px;}
+
+    .status-badge {
+      display: inline-block;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-weight: 800;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 10px;
+    }
+    .status-regen { background: #d4edda; color: #27ae60; }
+    .status-bewaehrung { background: #fcf3cf; color: #f39c12; }
+    .status-done { background: #d0ebff; color: #0056b3; }
+    .status-open { background: #fadbd8; color: #c0392b; }
+    
+    .eta-text { font-size: 1.1rem; font-weight: 700; color: var(--text-main); }
+    .eta-subtext { font-size: 0.85rem; color: var(--text-light); }
+    
+    .target-tracker { margin-top:15px; padding:10px; border-radius:10px; font-weight:bold; font-size:0.9rem; text-align:center; }
+
+    /* Progress Ring */
+    .ring-wrapper { 
+        position: relative; width: 240px; height: 240px; margin: 0 auto 2rem auto; 
+        cursor: pointer; transition: transform 0.2s;
+    }
+    .ring-wrapper:hover { transform: scale(1.03); }
+    .circular-chart { display: block; margin: 0 auto; width: 100%; height: 100%; transform: rotate(-90deg); }
+    .circle-bg { fill: none; stroke: #f0f0f0; stroke-width: 2.5; }
+    .circle { fill: none; stroke-width: 2.5; stroke-linecap: round; transition: stroke-dasharray 1s ease-out; }
+    .circle.regen { stroke: #27ae60; }
+    .circle.bewaehrung { stroke: #f39c12; }
+    .circle.nirvana { stroke: var(--nirvana-blue); }
+    
+    .ring-content {
+        position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+        text-align: center; width: 80%; display: flex; flex-direction: column; justify-content: center; align-items: center;
+        pointer-events: none;
+    }
+    .ring-percent { font-size: 2.8rem; font-weight: 800; color: #2c3e50; line-height: 1; margin-bottom: 2px; }
+    .ring-percent.nirvana { color: var(--nirvana-blue); font-size: 2.2rem; }
+    .ring-label { font-size: 0.7rem; font-weight: 800; color: #95a5a6; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 12px; }
+    .ring-days { font-size: 1rem; font-weight: 700; color: #2c3e50; background: #fdfdfd; padding: 2px 8px; border-radius: 6px; border: 1px solid #eee; margin-bottom: 4px;}
+    .ring-target { font-size: 0.8rem; font-weight: 600; color: #7f8c8d; }
+
+    /* Quick Action Buttons */
+    .quick-actions { display: flex; gap: 10px; }
+    .btn-quick { flex: 1; padding: 16px; border: none; border-radius: 12px; font-weight: 800; font-size: 1rem; cursor: pointer; color: white; transition: transform 0.1s; }
+    .btn-quick:active { transform: scale(0.96); }
+    .btn-pausiert { background: #27ae60; box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3); }
+    .btn-ausrutscher { background: #e74c3c; box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3); }
+    .undo-link { color: #7f8c8d; font-size: 0.85rem; text-decoration: underline; cursor: pointer; display: inline-block; margin-top: 10px; }
+
+    /* Modals */
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 100; justify-content: center; align-items: center; padding: 20px; }
+    .modal-overlay.active { display: flex; animation: fadeIn 0.2s; }
+    .modal-card { background: white; padding: 20px; border-radius: 16px; width: 100%; max-width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto;}
+    .modal-actions { display: flex; gap: 10px; margin-top: 20px; flex-direction: column;}
+    .modal-actions-row { display: flex; gap: 10px; width: 100%;}
+
+    /* --- HISTORIE & PLANER STYLES --- */
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .form-group-full { grid-column: 1 / -1; }
+    @media (min-width: 650px) { .form-grid { grid-template-columns: repeat(3, 1fr); gap: 1.5rem; } }
+
+    label { display: block; font-weight: 600; margin-bottom: 0.3rem; font-size: 0.85rem; }
+    input, select, textarea { width: 100%; padding: 10px 12px; border: 2px solid transparent; border-radius: 10px; font-size: 15px; background: var(--input-bg); transition: all 0.2s ease; box-sizing: border-box; font-family: inherit;}
+    input:focus, select:focus, textarea:focus { outline: none; background: #fff; border-color: var(--header-bg); }
+    input[readonly], select:disabled { background-color: #e9ecef; color: #7f8c8d; cursor: not-allowed; font-weight: bold; border: 1px solid #dee2e6; }
+    textarea { resize: vertical; }
+
+    .btn-tool { background: white; border: 2px solid #eee; color: var(--text-main); font-weight: 600; padding: 12px; border-radius: 10px; cursor: pointer; flex: 1; min-width: 120px; text-align: center; text-decoration: none; display: flex; align-items: center; justify-content: center;}
+    .btn-tool:hover { border-color: var(--accent); color: var(--accent); background: #fffdf5; }
+    body.sandbox-mode .btn-tool:hover { border-color: var(--accent); color: var(--accent); background: #fdfafb; }
+    
+    .tool-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 1.5rem; border-top: 2px solid #eee; padding-top: 1.5rem; }
+    @media (min-width: 600px) { .tool-grid { grid-template-columns: repeat(3, 1fr); } }
+
+    /* Diary Styles */
+    .diary-list { margin-top: 1rem; border-top: 1px solid #eee; padding-top: 1rem; display: flex; flex-direction: column; gap: 10px;}
+    .diary-month-group { background: white; border: 1px solid #eee; border-radius: 10px; margin-bottom: 10px; overflow: hidden;}
+    .diary-month-title { padding: 12px 15px; font-weight: 800; cursor: pointer; background: #fdfdfd; display: flex; justify-content: space-between; align-items: center; user-select: none; }
+    .diary-month-title:hover { background: #f5f5f5; }
+    .diary-month-content { padding: 10px; display: flex; flex-direction: column; gap: 8px; border-top: 1px solid #eee;}
+    .diary-count { font-size: 0.75rem; background: #eee; padding: 2px 8px; border-radius: 12px; color: #666; font-weight: bold;}
+    details > summary { list-style: none; }
+    details > summary::-webkit-details-marker { display: none; }
+
+    .diary-item { background: #fff; border: 1px solid #eee; border-radius: 8px; padding: 12px; display: flex; justify-content: space-between; align-items: flex-start;}
+    .diary-item:hover { border-color: #ddd; }
+    .diary-date { font-weight: 800; font-size: 0.9rem; color: #2c3e50; margin-bottom: 4px; }
+    .diary-badge { display: inline-block; padding: 3px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; margin-bottom: 6px; }
+    .badge-pause { background: #d4edda; color: #155724; }
+    .badge-aus { background: #fadbd8; color: #721c24; }
+    .badge-base { background: #f1c40f; color: #856404; }
+    .diary-meta { font-size: 0.8rem; color: #666; margin-bottom: 4px;}
+    .diary-note { font-size: 0.85rem; color: #444; background: #f4f6f7; padding: 8px; border-radius: 6px; font-style: italic; border-left: 3px solid #bdc3c7;}
+    .diary-edit-btn { background: #eee; border: none; padding: 6px 10px; border-radius: 8px; font-size: 0.8rem; font-weight: bold; color: #555; cursor: pointer; transition: 0.2s;}
+    .diary-edit-btn:hover { background: #ddd; color: #222; }
+
+    /* Calendar */
+    .calendar-wrapper { overflow-x: auto; margin-top: 1.5rem; border: 1px solid #f0f0f0; border-radius: 12px; }
+    table { width: 100%; border-collapse: separate; border-spacing: 0; min-width: 600px; font-size: 0.9rem; }
+    th { background: #fffcf5; padding: 12px; color: #95a5a6; font-weight: 600; border-bottom: 2px solid #eee; text-align: left; position: sticky; left: 0; z-index: 10;}
+    td { border-bottom: 1px solid #f5f5f5; border-right: 1px solid #f5f5f5; padding: 6px; vertical-align: top; height: 60px; background: white; width: 14.28%; position: relative;}
+    td.today-highlight { background-color: #f0f8ff; border: 2px solid #3498db; z-index: 1;}
+    td.today-highlight .date-num { color: #2980b9; font-weight: 800; }
+    .date-num { font-weight: 700; color: #bdc3c7; font-size: 0.75rem; margin-bottom: 4px; display: block; }
+    td.active-month .date-num { color: var(--text-main); }
+    
+    .tag { display: block; padding: 3px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; color: white; margin-top: 2px; line-height: 1.2; word-break: break-word; }
+    .tag.tday { background-color: #c0392b; }
+    .tag.regen { background-color: #27ae60; }
+    .tag.bewaehrung { background-color: #f39c12; color: #fff; }
+    .tag.ausrutscher { background-color: #e74c3c; }
+    .tag.nirvana { background-color: #3498db; }
+    .tag.target-flag { background-color: #8e44ad; color: white; border: 1px solid #732d91;}
+
+    .legend { display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center; margin-top: 1rem; font-size: 0.8rem; color: #666; }
+    .legend span { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 6px; vertical-align: middle; border: 1px solid rgba(0,0,0,0.1); }
+    .legend span.l-tday { background-color: #c0392b; }
+    .legend span.l-aus { background-color: #e74c3c; }
+    .legend span.l-bew { background-color: #f39c12; }
+    .legend span.l-reg { background-color: #27ae60; }
+    .legend span.l-nir { background-color: #3498db; }
+    
+    .setup-overlay { display: none; text-align: center; padding: 2rem; background: #fffcf5; border-radius: 12px; border: 2px dashed #f1c40f; margin-bottom: 1rem;}
+
+    /* --- ARCHIV & STATS STYLES --- */
+    .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 1.5rem;}
+    .stat-box { background: #f8f9fa; border-radius: 12px; padding: 15px; text-align: center; border: 1px solid #e9ecef;}
+    .stat-val { font-size: 1.8rem; font-weight: 800; color: var(--text-main); line-height: 1.2;}
+    .stat-label { font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: #7f8c8d; letter-spacing: 0.5px;}
+    .stat-val.gold { color: #f39c12; }
+    .stat-val.blue { color: #3498db; }
+    .stat-val.danger { color: var(--danger); }
+
+    .trigger-box { background: #fffcf5; border: 1px solid #fcf3cf; border-radius: 12px; padding: 15px; margin-bottom: 1.5rem; font-size: 0.9rem;}
+    .trigger-box ul { padding-left: 20px; margin: 5px 0 0 0;}
+    .trigger-box li { margin-bottom: 8px; color: #555;}
+
+    .archive-card { border: 1px solid #e0e0e0; border-radius: 12px; padding: 15px; margin-bottom: 15px; background: #fafafa; border-left: 5px solid #bdc3c7;}
+    .archive-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 10px;}
+    .archive-title { font-weight: 800; color: #2c3e50; font-size: 1.1rem;}
+    .archive-badge { background: #e9ecef; font-size: 0.75rem; padding: 4px 8px; border-radius: 8px; font-weight: 700; color: #666;}
+    .archive-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.85rem; color: #555;}
+    
+    #fileInput { display: none; }
+  </style>
+</head>
+<body>
+
+  <div id="sandbox-banner">
+      🧪 SIMULATIONS-MODUS AKTIV
+      <div class="sandbox-actions">
+          <button class="btn-sandbox" onclick="applySandboxGoal()">🎯 Als Ziel für Realität setzen</button>
+          <button class="btn-sandbox danger" onclick="closeSandbox()">❌ Verlassen</button>
+      </div>
+  </div>
+
+  <header>
+    <h1>🧪 Regenerations<wbr>Tracker</h1>
+    <div class="version">Version 7.1 – PWA & Journaling</div>
+  </header>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('dashboard')">🏠 Heute</button>
+    <button class="tab-btn" onclick="switchTab('historie')">⚙️ Aktuell</button>
+    <button class="tab-btn" onclick="switchTab('archiv')">🏛️ Archiv</button>
+  </div>
+
+  <!-- ================= TAB 1: DASHBOARD ================= -->
+  <div id="tab-dashboard" class="tab-content active">
+    <div id="setup-warning" class="setup-overlay">
+        <h3>Willkommen bei Version 7.1! 👋</h3>
+        <p>Um zu starten, lege deinen ersten Zyklus (Initiale T-Phase) an.</p>
+        <button class="btn-tool" style="background:var(--header-bg); border:none; margin: 0 auto;" onclick="switchTab('historie')">Zum Planer wechseln</button>
+    </div>
+
+    <div id="dashboard-main" style="display:none;">
+        <div class="card">
+            <div class="dashboard-header">
+                <div id="dash-today-date" class="today-date">Heute</div>
+                <div id="dash-streak" class="streak-badge" style="display:none;">🔥 0 Tage</div>
+                <br>
+                <div id="dash-status-badge" class="status-badge status-regen">Status Lädt...</div>
+                <div id="dash-eta" class="eta-text" style="display:none;">Berechne...</div>
+                <div id="dash-sub" class="eta-subtext"></div>
+            </div>
+
+            <!-- Easter Egg: onclick triggers the Sandbox -->
+            <div class="ring-wrapper" onclick="openSandbox()" title="Geheimes Labor öffnen">
+                <svg viewBox="0 0 36 36" class="circular-chart">
+                    <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                    <path id="dash-ring" class="circle regen" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                </svg>
+                <div class="ring-content">
+                    <div id="dash-percent" class="ring-percent">0%</div>
+                    <div id="dash-ring-label" class="ring-label">Heilung</div>
+                    <div id="dash-days-left" class="ring-days">Noch -- Tage</div>
+                    <div id="dash-target-date" class="ring-target">Ziel: --.--.----</div>
+                </div>
+            </div>
+
+            <div id="dash-target-tracker" class="target-tracker" style="display:none;"></div>
+
+            <div id="daily-action-area">
+                <div class="quick-actions">
+                    <button class="btn-quick btn-pausiert" onclick="openPauseModal()">🟢 Stark geblieben</button>
+                    <button class="btn-quick btn-ausrutscher" onclick="openAusrutscherModal(false)">🔴 Ausrutscher</button>
+                </div>
+            </div>
+            
+            <div id="daily-done-area" style="display:none; text-align: center; padding: 15px; background: #f0fdf4; border-radius: 12px; color: #155724; border: 1px solid #c3e6cb;">
+                <div style="font-weight: 800; font-size: 1.1rem; margin-bottom: 5px;">✅ Eintrag gespeichert!</div>
+                <div style="font-size: 0.9rem; opacity: 0.9;">Die Statistik wurde aktualisiert.</div>
+                <span class="undo-link" onclick="undoToday()">Eintrag für heute ändern / löschen</span>
+            </div>
+        </div>
+    </div>
+  </div>
+
+  <!-- ================= TAB 2: AKTUELLER ZYKLUS ================= -->
+  <div id="tab-historie" class="tab-content">
+    <div class="card" id="base-form-card">
+      <h3>📊 Start des aktuellen Zyklus</h3>
+      <div id="open-base-warning" style="display:none; background:#fadbd8; color:#c0392b; padding:10px; border-radius:8px; margin-bottom:15px; font-weight:bold; font-size:0.9rem; text-align:center;">
+        ⚠️ Initiale Konsumphase ist noch offen! Drücke auf "Stark geblieben", um sie abzuschließen.
+      </div>
+      <div class="form-grid">
+        <div><label>Startdatum</label><input type="date" id="base-start" onchange="calcBaseT()"></div>
+        <div><label>Enddatum</label><input type="date" id="base-end" onchange="calcBaseT()"></div>
+        <div class="form-group-tday"><label>T-Tage</label><input type="number" id="base-t" readonly></div>
+        <div><label>Stress (Max)</label>
+          <select id="base-s" onchange="saveBase()"><option value="0">Kein</option><option value="1">Moderat</option><option value="2">Hoch</option></select>
+        </div>
+        <div><label>Alkohol (Max)</label>
+          <select id="base-a" onchange="saveBase()"><option value="0">Kein</option><option value="1">Moderat</option><option value="2">Hoch</option></select>
+        </div>
+      </div>
+      <button class="btn-tool" style="width:100%; margin-top: 15px; background: var(--header-bg); border: none; color: white;" onclick="saveBase(true)">💾 Speichern & Neu berechnen</button>
+    </div>
+
+    <div id="historie-output" style="display:none;">
+        <div id="bilanz-container"></div>
+        
+        <div class="card" id="export-card" style="margin-top: 1.5rem;">
+            <h3>📅 Kalender (Laufender Zyklus)</h3>
+            <div class="legend">
+                <div><span class="l-tday"></span>1. Konsum</div>
+                <div><span class="l-aus"></span>weiterer Konsum</div>
+                <div><span class="l-bew"></span>Bewährung</div>
+                <div><span class="l-reg"></span>Regeneration</div>
+                <div><span class="l-nir"></span>Nirvana</div>
+            </div>
+            <div class="calendar-wrapper"><div id="calendar"></div></div>
+        </div>
+        
+        <button class="btn-tool" style="width:100%; margin-bottom:1.5rem;" onclick="toggleDiary()">📖 Tagebuch & Listenansicht öffnen</button>
+        <div id="diary-container" style="display:none; margin-bottom: 1.5rem;">
+            <div class="diary-list" id="diary-list-content"></div>
+        </div>
+
+        <div class="tool-grid">
+            <button class="btn-tool" onclick="exportData()">💾 JSON Backup</button>
+            <button class="btn-tool" onclick="document.getElementById('fileInput').click()">📂 JSON Import</button>
+            <button class="btn-tool" onclick="downloadICS()">📅 als Kalender (.ics)</button>
+            <button class="btn-tool" onclick="exportDiaryTxt()">📝 als Tagebuch (.txt)</button>
+            <button class="btn-tool" onclick="downloadImage()">📷 als Bild (.png)</button>
+        </div>
+    </div>
+  </div>
+
+  <!-- ================= TAB 3: ARCHIV & STATS ================= -->
+  <div id="tab-archiv" class="tab-content">
+    <div class="card">
+        <h3>📈 Deine Life-Tracker Statistiken</h3>
+        <p style="font-size: 0.8rem; color: #7f8c8d; text-align: center; margin-top: -10px; margin-bottom: 15px;">
+            Auswertungen basieren nur auf Tagen in der Vergangenheit.
+        </p>
+        <div class="stat-grid">
+            <div class="stat-box">
+                <div class="stat-val blue" id="stat-clean-quote">0%</div>
+                <div class="stat-label">Clean-Quote (All-Time)</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-val gold" id="stat-max-nirvana">0</div>
+                <div class="stat-label">Max Nirvana-Streak</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-val" id="stat-total-days">0</div>
+                <div class="stat-label">Tage Getrackt</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-val" id="stat-avg-ausrutscher">0</div>
+                <div class="stat-label">Ø T-Dauer</div>
+            </div>
+        </div>
+        
+        <div class="trigger-box">
+            <strong>🧠 Intelligente Verhaltensanalyse:</strong>
+            <ul id="trigger-list">
+                <li>Daten werden gesammelt...</li>
+            </ul>
+        </div>
+    </div>
+
+    <h3 style="margin-left:5px; color:#7f8c8d;">Abgeschlossene Zyklen</h3>
+    <div id="archive-container"></div>
+    
+    <div class="tool-grid" style="margin-top:2rem;">
+      <button class="btn-tool" style="color:var(--danger); border-color:#fadbd8; width:100%; grid-column: 1 / -1;" onclick="hardReset()">⚠️ Werkseinstellungen (Alles löschen)</button>
+    </div>
+  </div>
+
+  <!-- ================= CUSTOM MODALS ================= -->
+  <input type="file" id="fileInput" accept=".json" onchange="importData(this)">
+  
+  <!-- Alert Modal -->
+  <div id="modal-alert" class="modal-overlay">
+    <div class="modal-card" style="text-align:center;">
+      <h3>ℹ️ Hinweis</h3>
+      <p id="alert-message" style="margin-bottom: 20px; color: #555;"></p>
+      <button class="btn-quick btn-pausiert" style="width:100%;" id="alert-ok-btn">OK</button>
+    </div>
+  </div>
+
+  <!-- Confirm Modal -->
+  <div id="modal-confirm" class="modal-overlay">
+    <div class="modal-card" style="text-align:center;">
+      <h3 style="color:var(--danger)">⚠️ Achtung</h3>
+      <p id="confirm-message" style="margin-bottom: 20px; color: #555;"></p>
+      <div class="modal-actions-row">
+        <button class="btn-tool" onclick="closeModal('modal-confirm')">Abbrechen</button>
+        <button class="btn-quick btn-ausrutscher" id="confirm-yes-btn">Bestätigen</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ausrutscher Modal -->
+  <div id="modal-ausrutscher" class="modal-overlay">
+    <div class="modal-card">
+      <h3 style="color:var(--danger)">🔴 Ausrutscher loggen</h3>
+      <div class="form-grid">
+          <div class="form-group-full"><label>Datum</label><input type="date" id="modal-a-date"></div>
+          <div class="form-group-full"><label>Dauer (T-Tage)</label><input type="number" id="modal-a-t" value="1" min="1"></div>
+          <div><label>Stress</label><select id="modal-a-s"><option value="0">Kein</option><option value="1">Moderat</option><option value="2">Hoch</option></select></div>
+          <div><label>Alkohol</label><select id="modal-a-a"><option value="0">Kein</option><option value="1">Moderat</option><option value="2">Hoch</option></select></div>
+          <div class="form-group-full">
+              <label>Stimmung</label>
+              <select id="modal-a-mood">
+                  <option value="0">➖ Keine Angabe</option>
+                  <option value="5">🤩 Sehr gut</option>
+                  <option value="4">🙂 Gut</option>
+                  <option value="3">😐 Okay</option>
+                  <option value="2">🙁 Schlecht</option>
+                  <option value="1">😞 Sehr schlecht</option>
+              </select>
+          </div>
+          <div class="form-group-full">
+              <label>Tagebuch Notiz (Optional)</label>
+              <textarea id="modal-a-note" rows="2" maxlength="150" placeholder="Was führte zum Ausrutscher?"></textarea>
+          </div>
+      </div>
+      <div class="modal-actions">
+          <div class="modal-actions-row">
+            <button class="btn-tool" onclick="closeModal('modal-ausrutscher')">Abbrechen</button>
+            <button class="btn-quick btn-ausrutscher" onclick="submitAusrutscher()">Speichern</button>
+          </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pause/Clean Modal -->
+  <div id="modal-pause" class="modal-overlay">
+    <div class="modal-card">
+      <h3 style="color:var(--btn-calc)">🟢 Tagesabschluss</h3>
+      <p style="font-size:0.8rem; color:#666; margin-bottom: 15px;">Pausentage mit Stress/Alkohol drosseln <strong>nicht</strong> deine Heilungsdauer, füttern aber die Statistik.</p>
+      <div class="form-grid">
+          <div class="form-group-full"><label>Datum</label><input type="date" id="modal-p-date" readonly></div>
+          <div><label>Stress heute?</label><select id="modal-p-s"><option value="0">Kein</option><option value="1">Moderat</option><option value="2">Hoch</option></select></div>
+          <div><label>Alkohol heute?</label><select id="modal-p-a"><option value="0">Kein</option><option value="1">Moderat</option><option value="2">Hoch</option></select></div>
+          <div class="form-group-full">
+              <label>Stimmung</label>
+              <select id="modal-p-mood">
+                  <option value="0">➖ Keine Angabe</option>
+                  <option value="5">🤩 Sehr gut</option>
+                  <option value="4">🙂 Gut</option>
+                  <option value="3">😐 Okay</option>
+                  <option value="2">🙁 Schlecht</option>
+                  <option value="1">😞 Sehr schlecht</option>
+              </select>
+          </div>
+          <div class="form-group-full">
+              <label>Tagebuch Notiz (Optional)</label>
+              <textarea id="modal-p-note" rows="2" maxlength="150" placeholder="Was ging dir heute durch den Kopf?"></textarea>
+          </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-tool" style="background:#f0fdf4; border-color:#c3e6cb; color:#155724; font-weight:800; width: 100%; margin-bottom: 5px;" onclick="submitPause(true)">⚡ Schnell-Speichern (0 / 0 / ohne Text)</button>
+        <div class="modal-actions-row">
+            <button class="btn-tool" onclick="closeModal('modal-pause')">Abbrechen</button>
+            <button class="btn-quick btn-pausiert" onclick="submitPause(false)">💾 Eintragen</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Universal Edit Modal (Tagebuch) -->
+  <div id="modal-edit-day" class="modal-overlay">
+    <div class="modal-card">
+      <h3 id="edit-day-title">✏️ Tag bearbeiten</h3>
+      <input type="hidden" id="edit-day-date">
+      <input type="hidden" id="edit-is-base">
+      
+      <div class="form-grid">
+          <div class="form-group-full">
+              <label>Eintragstyp</label>
+              <select id="edit-day-type" onchange="toggleEditFields()" style="font-weight:bold;">
+                  <option value="pause">🟢 Pause / Stark geblieben</option>
+                  <option value="ausrutscher">🔴 Ausrutscher</option>
+              </select>
+          </div>
+          <div class="form-group-full" id="edit-t-wrapper" style="display:none;">
+              <label>Dauer (T-Tage)</label><input type="number" id="edit-day-t" value="1" min="1">
+          </div>
+          <div><label>Stress</label><select id="edit-day-s"><option value="0">Kein</option><option value="1">Moderat</option><option value="2">Hoch</option></select></div>
+          <div><label>Alkohol</label><select id="edit-day-a"><option value="0">Kein</option><option value="1">Moderat</option><option value="2">Hoch</option></select></div>
+          <div class="form-group-full">
+              <label>Stimmung</label>
+              <select id="edit-day-mood">
+                  <option value="0">➖ Keine Angabe</option>
+                  <option value="5">🤩 Sehr gut</option>
+                  <option value="4">🙂 Gut</option>
+                  <option value="3">😐 Okay</option>
+                  <option value="2">🙁 Schlecht</option>
+                  <option value="1">😞 Sehr schlecht</option>
+              </select>
+          </div>
+          <div class="form-group-full">
+              <label>Tagebuch Notiz</label>
+              <textarea id="edit-day-note" rows="3" maxlength="150"></textarea>
+          </div>
+      </div>
+      <div class="modal-actions-row" style="margin-top: 20px;">
+          <button class="btn-tool" onclick="closeModal('modal-edit-day')">Abbrechen</button>
+          <button class="btn-quick btn-pausiert" style="background:var(--text-main)" onclick="submitEditDay()">Speichern</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+  let appData = {
+      version: 7.1,
+      cycles: [] 
+  };
+  
+  let isSandbox = false;
+  let sandboxData = null;
+
+  const getApp = () => isSandbox ? sandboxData : appData;
+  const getActiveCycle = () => getApp().cycles.find(c => c.status === 'active');
+  
+  let globalSimResults = []; 
+  let activeSimResult = null;
+  let lastRenderDateStr = null;
+
+  // --- HILFSFUNKTIONEN ---
+  const escapeHTML = str => str ? str.replace(/[&<>'"]/g, tag => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'}[tag])) : "";
+  const parseLocal = (dateStr) => { if(!dateStr) return null; const parts = dateStr.split('-'); return new Date(parts[0], parts[1] - 1, parts[2]); };
+  const toIsoString = (date) => { const y = date.getFullYear(); const m = String(date.getMonth() + 1).padStart(2, '0'); const d = String(date.getDate()).padStart(2, '0'); return `${y}-${m}-${d}`; };
+  const addDays = (date, days) => { const r = new Date(date); r.setDate(r.getDate() + days); return r; };
+  const diffDays = (d1, d2) => Math.round((d2 - d1) / (24 * 60 * 60 * 1000));
+
+  // --- CUSTOM MODALS LOGIC ---
+  function customAlert(msg, callback) {
+      document.getElementById('alert-message').textContent = msg;
+      document.getElementById('modal-alert').classList.add('active');
+      document.getElementById('alert-ok-btn').onclick = () => {
+          closeModal('modal-alert');
+          if(callback) callback();
+      };
+  }
+
+  let pendingConfirmAction = null;
+  function customConfirm(msg, action) {
+      document.getElementById('confirm-message').textContent = msg;
+      pendingConfirmAction = action;
+      document.getElementById('modal-confirm').classList.add('active');
+  }
+  document.getElementById('confirm-yes-btn').addEventListener('click', () => {
+      closeModal('modal-confirm');
+      if(pendingConfirmAction) pendingConfirmAction();
+  });
+
+  document.addEventListener("DOMContentLoaded", () => { 
+      lastRenderDateStr = toIsoString(new Date());
+      loadData(); 
+  });
+  
+  document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === 'visible' && !isSandbox) {
+          const nowStr = toIsoString(new Date());
+          if (nowStr !== lastRenderDateStr) {
+              lastRenderDateStr = nowStr;
+              loadData(); 
+          }
+      }
+  });
+
+  // --- SANDBOX CONTROL ---
+  function openSandbox() {
+      if(isSandbox) return;
+      if(!appData.cycles || appData.cycles.length === 0) return customAlert("Du musst erst einen echten Zyklus anlegen, bevor du simulieren kannst.");
+      
+      isSandbox = true;
+      sandboxData = JSON.parse(JSON.stringify(appData)); 
+      
+      document.body.classList.add('sandbox-mode');
+      document.getElementById('sandbox-banner').style.display = 'block';
+      
+      runAllSimulations();
+      switchTab('dashboard');
+  }
+
+  function closeSandbox() {
+      if(!isSandbox) return;
+      isSandbox = false;
+      sandboxData = null; 
+      
+      document.body.classList.remove('sandbox-mode');
+      document.getElementById('sandbox-banner').style.display = 'none';
+      
+      runAllSimulations();
+      updateUI();
+      switchTab('dashboard');
+  }
+
+  function clearTargetETA() {
+      const active = getActiveCycle();
+      if (active && active.targetETA) {
+          delete active.targetETA;
+          saveData();
+          customAlert("Zielvorgabe wurde verworfen.");
+      }
+  }
+
+  function applySandboxGoal() {
+      if(!activeSimResult) return;
+      const targetStr = toIsoString(activeSimResult.finalEnd);
+      appData.cycles[appData.cycles.length - 1].targetETA = targetStr;
+      
+      closeSandbox();
+      saveData();
+      customAlert("Zielvorgabe (" + parseLocal(targetStr).toLocaleDateString('de-DE') + ") wurde erfolgreich in deine Realität übertragen!");
+  }
+
+  function loadData() {
+      const saved = localStorage.getItem('regenAppData_v6') || localStorage.getItem('regenAppData_v5');
+      if (saved) {
+          try { 
+              let data = JSON.parse(saved); 
+              if (data.version >= 5) {
+                  data.version = 7.1; 
+                  appData = data;
+              } else if (!data.cycles && data.base) { 
+                  appData = { version: 7.1, cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }] };
+              }
+          } catch(e) { console.error("Save data corrupted."); }
+      }
+      
+      const active = getActiveCycle();
+      if (!active) {
+          document.getElementById('setup-warning').style.display = 'block';
+          document.getElementById('dashboard-main').style.display = 'none';
+          document.getElementById('base-form-card').style.display = 'block';
+      } else {
+          document.getElementById('setup-warning').style.display = 'none';
+          document.getElementById('dashboard-main').style.display = 'block';
+          
+          if (active.base.isOpen) {
+              const todayStr = toIsoString(new Date());
+              const expectedNext = toIsoString(addDays(parseLocal(active.base.end), 1));
+              if (todayStr > active.base.end) {
+                  if (!active.logs[expectedNext] || active.logs[expectedNext].type !== 'ausrutscher') {
+                      active.base.isOpen = false;
+                      saveData(true); 
+                  }
+              }
+          }
+          populateBaseForm();
+          runAllSimulations();
+      }
+  }
+
+  function saveData(silent = false) {
+      if (!isSandbox) {
+          localStorage.setItem('regenAppData_v6', JSON.stringify(appData)); // Keep V6 key for continuity
+      }
+      if(!silent) runAllSimulations(); 
+  }
+
+  function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      const activeBtn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.onclick.toString().includes(tabId));
+      if(activeBtn) activeBtn.classList.add('active');
+      document.getElementById('tab-' + tabId).classList.add('active');
+      
+      if(activeSimResult) updateUI();
+  }
+
+  function calcBaseT() {
+      const s = parseLocal(document.getElementById('base-start').value);
+      const e = parseLocal(document.getElementById('base-end').value);
+      const tInput = document.getElementById('base-t');
+      if (s && e) { tInput.value = Math.max(0, diffDays(s, e) + 1); } else { tInput.value = ""; }
+  }
+
+  function populateBaseForm() {
+      const active = getActiveCycle();
+      if(!active) return;
+      document.getElementById('base-start').value = active.base.start;
+      document.getElementById('base-end').value = active.base.end;
+      document.getElementById('base-t').value = active.base.tDays;
+      document.getElementById('base-s').value = active.base.sLevel;
+      document.getElementById('base-a').value = active.base.aLevel;
+      
+      let isBaseLocked = active.base.isOpen;
+      let showSandboxLockWarning = false;
+      if (isSandbox) {
+          const realActive = appData.cycles.find(c => c.status === 'active');
+          if (active.id === realActive.id && realActive && activeSimResult && activeSimResult.dashState && activeSimResult.dashState.debt > 0) {
+              isBaseLocked = true;
+              showSandboxLockWarning = true;
+          }
+      }
+      
+      document.getElementById('base-start').readOnly = isBaseLocked;
+      document.getElementById('base-end').readOnly = isBaseLocked;
+      document.getElementById('base-s').disabled = isBaseLocked;
+      document.getElementById('base-a').disabled = isBaseLocked;
+
+      if (showSandboxLockWarning) {
+          document.getElementById('open-base-warning').innerHTML = "⚠️ Sandbox: Basis ist schreibgeschützt, da die Realität noch läuft. Plane die Zukunft bitte über Ausrutscher!";
+          document.getElementById('open-base-warning').style.display = 'block';
+      } else if (active.base.isOpen) {
+          document.getElementById('open-base-warning').innerHTML = "⚠️ Initiale Konsumphase ist noch offen! Drücke auf 'Stark geblieben', um sie abzuschließen.";
+          document.getElementById('open-base-warning').style.display = 'block';
+      } else {
+          document.getElementById('open-base-warning').style.display = 'none';
+      }
+  }
+
+  function saveBase(force = false) {
+      const s = document.getElementById('base-start').value;
+      const e = document.getElementById('base-end').value;
+      const t = parseInt(document.getElementById('base-t').value);
+      if(!s || !e || isNaN(t)) { if(force) customAlert("Bitte Start und Ende eintragen."); return; }
+      
+      let active = getActiveCycle();
+      if (!active) {
+          active = { id: Date.now(), status: 'active', logs: {}, base: {} };
+          getApp().cycles.push(active);
+      }
+      
+      active.base.start = s; active.base.end = e; active.base.tDays = t;
+      if (!active.base.isOpen) {
+          active.base.sLevel = parseInt(document.getElementById('base-s').value) || 0;
+          active.base.aLevel = parseInt(document.getElementById('base-a').value) || 0;
+      }
+      if(active.base.isOpen === undefined) active.base.isOpen = false;
+      if(force) saveData();
+  }
+
+  function openPauseModal() {
+      document.getElementById('modal-p-date').value = toIsoString(new Date());
+      document.getElementById('modal-p-s').value = 0;
+      document.getElementById('modal-p-a').value = 0;
+      document.getElementById('modal-p-mood').value = 0;
+      document.getElementById('modal-p-note').value = "";
+      document.getElementById('modal-pause').classList.add('active');
+  }
+
+  function submitPause(isQuick) {
+      const dStr = document.getElementById('modal-p-date').value;
+      const s = isQuick ? 0 : (parseInt(document.getElementById('modal-p-s').value) || 0);
+      const a = isQuick ? 0 : (parseInt(document.getElementById('modal-p-a').value) || 0);
+      const mood = isQuick ? 0 : parseInt(document.getElementById('modal-p-mood').value);
+      const note = isQuick ? "" : document.getElementById('modal-p-note').value.trim();
+      
+      const todayStr = toIsoString(new Date());
+      if(!isSandbox && dStr > todayStr) return customAlert("Keine Logs in der Zukunft möglich!");
+
+      const active = getActiveCycle();
+      if(active && active.base.isOpen && dStr > active.base.end) {
+          active.base.isOpen = false; 
+      }
+      
+      active.logs[dStr] = { type: 'pause', s, a, mood, note };
+      closeModal('modal-pause');
+      saveData();
+  }
+
+  function undoToday() {
+      const todayStr = toIsoString(new Date());
+      let active = getActiveCycle();
+      if (active && active.base.start === todayStr && Object.keys(active.logs).length === 0 && getApp().cycles.length > 1) {
+          getApp().cycles.pop(); 
+          active = getApp().cycles[getApp().cycles.length - 1];
+          active.status = 'active'; 
+          saveData();
+          return;
+      }
+      if(active && active.logs[todayStr]) {
+          delete active.logs[todayStr];
+          saveData();
+      }
+  }
+
+  function openAusrutscherModal(isPast = false) { 
+      document.getElementById('modal-a-t').value = 1; 
+      document.getElementById('modal-a-s').value = 0; 
+      document.getElementById('modal-a-a').value = 0;
+      document.getElementById('modal-a-mood').value = 0;
+      document.getElementById('modal-a-note').value = "";
+      document.getElementById('modal-a-date').value = isPast ? "" : toIsoString(new Date());
+      document.getElementById('modal-ausrutscher').classList.add('active'); 
+  }
+  
+  function submitAusrutscher() {
+      const dStr = document.getElementById('modal-a-date').value;
+      const t = parseInt(document.getElementById('modal-a-t').value) || 1;
+      const s = parseInt(document.getElementById('modal-a-s').value) || 0;
+      const a = parseInt(document.getElementById('modal-a-a').value) || 0;
+      const mood = parseInt(document.getElementById('modal-a-mood').value) || 0;
+      const note = document.getElementById('modal-a-note').value.trim();
+
+      if(!dStr) return customAlert("Datum fehlt!");
+      
+      const todayStr = toIsoString(new Date());
+      if(!isSandbox && dStr > todayStr) return customAlert("Keine Logs in der Zukunft möglich!");
+
+      let active = getActiveCycle();
+      if (activeSimResult && activeSimResult.dashState && activeSimResult.dashState.debt <= 0) {
+          if (dStr > toIsoString(activeSimResult.finalEnd)) {
+              active.status = 'archived';
+              const newCycle = { id: Date.now(), status: 'active', base: { start: dStr, end: addDays(parseLocal(dStr), t-1).toISOString().split('T')[0], tDays: t, sLevel: s, aLevel: a, isOpen: true }, logs: {} };
+              getApp().cycles.push(newCycle);
+              closeModal('modal-ausrutscher');
+              saveData(); return;
+          }
+      }
+
+      if(active.base.start && dStr >= active.base.start && dStr <= active.base.end) {
+          if (!active.base.isOpen) return customAlert("Datum liegt in bereits geschlossener initialer T-Phase.");
+      }
+
+      if (active.base.isOpen) {
+          const expectedNext = toIsoString(addDays(parseLocal(active.base.end), 1));
+          if (dStr === expectedNext) {
+              active.base.end = addDays(parseLocal(dStr), t-1).toISOString().split('T')[0];
+              active.base.tDays += t;
+              active.base.sLevel = Math.max(active.base.sLevel, s);
+              active.base.aLevel = Math.max(active.base.aLevel, a);
+              closeModal('modal-ausrutscher'); saveData(); return;
+          } else if (dStr > expectedNext) {
+              active.base.isOpen = false; 
+          }
+      }
+
+      active.logs[dStr] = { type: 'ausrutscher', t, s, a, mood, note };
+      closeModal('modal-ausrutscher'); saveData();
+  }
+
+  // --- DIARY & UNIVERSAL EDIT LOGIC ---
+  function toggleDiary() {
+      const d = document.getElementById('diary-container');
+      if (d.style.display === 'none') {
+          d.style.display = 'block';
+          renderDiaryList();
+      } else {
+          d.style.display = 'none';
+      }
+  }
+
+  function renderDiaryList() {
+      const active = getActiveCycle();
+      if(!active || !active.base.start) return;
+      
+      let curr = parseLocal(active.base.start);
+      const todayStr = toIsoString(new Date());
+      let endStr = isSandbox ? (activeSimResult ? toIsoString(activeSimResult.finalEnd) : todayStr) : todayStr;
+      
+      const moodEmojis = ["", "😞", "🙁", "😐", "🙂", "🤩"];
+      const sLevels = ['S:0', 'S:1', 'S:2'];
+      const aLevels = ['A:0', 'A:1', 'A:2'];
+
+      let items = [];
+
+      while (toIsoString(curr) <= endStr) {
+          let dStr = toIsoString(curr);
+          let log = active.logs[dStr];
+          let isBaseDay = (dStr >= active.base.start && dStr <= active.base.end);
+          let formattedDate = curr.toLocaleDateString('de-DE', {weekday: 'short', day: '2-digit', month: '2-digit'});
+          let monthYear = curr.toLocaleDateString('de-DE', {month: 'long', year: 'numeric'});
+          
+          if (isBaseDay) {
+              items.push({dStr, formattedDate, monthYear, log: log || {}, isImplicit: false, isBase: true});
+          } else if (log) {
+              items.push({dStr, formattedDate, monthYear, log, isImplicit: false, isBase: false});
+              if (log.type === 'ausrutscher' && log.t > 1) {
+                  curr.setDate(curr.getDate() + log.t - 1); 
+              }
+          } else if (dStr <= todayStr) {
+              items.push({dStr, formattedDate, monthYear, log: null, isImplicit: true, isBase: false});
+          }
+          curr.setDate(curr.getDate() + 1);
+      }
+
+      items.reverse(); 
+
+      let grouped = {};
+      items.forEach(item => {
+          if(!grouped[item.monthYear]) grouped[item.monthYear] = [];
+          grouped[item.monthYear].push(item);
+      });
+
+      let recentMoods = items.filter(i => (!i.isImplicit || i.isBase) && i.log && i.log.mood > 0).slice(0, 7);
+      let trendHtml = "";
+      if (recentMoods.length > 0) {
+          let avg = (recentMoods.reduce((sum, i) => sum + parseInt(i.log.mood), 0) / recentMoods.length).toFixed(1);
+          let trendIcon = avg >= 3.5 ? "↗️ (Positiv)" : (avg <= 2.5 ? "↘️ (Kritisch)" : "➡️ (Stabil)");
+          trendHtml = `<div style="font-size: 0.85rem; background: #e8f6f3; color: #16a085; padding: 8px 12px; border-radius: 8px; margin-bottom: 15px; font-weight: bold; text-align: center;">📈 Stimmungstendenz (letzte Einträge): Ø ${avg} ${trendIcon}</div>`;
+      }
+
+      let html = trendHtml;
+      let isFirst = true;
+
+      for (let month in grouped) {
+          html += `<details class="diary-month-group" ${isFirst ? 'open' : ''}>
+              <summary class="diary-month-title">${month} <span class="diary-count">${grouped[month].length} Einträge</span></summary>
+              <div class="diary-month-content">`;
+
+          grouped[month].forEach(item => {
+              let badge = "";
+              let meta = "";
+              let noteStr = (item.log && item.log.note) ? `<div class="diary-note">${escapeHTML(item.log.note)}</div>` : "";
+              let moodStr = (item.log && item.log.mood > 0) ? moodEmojis[item.log.mood] : "➖";
+
+              if (item.isBase) {
+                  badge = `<span class="diary-badge badge-base">⭐ Basis-Phase</span>`;
+                  meta = `Mood: ${moodStr}`;
+              } else if (!item.isImplicit) {
+                  badge = item.log.type === 'ausrutscher' ? `<span class="diary-badge badge-aus">🔴 Konsum (${item.log.t}d)</span>` : `<span class="diary-badge badge-pause">🟢 Pause</span>`;
+                  meta = `${sLevels[item.log.s||0]} | ${aLevels[item.log.a||0]} | Mood: ${moodStr}`;
+              } else {
+                  badge = `<span class="diary-badge badge-pause" style="background:#e9ecef; color:#666;">⚪ Pause (Auto)</span>`;
+                  meta = `Fehlender Eintrag`;
+              }
+
+              html += `<div class="diary-item" style="${item.isImplicit ? 'opacity: 0.7;' : ''}">
+                  <div style="flex:1;">
+                      <div class="diary-date">${item.formattedDate}</div>
+                      ${badge}
+                      <div class="diary-meta">${meta}</div>
+                      ${noteStr}
+                  </div>
+                  <button class="diary-edit-btn" onclick="openDiaryEdit('${item.dStr}')">Edit</button>
+              </div>`;
+          });
+
+          html += `</div></details>`;
+          isFirst = false;
+      }
+      
+      document.getElementById('diary-list-content').innerHTML = html || "<div style='text-align:center; padding: 20px; color: #7f8c8d;'>Noch keine Einträge vorhanden.</div>";
+  }
+
+  function openDiaryEdit(dateStr) {
+      const active = getActiveCycle();
+      const isBase = (dateStr >= active.base.start && dateStr <= active.base.end);
+      
+      document.getElementById('edit-day-title').innerHTML = `✏️ Tag bearbeiten: <span style="color:var(--accent)">${parseLocal(dateStr).toLocaleDateString('de-DE')}</span>`;
+      document.getElementById('edit-day-date').value = dateStr;
+      document.getElementById('edit-is-base').value = isBase ? "1" : "0";
+      
+      const log = active.logs[dateStr] || {};
+      
+      document.getElementById('edit-day-type').value = isBase ? 'ausrutscher' : (log.type || 'pause');
+      document.getElementById('edit-day-t').value = log.t || 1;
+      document.getElementById('edit-day-s').value = log.s || 0;
+      document.getElementById('edit-day-a').value = log.a || 0;
+      document.getElementById('edit-day-mood').value = log.mood || 0;
+      document.getElementById('edit-day-note').value = log.note || "";
+
+      document.getElementById('edit-day-type').disabled = isBase;
+      document.getElementById('edit-day-t').disabled = isBase;
+      document.getElementById('edit-day-s').disabled = isBase;
+      document.getElementById('edit-day-a').disabled = isBase;
+      
+      toggleEditFields();
+      document.getElementById('modal-edit-day').classList.add('active');
+  }
+
+  function toggleEditFields() {
+      const type = document.getElementById('edit-day-type').value;
+      const isBase = document.getElementById('edit-is-base').value === "1";
+      document.getElementById('edit-t-wrapper').style.display = (type === 'ausrutscher' && !isBase) ? 'block' : 'none';
+  }
+
+  function submitEditDay() {
+      const active = getActiveCycle();
+      const dStr = document.getElementById('edit-day-date').value;
+      const isBase = document.getElementById('edit-is-base').value === "1";
+      
+      const mood = parseInt(document.getElementById('edit-day-mood').value) || 0;
+      const note = document.getElementById('edit-day-note').value.trim();
+
+      if (isBase) {
+          const existing = active.logs[dStr] || { type: 'ausrutscher', t:1, s:0, a:0 };
+          active.logs[dStr] = { ...existing, mood, note };
+      } else {
+          const type = document.getElementById('edit-day-type').value;
+          const s = parseInt(document.getElementById('edit-day-s').value) || 0;
+          const a = parseInt(document.getElementById('edit-day-a').value) || 0;
+          
+          if (type === 'ausrutscher') {
+              const t = parseInt(document.getElementById('edit-day-t').value) || 1;
+              active.logs[dStr] = { type: 'ausrutscher', t, s, a, mood, note };
+          } else {
+              active.logs[dStr] = { type: 'pause', s, a, mood, note };
+          }
+      }
+      
+      closeModal('modal-edit-day');
+      saveData();
+      if(document.getElementById('diary-container').style.display === 'block') renderDiaryList();
+  }
+
+  function exportDiaryTxt() {
+      const active = getActiveCycle();
+      if(!active) return;
+      let txt = `Tagebuch - Regenerations-Tracker\nZyklus Start: ${active.base.start}\n=====================================\n\n`;
+
+      const sLevels = ['Kein', 'Moderat', 'Hoch'];
+      const aLevels = ['Kein', 'Moderat', 'Hoch'];
+      const moodEmojis = ["Keine Angabe", "Sehr schlecht", "Schlecht", "Okay", "Gut", "Sehr gut"];
+
+      const dates = Object.keys(active.logs).sort();
+      let hasNotes = false;
+      dates.forEach(dStr => {
+          const log = active.logs[dStr];
+          let isBase = (dStr >= active.base.start && dStr <= active.base.end);
+          if (log.note || log.mood > 0) {
+              hasNotes = true;
+              let typeStr = isBase ? '⭐ Basis-Phase' : (log.type === 'ausrutscher' ? '🔴 Ausrutscher' : '🟢 Pause');
+              txt += `[${parseLocal(dStr).toLocaleDateString('de-DE')}] - ${typeStr}\n`;
+              if (log.mood > 0) txt += `Stimmung: ${moodEmojis[log.mood]}\n`;
+              if (!isBase && log.s > 0) txt += `Stress: ${sLevels[log.s]}\n`;
+              if (!isBase && log.a > 0) txt += `Alkohol: ${aLevels[log.a]}\n`;
+              if (log.note) txt += `Notiz: ${log.note}\n`;
+              txt += `-------------------------------------\n\n`;
+          }
+      });
+
+      if(!hasNotes) txt += "Keine Tagebucheinträge in diesem Zyklus vorhanden.";
+
+      const blob = new Blob([txt], {type: "text/plain;charset=utf-8"});
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `Tagebuch_${active.base.start}.txt`;
+      link.click();
+  }
+
+  function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+  function runAllSimulations() {
+      globalSimResults = getApp().cycles.map(cycle => simulateCycle(cycle));
+      activeSimResult = globalSimResults[globalSimResults.length - 1];
+      updateUI();
+  }
+
+  function simulateCycle(cycle) {
+      const baseVal = cycle.base.tDays * 3;
+      let sAdd=0, aAdd=0;
+      if (cycle.base.tDays < 4) { sAdd=(cycle.base.sLevel===1?1:cycle.base.sLevel===2?2:0); aAdd=(cycle.base.aLevel===1?1:cycle.base.aLevel===2?2:0); } 
+      else { sAdd=Math.ceil(baseVal*(cycle.base.sLevel===1?0.1:cycle.base.sLevel===2?0.25:0)); aAdd=Math.ceil(baseVal*(cycle.base.aLevel===1?0.1:cycle.base.aLevel===2?0.25:0)); }
+      const comboAdd = (cycle.base.sLevel===2 && cycle.base.aLevel===2) ? 1 : 0;
+      
+      let debt = baseVal + sAdd + aAdd + comboAdd;
+      let totalDebtEver = debt;
+      let totalTDaysEver = cycle.base.tDays;
+      let initialDebtTotal = debt;
+
+      let state = 'REGEN'; let bewaehrungTimer = 0; let withheldBonus = 0;
+      let clusterTDays = 0; 
+      
+      let simDate = parseLocal(cycle.base.end); simDate.setDate(simDate.getDate() + 1);
+      
+      const todayStr = toIsoString(new Date());
+      const nextCycle = getApp().cycles[getApp().cycles.findIndex(c=>c.id===cycle.id)+1];
+      
+      let endSimLimit = nextCycle ? toIsoString(addDays(parseLocal(nextCycle.base.start), -1)) : todayStr;
+      
+      if (isSandbox && !nextCycle) {
+          const logsStr = Object.keys(cycle.logs).sort();
+          if (logsStr.length > 0 && logsStr[logsStr.length-1] > endSimLimit) {
+              endSimLimit = logsStr[logsStr.length-1];
+          }
+      }
+
+      let activeAusrutscherDays = 0;
+      let history = { t: [], r: [], b: [], a: [], n: [], logDetails: [] }; 
+      
+      let cBase = parseLocal(cycle.base.start); let endBase = parseLocal(cycle.base.end);
+      while(cBase <= endBase) { history.t.push(new Date(cBase)); cBase.setDate(cBase.getDate()+1); }
+
+      let safety = 0; let dashState = null; 
+      let finalDebtZeroDate = null;
+
+      while ((debt > 0 || toIsoString(simDate) <= endSimLimit) && safety < 5000) {
+          safety++; let dStr = toIsoString(simDate); let log = cycle.logs[dStr];
+          let isBaseDay = dStr >= cycle.base.start && dStr <= cycle.base.end;
+
+          if (log && log.type === 'ausrutscher' && !isBaseDay) {
+              activeAusrutscherDays = log.t; totalTDaysEver += log.t;
+              
+              let iBase = log.t * 3;
+              let iS = log.t < 4 ? (log.s===1?1:log.s===2?2:0) : Math.ceil(iBase * (log.s===1?0.1:log.s===2?0.25:0));
+              let iA = log.t < 4 ? (log.a===1?1:log.a===2?2:0) : Math.ceil(iBase * (log.a===1?0.1:log.a===2?0.25:0));
+              let iC = (log.s===2 && log.a===2)?1:0;
+              
+              let isStottern = (state === 'BEWAEHRUNG');
+              let pauschale = isStottern ? 0 : 1; 
+              
+              if (isStottern) {
+                  clusterTDays += log.t; 
+              } else {
+                  clusterTDays = log.t; 
+              }
+              
+              let penalty = iBase + iS + iA + iC + pauschale;
+              
+              debt += penalty; totalDebtEver += penalty;
+              state = 'BEWAEHRUNG'; 
+              bewaehrungTimer = Math.min(Math.max(clusterTDays * 3, 3), 21); 
+              withheldBonus = 0; 
+              history.logDetails.push({ date: dStr, p: penalty, t: log.t, b: iBase, s: iS, a: iA, f: pauschale });
+          }
+
+          if (dStr === todayStr && cycle.status === 'active') { dashState = { debt, totalDebtEver, state, bewaehrungTimer, logToday: log }; }
+
+          if (activeAusrutscherDays > 0) {
+              history.a.push(new Date(simDate)); activeAusrutscherDays--;
+          } else {
+              if (debt > 0) {
+                  if (state === 'BEWAEHRUNG') {
+                      debt -= 0.5; withheldBonus += 0.5; bewaehrungTimer--; history.b.push(new Date(simDate));
+                      if (bewaehrungTimer <= 0) { 
+                          if (dStr <= todayStr) { // Pessimistic ETA applies to both reality and sandbox
+                              debt -= withheldBonus; if(debt<0) debt=0; withheldBonus=0; state='REGEN'; clusterTDays = 0;
+                          } else {
+                              state='REGEN'; clusterTDays = 0;
+                          }
+                      }
+                  } else { debt -= 1.0; history.r.push(new Date(simDate)); }
+                  if(debt <= 0 && !finalDebtZeroDate) finalDebtZeroDate = new Date(simDate);
+              } else {
+                  history.n.push(new Date(simDate));
+              }
+          }
+          simDate.setDate(simDate.getDate() + 1);
+      }
+      
+      if (!dashState && cycle.status === 'active') {
+          dashState = { debt, totalDebtEver, state, bewaehrungTimer, logToday: null };
+      }
+      
+      let nirvanaStreak = 0;
+      if (debt <= 0 && history.n.length > 0) {
+          nirvanaStreak = history.n.length; 
+      }
+
+      return {
+          cycleId: cycle.id, status: cycle.status, isOpen: cycle.base.isOpen,
+          history, finalEnd: finalDebtZeroDate || addDays(simDate, -1), 
+          totalTDaysEver, totalDebtEver, dashState, nirvanaStreak, initialDebtTotal,
+          initialDebt: baseVal + sAdd + aAdd + comboAdd,
+          baseDetails: { baseVal, sAdd, aAdd, comboAdd }
+      };
+  }
+
+  function updateUI() {
+      renderDashboard();
+      renderHistorie();
+      renderArchiv();
+  }
+
+  function renderDashboard() {
+      const res = activeSimResult; if(!res || !res.dashState) return;
+      const ds = res.dashState;
+      
+      const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+      document.getElementById('dash-today-date').textContent = "Heute: " + new Date().toLocaleDateString('de-DE', options);
+      
+      const badge = document.getElementById('dash-status-badge');
+      const sub = document.getElementById('dash-sub');
+      const ring = document.getElementById('dash-ring');
+      const percentTxt = document.getElementById('dash-percent');
+      const ringLbl = document.getElementById('dash-ring-label');
+      const daysLeftTxt = document.getElementById('dash-days-left');
+      const targetTxt = document.getElementById('dash-target-date');
+      const streakBadge = document.getElementById('dash-streak');
+      const targetTracker = document.getElementById('dash-target-tracker');
+      
+      let progress = 100;
+      if (ds.debt > 0 && ds.totalDebtEver > 0) progress = Math.max(0, Math.min(100, 100 - (ds.debt / ds.totalDebtEver * 100)));
+      
+      ring.setAttribute('stroke-dasharray', `${progress}, 100`);
+      percentTxt.textContent = Math.round(progress) + '%';
+      
+      ring.classList.remove('regen', 'bewaehrung', 'nirvana');
+      percentTxt.classList.remove('nirvana');
+      streakBadge.className = 'streak-badge';
+
+      if (res.isOpen) {
+          badge.className = 'status-badge status-open'; badge.textContent = "Konsumphase Aktiv";
+          ring.setAttribute('stroke-dasharray', `0, 100`);
+          percentTxt.textContent = "!"; ringLbl.textContent = "OFFEN";
+          daysLeftTxt.textContent = `Dauer: ${res.history.t.length}d`; targetTxt.textContent = "Pausiere zum Start";
+          sub.textContent = "Die initiale T-Phase wächst, bis du pausierst.";
+          streakBadge.style.display = 'none';
+      } else if (ds.debt <= 0) {
+          badge.className = 'status-badge status-done'; badge.textContent = "Vollständig Regeneriert";
+          ring.classList.add('nirvana'); percentTxt.classList.add('nirvana');
+          percentTxt.textContent = "100%"; ringLbl.textContent = "NIRVANA";
+          daysLeftTxt.textContent = "Ziel erreicht"; targetTxt.textContent = "Bleib clean!";
+          sub.textContent = isSandbox ? "Du bist in der Simulation clean." : "Ein Ausrutscher startet einen neuen Zyklus.";
+          streakBadge.style.display = 'inline-block';
+          streakBadge.classList.add('nirvana');
+          streakBadge.textContent = `💎 ${res.nirvanaStreak} Tage Clean-Streak`;
+      } else if (ds.state === 'BEWAEHRUNG') {
+          badge.className = 'status-badge status-bewaehrung'; badge.textContent = `Bewährungsphase`;
+          ring.classList.add('bewaehrung'); ringLbl.textContent = "HEILUNG";
+          daysLeftTxt.textContent = `Schulden: ${Math.ceil(ds.debt)} Tage`; targetTxt.textContent = `Ziel: ${res.finalEnd.toLocaleDateString('de-DE')}`;
+          sub.textContent = `Heilung: 0,5x. Halte noch ${ds.bewaehrungTimer} Tag(e) durch für den Bonus!`;
+          streakBadge.style.display = 'none';
+      } else {
+          badge.className = 'status-badge status-regen'; badge.textContent = "Tiefe Regeneration";
+          ring.classList.add('regen'); ringLbl.textContent = "HEILUNG";
+          daysLeftTxt.textContent = `Schulden: ${Math.ceil(ds.debt)} Tage`; targetTxt.textContent = `Ziel: ${res.finalEnd.toLocaleDateString('de-DE')}`;
+          sub.textContent = "Du heilst mit 1,0x Geschwindigkeit.";
+          streakBadge.style.display = 'none';
+      }
+
+      const activeCycle = getActiveCycle();
+      
+      if (!isSandbox && activeCycle.targetETA) {
+          const targetDateObj = parseLocal(activeCycle.targetETA);
+          const diff = diffDays(res.finalEnd, targetDateObj);
+          targetTracker.style.display = 'block';
+          
+          const closeBtn = `<span style="cursor:pointer; font-size:0.85rem; margin-left:15px; opacity:0.8; text-decoration:underline;" onclick="clearTargetETA()">✖️ Verwerfen</span>`;
+          
+          if (diff <= 0) {
+              targetTracker.style.backgroundColor = '#d4edda'; targetTracker.style.color = '#155724'; targetTracker.style.border = '1px solid #c3e6cb';
+              targetTracker.innerHTML = `🏁 Plan-Ziel (${targetDateObj.toLocaleDateString('de-DE')}): <br>🟢 Du bist voll auf Kurs! ${closeBtn}`;
+          } else if (diff <= 3) {
+              targetTracker.style.backgroundColor = '#fff3cd'; targetTracker.style.color = '#856404'; targetTracker.style.border = '1px solid #ffeeba';
+              targetTracker.innerHTML = `🏁 Plan-Ziel (${targetDateObj.toLocaleDateString('de-DE')}): <br>🟡 Kritisch (${Math.abs(diff)} Tage hinter Plan) ${closeBtn}`;
+          } else {
+              targetTracker.style.backgroundColor = '#f8d7da'; targetTracker.style.color = '#721c24'; targetTracker.style.border = '1px solid #f5c6cb';
+              targetTracker.innerHTML = `🏁 Plan-Ziel (${targetDateObj.toLocaleDateString('de-DE')}): <br>🔴 Ziel gefährdet (${Math.abs(diff)} Tage hinter Plan) ${closeBtn}`;
+          }
+      } else {
+          targetTracker.style.display = 'none';
+      }
+
+      const todayStr = toIsoString(new Date());
+      if (activeCycle && activeCycle.logs[todayStr] && !isSandbox) {
+          document.getElementById('daily-action-area').style.display = 'none';
+          document.getElementById('daily-done-area').style.display = 'block';
+      } else {
+          document.getElementById('daily-action-area').style.display = 'block';
+          document.getElementById('daily-done-area').style.display = 'none';
+      }
+  }
+
+  function renderHistorie() {
+      const res = activeSimResult; if(!res) return;
+      const active = getActiveCycle();
+      document.getElementById('historie-output').style.display = 'block';
+      
+      const totalT = res.totalTDaysEver;
+      const totalRegenDebt = res.totalDebtEver;
+      const aufschlag = totalRegenDebt - (totalT * 3);
+
+      let html = `<div style="margin-top:0.5rem; font-weight:bold; color:#2c3e50; margin-bottom: 10px;">📊 Gesamtbilanz dieses Zyklus</div>
+      <div class="stat-grid" style="margin-bottom: 1rem;">
+          <div class="stat-box" style="padding: 10px;">
+              <div class="stat-val" style="font-size: 1.4rem;">${totalT}</div>
+              <div class="stat-label" style="font-size: 0.65rem;">T-Tage</div>
+          </div>
+          <div class="stat-box" style="padding: 10px;">
+              <div class="stat-val" style="font-size: 1.4rem;">${totalT * 3}</div>
+              <div class="stat-label" style="font-size: 0.65rem;">x3 Schuld</div>
+          </div>
+          <div class="stat-box" style="padding: 10px;">
+              <div class="stat-val danger" style="font-size: 1.4rem; color: var(--danger);">+${aufschlag}</div>
+              <div class="stat-label" style="font-size: 0.65rem;">Aufschlag</div>
+          </div>
+          <div class="stat-box" style="padding: 10px;">
+              <div class="stat-val blue" style="font-size: 1.4rem; color: var(--nirvana-blue);">${totalRegenDebt}</div>
+              <div class="stat-label" style="font-size: 0.65rem;">Gesamtschuld</div>
+          </div>
+      </div>`;
+      
+      const mFree = Math.min(res.totalTDaysEver * 2, 14);
+      html += `<div style="margin-top:10px; padding:10px; background:#e8f6f3; border-radius:8px; color:#16a085; font-weight:bold; text-align:center;">
+        Empfohlene M-freie Tage: ${mFree}
+      </div>`;
+
+      document.getElementById('bilanz-container').innerHTML = html;
+
+      const allDates = [...res.history.t, ...res.history.a, ...res.history.b, ...res.history.r, ...res.history.n];
+      if (allDates.length === 0) return;
+      const minDate = new Date(Math.min(...allDates.map(d => d.getTime())));
+      
+      let rawMaxDate = new Date(Math.max(...allDates.map(d => d.getTime())));
+      if(active.targetETA) {
+          const targetObj = parseLocal(active.targetETA);
+          if (targetObj > rawMaxDate) rawMaxDate = targetObj;
+      }
+      const maxDate = rawMaxDate;
+      
+      let current = new Date(minDate.getFullYear(), minDate.getMonth(), 1);
+      const realEnd = new Date(maxDate.getFullYear(), maxDate.getMonth() + 1, 0);
+      const todayStr = new Date().toDateString();
+      const targetStrCheck = active.targetETA ? parseLocal(active.targetETA).toDateString() : null;
+
+      let calHtml = "<table><thead><tr><th>Mo</th><th>Di</th><th>Mi</th><th>Do</th><th>Fr</th><th>Sa</th><th>So</th></tr></thead><tbody><tr>";
+      let startDay = current.getDay() === 0 ? 6 : current.getDay() - 1;
+      for (let i = 0; i < startDay; i++) calHtml += "<td></td>";
+
+      while (current <= realEnd) {
+        const dStr = current.toDateString();
+        const isoDStr = toIsoString(current);
+        let log = active.logs[isoDStr];
+        let tagClass = "", tagText = "";
+        let isTodayClass = (dStr === todayStr) ? "today-highlight" : "";
+
+        if (res.history.t.some(d => d.toDateString() === dStr)) { tagClass = "tday"; tagText="1. Konsum"; }
+        else if (res.history.a.some(d => d.toDateString() === dStr)) { tagClass = "ausrutscher"; tagText="weiterer Konsum"; }
+        else if (res.history.b.some(d => d.toDateString() === dStr)) { tagClass = "bewaehrung"; tagText="Bewährung"; }
+        else if (res.history.r.some(d => d.toDateString() === dStr)) { tagClass = "regen"; tagText="Regeneration"; }
+        else if (res.history.n.some(d => d.toDateString() === dStr)) { tagClass = "nirvana"; tagText="Nirvana"; }
+        
+        if (log && log.note) {
+            tagText += " 📝";
+        }
+
+        if (targetStrCheck && dStr === targetStrCheck) {
+            tagText += " 🏁";
+            tagClass += " target-flag";
+        }
+
+        calHtml += `<td class="active-month ${isTodayClass}"><span class="date-num">${current.getDate()}.</span>${tagText ? `<span class="tag ${tagClass}">${tagText.trim()}</span>` : ''}</td>`;
+        if (current.getDay() === 0 && current < realEnd) calHtml += "</tr><tr>";
+        current.setDate(current.getDate() + 1);
+      }
+      
+      if (current.getDay() !== 1) {
+          let endPad = current.getDay() === 0 ? 0 : 8 - current.getDay();
+          for (let i=0; i<endPad; i++) calHtml += "<td></td>";
+      }
+      
+      calHtml += "</tr></tbody></table>";
+      document.getElementById("calendar").innerHTML = calHtml;
+  }
+
+  function renderArchiv() {
+      const todayStr = toIsoString(new Date());
+      const isPast = d => toIsoString(d) < todayStr;
+
+      let pastDaysTracked = 0; 
+      let pastPauseDays = 0; 
+      let maxNirvana = 0;
+      
+      let totalAusrutscher = 0; 
+      let highStressAusrutscher = 0;
+      let totalLoggedPauses = 0; 
+      let noAlcoholPauses = 0; 
+      let sumAusrutscherDays = 0;
+      
+      let sumMoodPause = 0; let countMoodPause = 0;
+      let sumMoodAus = 0; let countMoodAus = 0;
+
+      let allPastAusrutscherDates = [];
+
+      getApp().cycles.forEach((cycle, index) => {
+          const res = globalSimResults[index];
+          if(!res) return;
+
+          const pastT = res.history.t.filter(isPast);
+          const pastA = res.history.a.filter(isPast);
+          const pastB = res.history.b.filter(isPast);
+          const pastR = res.history.r.filter(isPast);
+          const pastN = res.history.n.filter(isPast);
+
+          pastDaysTracked += (pastT.length + pastA.length + pastB.length + pastR.length + pastN.length);
+          pastPauseDays += (pastB.length + pastR.length + pastN.length);
+
+          let currentStreak = 0;
+          for (let i=0; i<pastN.length; i++) {
+              if (i===0 || diffDays(pastN[i-1], pastN[i]) === 1) currentStreak++;
+              else { maxNirvana = Math.max(maxNirvana, currentStreak); currentStreak = 1; }
+          }
+          maxNirvana = Math.max(maxNirvana, currentStreak);
+          
+          if (cycle.base.start < todayStr) {
+              totalAusrutscher++; 
+              if(cycle.base.sLevel === 2) highStressAusrutscher++;
+              let baseD = parseLocal(cycle.base.start);
+              let baseEnd = parseLocal(cycle.base.end);
+              while (baseD <= baseEnd && toIsoString(baseD) < todayStr) {
+                  sumAusrutscherDays++;
+                  allPastAusrutscherDates.push(toIsoString(baseD));
+                  baseD.setDate(baseD.getDate() + 1);
+              }
+          }
+
+          Object.entries(cycle.logs).forEach(([dStr, log]) => {
+              if (dStr >= todayStr) return; 
+              
+              let isBaseDay = (dStr >= cycle.base.start && dStr <= cycle.base.end);
+
+              if (log.mood && log.mood > 0) {
+                  if (log.type === 'pause') { sumMoodPause += parseInt(log.mood); countMoodPause++; }
+                  if (log.type === 'ausrutscher' || isBaseDay) { sumMoodAus += parseInt(log.mood); countMoodAus++; }
+              }
+              
+              if (isBaseDay) return;
+
+              if (log.type === 'ausrutscher') {
+                  totalAusrutscher++;
+                  if(log.s === 2) highStressAusrutscher++;
+                  let logD = parseLocal(dStr);
+                  for(let i=0; i<log.t; i++) {
+                      let curDStr = toIsoString(logD);
+                      if (curDStr < todayStr) {
+                          sumAusrutscherDays++;
+                          allPastAusrutscherDates.push(curDStr);
+                      }
+                      logD.setDate(logD.getDate() + 1);
+                  }
+              } else if (log.type === 'pause') {
+                  totalLoggedPauses++;
+                  if(log.a === 0) noAlcoholPauses++;
+              }
+          });
+      });
+
+      const cleanQuote = pastDaysTracked > 0 ? Math.round((pastPauseDays / pastDaysTracked) * 100) : 0;
+      const avgAus = totalAusrutscher > 0 ? (sumAusrutscherDays / totalAusrutscher).toFixed(1) : 0;
+
+      document.getElementById('stat-clean-quote').textContent = cleanQuote + '%';
+      document.getElementById('stat-max-nirvana').textContent = maxNirvana;
+      document.getElementById('stat-total-days').textContent = pastDaysTracked;
+      document.getElementById('stat-avg-ausrutscher').textContent = avgAus;
+
+      let triggersHtml = "";
+      allPastAusrutscherDates.sort();
+
+      // Wochentag-Analyse
+      if (allPastAusrutscherDates.length > 0) {
+          let dayCounts = [0,0,0,0,0,0,0];
+          allPastAusrutscherDates.forEach(dStr => dayCounts[parseLocal(dStr).getDay()]++);
+          let maxCount = Math.max(...dayCounts);
+          let maxIndex = dayCounts.indexOf(maxCount);
+          const dayNames = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
+          let peakPercent = Math.round((maxCount / allPastAusrutscherDates.length) * 100);
+          if (peakPercent > 15) { 
+               triggersHtml += `<li>📅 <strong>Gefahrenzone:</strong> ${peakPercent}% deiner bisherigen Ausrutscher passieren an einem <strong>${dayNames[maxIndex]}</strong>.</li>`;
+          }
+      }
+
+      // Block Analyse
+      let blocks = [];
+      if (allPastAusrutscherDates.length > 0) {
+          let currentBlock = { start: allPastAusrutscherDates[0], end: allPastAusrutscherDates[0], count: 1 };
+          for (let i = 1; i < allPastAusrutscherDates.length; i++) {
+              let prevD = parseLocal(currentBlock.end);
+              let currD = parseLocal(allPastAusrutscherDates[i]);
+              if (diffDays(prevD, currD) === 1) {
+                  currentBlock.end = allPastAusrutscherDates[i];
+                  currentBlock.count++;
+              } else if (diffDays(prevD, currD) > 1) {
+                  blocks.push(currentBlock);
+                  currentBlock = { start: allPastAusrutscherDates[i], end: allPastAusrutscherDates[i], count: 1 };
+              }
+          }
+          blocks.push(currentBlock);
+          
+          let stotterBlocks = blocks.filter(b => b.count > 1).length;
+          let stotterPercent = Math.round((stotterBlocks / blocks.length) * 100);
+          if (stotterPercent > 0) {
+              triggersHtml += `<li>🔗 <strong>Stotter-Faktor:</strong> In <strong>${stotterPercent}%</strong> der Fälle bleibt es nicht bei einem Tag, sondern es entsteht ein mehrtägiger Cluster.</li>`;
+          }
+
+          if (blocks.length > 1) {
+              let totalDist = 0;
+              for(let i=0; i<blocks.length-1; i++) {
+                  totalDist += (diffDays(parseLocal(blocks[i].end), parseLocal(blocks[i+1].start)) - 1);
+              }
+              let avgDist = Math.round(totalDist / (blocks.length - 1));
+              triggersHtml += `<li>⏳ <strong>Kritische Distanz:</strong> Nach einer Konsumphase bleibst du durchschnittlich <strong>${avgDist} Tage</strong> stark, bevor ein neuer Ausrutscher droht.</li>`;
+          }
+      }
+
+      // Basis-Triggers & Mood
+      if (totalAusrutscher > 0 && Math.round((highStressAusrutscher/totalAusrutscher)*100) > 30) { 
+          triggersHtml += `<li>⚠️ <strong>Stress-Trigger:</strong> Bei ${Math.round((highStressAusrutscher/totalAusrutscher)*100)}% deiner Rückfälle war dein Stresslevel HOCH.</li>`; 
+      }
+      
+      if (countMoodAus > 0 && countMoodPause > 0) {
+          let avgMoodP = (sumMoodPause / countMoodPause).toFixed(1);
+          let avgMoodA = (sumMoodAus / countMoodAus).toFixed(1);
+          triggersHtml += `<li>🧠 <strong>Stimmungs-Analyse:</strong> An cleanen Tagen liegt deine Stimmung im Schnitt bei <strong>${avgMoodP}</strong>. An Konsumtagen bei <strong>${avgMoodA}</strong>.</li>`;
+      }
+
+      if(triggersHtml === "") triggersHtml = "<li>Noch nicht genug verifizierte Vergangenheits-Daten für eine tiefgehende Analyse. Bleib dran!</li>";
+      
+      document.getElementById('trigger-list').innerHTML = triggersHtml;
+
+      // Archiv-Karten
+      const archContainer = document.getElementById('archive-container');
+      archContainer.innerHTML = "";
+      const archived = getApp().cycles.filter(c => c.status === 'archived');
+      if (archived.length === 0) {
+          archContainer.innerHTML = "<p style='color:#7f8c8d; text-align:center;'>Noch keine Zyklen abgeschlossen.</p>";
+      } else {
+          [...archived].reverse().forEach(cycle => {
+              const res = globalSimResults.find(r => r.cycleId === cycle.id);
+              if(!res) return;
+              const startStr = parseLocal(cycle.base.start).toLocaleDateString('de-DE', {day:'2-digit', month:'short', year:'numeric'});
+              let endStr = "Unbekannt";
+              const allArchDates = [...res.history.t, ...res.history.a, ...res.history.b, ...res.history.r, ...res.history.n];
+              if(allArchDates.length>0) endStr = allArchDates[allArchDates.length-1].toLocaleDateString('de-DE', {day:'2-digit', month:'short'});
+              let ausCount = Object.values(cycle.logs).filter(l=>l.type==='ausrutscher').length;
+              const card = document.createElement('div'); card.className = 'archive-card';
+              card.innerHTML = `<div class="archive-header"><div class="archive-title">Zyklus: ${startStr} – ${endStr}</div><div class="archive-badge">${allArchDates.length} Tage Total</div></div>
+                <div class="archive-stats"><div><strong>Start-Konsum:</strong> ${cycle.base.tDays} Tage</div><div><strong>Ausrutscher in Phase:</strong> ${ausCount}</div>
+                    <div><strong>Heilungsdauer:</strong> ${res.history.b.length + res.history.r.length} Tage</div><div><strong>Nirvana-Streak danach:</strong> ${res.nirvanaStreak} Tage</div></div>`;
+              archContainer.appendChild(card);
+          });
+      }
+  }
+
+  function exportData() {
+      let exportObj = JSON.parse(JSON.stringify(getApp()));
+      if (isSandbox) exportObj.isSandbox = true;
+      const blob = new Blob([JSON.stringify(exportObj, null, 2)], {type: "application/json"});
+      const fileName = isSandbox ? "lifetracker_simulation.json" : "lifetracker_backup.json";
+      const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = fileName; link.click();
+  }
+
+  function importData(input) {
+      const file = input.files[0]; if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+          try {
+              let data = JSON.parse(e.target.result);
+              
+              if (!isSandbox && data.isSandbox) {
+                  return customAlert("Achtung: Dies ist eine Simulations-Datei. Du kannst sie nur im Labor (Ring klicken) laden!");
+              }
+
+              if (isSandbox) {
+                  sandboxData = data; 
+                  runAllSimulations();
+                  customAlert("Simulation erfolgreich in die Sandbox geladen!");
+              } else {
+                  if (data.version >= 5) { 
+                      data.version = 7.1; appData = data; 
+                  } else if (data.base && !data.cycles) { 
+                      appData = { version: 7.1, cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }] };
+                  } else if (data.tDays !== undefined && !data.base) {
+                      let base = { start: data.startDate, end: data.endDate, tDays: parseInt(data.tDays)||0, sLevel: parseInt(data.stress)||0, aLevel: parseInt(data.alcohol)||0, isOpen: false };
+                      let logs = {}; if(data.interruptions) { data.interruptions.forEach(int => { logs[int.start] = { type: 'ausrutscher', t: parseInt(int.t)||1, s: parseInt(int.s)||0, a: parseInt(int.a)||0 }; }); }
+                      appData = { version: 7.1, cycles: [{ id: Date.now(), status: 'active', base: base, logs: logs }] };
+                  } else { appData = data; }
+                  
+                  saveData(true); 
+                  customAlert("Daten erfolgreich geladen! Die Seite wird nun aktualisiert.", () => {
+                      if (!isSandbox) location.reload();
+                  });
+              }
+          } catch(err) { customAlert("Fehler beim Laden: " + err); }
+      };
+      reader.readAsText(file); input.value = ''; 
+  }
+  
+  function downloadICS() {
+      if(!activeSimResult) return;
+      const res = activeSimResult; 
+      const activeCycle = getActiveCycle();
+      
+      const sLevels = ['Kein', 'Moderat', 'Hoch'];
+      const aLevels = ['Kein', 'Moderat', 'Hoch'];
+      
+      let desc = isSandbox ? `Regenerations-Tracker SIMULATION\n\n` : `Regenerations-Tracker V7.1\n\n`;
+      desc += `--- Basis-Phase ---\n`;
+      desc += `Start: ${parseLocal(activeCycle.base.start).toLocaleDateString('de-DE')}\n`;
+      desc += `T-Tage: ${activeCycle.base.tDays}d\n`;
+      desc += `Stress (Max): ${sLevels[activeCycle.base.sLevel]}\n`;
+      desc += `Alkohol (Max): ${aLevels[activeCycle.base.aLevel]}\n`;
+      desc += `Basis-Schulden (Start): ${res.initialDebtTotal} Tage\n`;
+      
+      if(res.history.logDetails.length > 0) {
+          desc += `\n--- Ausrutscher / Logs ---\n`;
+          const sortedLogs = [...res.history.logDetails].sort((a,b) => parseLocal(a.date) - parseLocal(b.date));
+          sortedLogs.forEach(l => {
+              desc += `[${parseLocal(l.date).toLocaleDateString('de-DE')}] Dauer: ${l.t}d | S: ${sLevels[l.s]} | A: ${aLevels[l.a]} -> Strafe: +${l.p} Tage\n`;
+          });
+      }
+
+      const totalT = res.totalTDaysEver;
+      const totalRegenDebt = res.totalDebtEver;
+      const aufschlag = totalRegenDebt - (totalT * 3);
+
+      desc += `\n--- Gesamtbilanz ---\n`;
+      desc += `T-Tage (Konsum) gesamt: ${totalT}\n`;
+      desc += `x3 Schuld: ${totalT * 3} Tage\n`;
+      desc += `Zusätzlicher Aufschlag: +${aufschlag} Tage\n`;
+      desc += `Regenerationsschuld gesamt: ${totalRegenDebt} Tage\n`;
+
+      const mFree = Math.min(res.totalTDaysEver * 2, 14);
+      desc += `\nEmpfohlene M-freie Tage: ${mFree}\n`;
+      desc += `Prognostiziertes Ziel: ${res.finalEnd.toLocaleDateString('de-DE')}\n`;
+
+      const exportDates = [...res.history.b, ...res.history.r].sort((a,b) => a-b);
+      if(exportDates.length === 0) return customAlert("Keine Erholungstage zum Exportieren gefunden.");
+
+      const start = exportDates[0]; 
+      const end = addDays(exportDates[exportDates.length - 1], 1); 
+      const formatDate = d => `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
+
+      const ics = `BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nUID:${Date.now()}@regenrechner\nDTSTAMP:${formatDate(new Date())}T000000Z\nDTSTART;VALUE=DATE:${formatDate(start)}\nDTEND;VALUE=DATE:${formatDate(end)}\nSUMMARY:${isSandbox ? 'Simulation:' : ''} Regenerationsphase (${exportDates.length} Tage)\nDESCRIPTION:${desc.replace(/\n/g, '\\n')}\nEND:VEVENT\nEND:VCALENDAR`;
+
+      const blob = new Blob([ics], { type: "text/calendar" });
+      const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = isSandbox ? "simulation.ics" : "regeneration.ics"; link.click();
+  }
+
+  function downloadImage() {
+      const exportCard = document.getElementById("export-card");
+      const wrapper = exportCard.querySelector('.calendar-wrapper');
+
+      const oldOverflow = wrapper.style.overflowX;
+      const oldWidth = exportCard.style.width;
+      
+      wrapper.style.overflowX = 'visible';
+      exportCard.style.width = wrapper.scrollWidth + 40 + 'px'; 
+
+      html2canvas(exportCard, { 
+          scale: 2, 
+          backgroundColor: isSandbox ? "#f5eef8" : "#ffffff"
+      }).then(canvas => {
+          wrapper.style.overflowX = oldOverflow;
+          exportCard.style.width = oldWidth;
+
+          const link = document.createElement("a"); 
+          link.download = isSandbox ? "simulation_zyklus.png" : "aktueller_zyklus.png"; 
+          link.href = canvas.toDataURL("image/png"); 
+          link.click();
+      });
+  }
+  
+  // --- Service Worker Registrierung (PWA) ---
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js')
+        .then(reg => console.log('Service Worker registriert'))
+        .catch(err => console.error('Service Worker Fehler', err));
+    });
+  }
+</script>
+</body>
+</html>
