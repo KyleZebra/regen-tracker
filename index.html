@@ -4,12 +4,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   
+  <!-- Anti-Cache Meta Tags für den Browser -->
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
 
-  <title>ReTrack 8.2</title>
+  <title>ReTrack 8.3</title>
   
+  <!-- PWA Setup -->
   <link rel="manifest" href="./manifest.json" />
   <meta name="theme-color" content="#f1c40f" />
   <link rel="apple-touch-icon" href="./icon-192x192.png" />
@@ -70,7 +72,7 @@
       margin-bottom: 1rem;
       box-shadow: 0 4px 15px rgba(0,0,0,0.1);
       transition: background 0.3s ease, color 0.3s ease;
-      cursor: pointer; /* Signalisiert, dass der Header klickbar ist */
+      cursor: pointer;
     }
     header:active { transform: scale(0.98); }
     header h1 { margin: 0; font-size: 1.6rem; font-weight: 800; text-transform: uppercase; letter-spacing: -0.5px; }
@@ -379,7 +381,7 @@
 
   <header onclick="openBreatheOverlay()" title="Geheime Atem-Übung öffnen">
     <h1>🧪 ReTrack</h1>
-    <div class="version">Version 8.2 – Journaling & Therapie</div>
+    <div class="version">Version 8.3 – Crash-Protection & Therapie</div>
   </header>
 
   <div class="tabs">
@@ -393,347 +395,7 @@
   <div id="tab-dashboard" class="tab-content active">
     
     <div id="setup-warning" class="setup-overlay">
-        <h3>Willkommen bei ReTrack (v8.2)! 👋</h3>
-        <p>Lege deinen ersten Zyklus an oder lade ein bestehendes Backup.</p>
-        <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 15px;">
-    /* Header & Tabs */
-    header {
-      background: var(--header-bg);
-      padding: 1.5rem;
-      border-radius: var(--border-radius);
-      color: var(--header-text);
-      text-align: center;
-      margin-bottom: 1rem;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-      transition: background 0.3s ease, color 0.3s ease;
-      cursor: pointer; /* Signalisiert, dass der Header klickbar ist */
-    }
-    header:active { transform: scale(0.98); }
-    header h1 { margin: 0; font-size: 1.6rem; font-weight: 800; text-transform: uppercase; letter-spacing: -0.5px; }
-    header .version { font-weight: 600; opacity: 0.8; font-size: 0.85rem; margin-top: 0.2rem; }
-
-    #sandbox-banner {
-      display: none;
-      background: #2c3e50;
-      color: white;
-      padding: 12px;
-      border-radius: var(--border-radius);
-      margin-bottom: 1rem;
-      text-align: center;
-      font-weight: bold;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-    }
-    
-    #update-banner {
-      display: none;
-      background: #3498db;
-      color: white;
-      padding: 15px;
-      border-radius: var(--border-radius);
-      margin-bottom: 1rem;
-      text-align: center;
-      font-weight: bold;
-      box-shadow: 0 4px 15px rgba(52, 152, 219, 0.4);
-      animation: slideDown 0.5s ease-out;
-    }
-    @keyframes slideDown { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-
-    .sandbox-actions { display: flex; gap: 10px; margin-top: 10px; justify-content: center; }
-    .btn-sandbox { background: white; color: #2c3e50; border: none; padding: 6px 12px; border-radius: 8px; font-weight: 700; cursor: pointer; }
-    .btn-sandbox.danger { background: #e74c3c; color: white; }
-
-    .tabs {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 1.5rem;
-      overflow-x: auto;
-      padding-bottom: 5px;
-    }
-    .tab-btn {
-      flex: 1;
-      min-width: 80px;
-      padding: 12px 8px;
-      border: none;
-      background: #e9ecef;
-      border-radius: 12px;
-      font-weight: 700;
-      color: var(--text-light);
-      cursor: pointer;
-      transition: all 0.2s;
-      font-size: 0.9rem;
-      white-space: nowrap;
-    }
-    .tab-btn.active {
-      background: var(--text-main);
-      color: #fff;
-      box-shadow: 0 4px 10px rgba(44, 62, 80, 0.2);
-    }
-
-    .tab-content { display: none; animation: fadeIn 0.3s ease; }
-    .tab-content.active { display: block; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-    /* Cards */
-    .card {
-      background: var(--card-bg);
-      padding: 1.5rem;
-      border-radius: var(--border-radius);
-      box-shadow: var(--shadow);
-      margin-bottom: 1.5rem;
-      border: 1px solid rgba(0,0,0,0.02);
-    }
-
-    h3 {
-      margin-top: 0;
-      font-size: 1.1rem;
-      border-bottom: 2px solid #fcf3cf;
-      padding-bottom: 0.8rem;
-      margin-bottom: 1.2rem;
-      font-weight: 700;
-    }
-
-    /* --- DASHBOARD STYLES --- */
-    .dashboard-header { text-align: center; margin-bottom: 1.5rem; }
-    .today-date { font-size: 0.95rem; color: var(--text-light); font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
-    
-    .streak-badge { display: inline-block; background: #fff3cd; color: #856404; font-weight: 800; padding: 4px 12px; border-radius: 12px; font-size: 0.85rem; margin-bottom: 15px; border: 1px solid #ffeeba;}
-    .streak-badge.nirvana { background: #d0ebff; color: #0056b3; border-color: #a5d8ff; font-size: 1rem; padding: 6px 16px;}
-
-    .status-badge {
-      display: inline-block;
-      padding: 6px 14px;
-      border-radius: 20px;
-      font-weight: 800;
-      font-size: 0.85rem;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      margin-bottom: 10px;
-    }
-    .status-regen { background: #d4edda; color: #27ae60; }
-    .status-bewaehrung { background: #fcf3cf; color: #f39c12; }
-    .status-done { background: #d0ebff; color: #0056b3; }
-    .status-open { background: #fadbd8; color: #c0392b; }
-    
-    .eta-text { font-size: 1.1rem; font-weight: 700; color: var(--text-main); }
-    .eta-subtext { font-size: 0.85rem; color: var(--text-light); }
-    
-    .target-tracker { margin-top:15px; padding:10px; border-radius:10px; font-weight:bold; font-size:0.9rem; text-align:center; }
-
-    /* Progress Ring */
-    .ring-wrapper { 
-        position: relative; width: 240px; height: 240px; margin: 0 auto 2rem auto; 
-        cursor: pointer; transition: transform 0.2s;
-    }
-    .ring-wrapper:hover { transform: scale(1.03); }
-    .circular-chart { display: block; margin: 0 auto; width: 100%; height: 100%; transform: rotate(-90deg); }
-    .circle-bg { fill: none; stroke: #f0f0f0; stroke-width: 2.5; }
-    .circle { fill: none; stroke-width: 2.5; stroke-linecap: round; transition: stroke-dasharray 1s ease-out; }
-    .circle.regen { stroke: #27ae60; }
-    .circle.bewaehrung { stroke: #f39c12; }
-    .circle.nirvana { stroke: var(--nirvana-blue); }
-    
-    .ring-content {
-        position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-        text-align: center; width: 80%; display: flex; flex-direction: column; justify-content: center; align-items: center;
-        pointer-events: none;
-    }
-    .ring-percent { font-size: 2.8rem; font-weight: 800; color: #2c3e50; line-height: 1; margin-bottom: 2px; }
-    .ring-percent.nirvana { color: var(--nirvana-blue); font-size: 2.2rem; }
-    .ring-label { font-size: 0.7rem; font-weight: 800; color: #95a5a6; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 12px; }
-    .ring-days { font-size: 1rem; font-weight: 700; color: #2c3e50; background: #fdfdfd; padding: 2px 8px; border-radius: 6px; border: 1px solid #eee; margin-bottom: 4px;}
-    .ring-target { font-size: 0.8rem; font-weight: 600; color: #7f8c8d; }
-
-    /* Quick Action Buttons */
-    .quick-actions { display: flex; gap: 10px; }
-    .btn-quick { flex: 1; padding: 16px; border: none; border-radius: 12px; font-weight: 800; font-size: 1rem; cursor: pointer; color: white; transition: transform 0.1s; }
-    .btn-quick:active { transform: scale(0.96); }
-    .btn-pausiert { background: #27ae60; box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3); }
-    .btn-ausrutscher { background: #e74c3c; box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3); }
-    .undo-link { color: #7f8c8d; font-size: 0.85rem; text-decoration: underline; cursor: pointer; display: inline-block; margin-top: 10px; }
-
-    /* Modals */
-    .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 100; justify-content: center; align-items: center; padding: 20px; }
-    .modal-overlay.active { display: flex; animation: fadeIn 0.2s; }
-    .modal-card { background: white; padding: 20px; border-radius: 16px; width: 100%; max-width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto;}
-    .modal-actions { display: flex; gap: 10px; margin-top: 20px; flex-direction: column;}
-    .modal-actions-row { display: flex; gap: 10px; width: 100%;}
-
-    /* --- HISTORIE & PLANER STYLES --- */
-    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .form-group-full { grid-column: 1 / -1; }
-    @media (min-width: 650px) { .form-grid { grid-template-columns: repeat(3, 1fr); gap: 1.5rem; } }
-
-    label { display: block; font-weight: 600; margin-bottom: 0.3rem; font-size: 0.85rem; }
-    input, select, textarea { width: 100%; padding: 10px 12px; border: 2px solid transparent; border-radius: 10px; font-size: 15px; background: var(--input-bg); transition: all 0.2s ease; box-sizing: border-box; font-family: inherit;}
-    input:focus, select:focus, textarea:focus { outline: none; background: #fff; border-color: var(--header-bg); }
-    input[readonly], select:disabled { background-color: #e9ecef; color: #7f8c8d; cursor: not-allowed; font-weight: bold; border: 1px solid #dee2e6; }
-    textarea { resize: vertical; }
-
-    .btn-tool { background: white; border: 2px solid #eee; color: var(--text-main); font-weight: 600; padding: 12px; border-radius: 10px; cursor: pointer; flex: 1; min-width: 120px; text-align: center; text-decoration: none; display: flex; align-items: center; justify-content: center;}
-    .btn-tool:hover { border-color: var(--accent); color: var(--accent); background: #fffdf5; }
-    body.sandbox-mode .btn-tool:hover { border-color: var(--accent); color: var(--accent); background: #fdfafb; }
-    
-    .tool-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 1.5rem; border-top: 2px solid #eee; padding-top: 1.5rem; }
-    @media (min-width: 600px) { .tool-grid { grid-template-columns: repeat(3, 1fr); } }
-
-    /* Diary Styles */
-    .diary-list { margin-top: 1rem; border-top: 1px solid #eee; padding-top: 1rem; display: flex; flex-direction: column; gap: 10px;}
-    .diary-month-group { background: white; border: 1px solid #eee; border-radius: 10px; margin-bottom: 10px; overflow: hidden;}
-    .diary-month-title { padding: 12px 15px; font-weight: 800; cursor: pointer; background: #fdfdfd; display: flex; justify-content: space-between; align-items: center; user-select: none; }
-    .diary-month-title:hover { background: #f5f5f5; }
-    .diary-month-content { padding: 10px; display: flex; flex-direction: column; gap: 8px; border-top: 1px solid #eee;}
-    .diary-count { font-size: 0.75rem; background: #eee; padding: 2px 8px; border-radius: 12px; color: #666; font-weight: bold;}
-    details > summary { list-style: none; }
-    details > summary::-webkit-details-marker { display: none; }
-
-    .diary-item { background: #fff; border: 1px solid #eee; border-radius: 8px; padding: 12px; display: flex; justify-content: space-between; align-items: flex-start;}
-    .diary-item:hover { border-color: #ddd; }
-    .diary-date { font-weight: 800; font-size: 0.9rem; color: #2c3e50; margin-bottom: 4px; }
-    .diary-badge { display: inline-block; padding: 3px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; margin-bottom: 6px; }
-    .badge-pause { background: #d4edda; color: #155724; }
-    .badge-aus { background: #fadbd8; color: #721c24; }
-    .badge-base { background: #f1c40f; color: #856404; }
-    .diary-meta { font-size: 0.8rem; color: #666; margin-bottom: 4px;}
-    .diary-note { font-size: 0.85rem; color: #444; background: #f4f6f7; padding: 8px; border-radius: 6px; font-style: italic; border-left: 3px solid #bdc3c7;}
-    .diary-edit-btn { background: #eee; border: none; padding: 6px 10px; border-radius: 8px; font-size: 0.8rem; font-weight: bold; color: #555; cursor: pointer; transition: 0.2s;}
-    .diary-edit-btn:hover { background: #ddd; color: #222; }
-
-    /* Calendar */
-    .calendar-wrapper { overflow-x: auto; margin-top: 1.5rem; border: 1px solid #f0f0f0; border-radius: 12px; }
-    table { width: 100%; border-collapse: separate; border-spacing: 0; min-width: 600px; font-size: 0.9rem; }
-    th { background: #fffcf5; padding: 12px; color: #95a5a6; font-weight: 600; border-bottom: 2px solid #eee; text-align: left; position: sticky; left: 0; z-index: 10;}
-    td { border-bottom: 1px solid #f5f5f5; border-right: 1px solid #f5f5f5; padding: 6px; vertical-align: top; height: 60px; background: white; width: 14.28%; position: relative;}
-    td.today-highlight { background-color: #f0f8ff; border: 2px solid #3498db; z-index: 1;}
-    td.today-highlight .date-num { color: #2980b9; font-weight: 800; }
-    .date-num { font-weight: 700; color: #bdc3c7; font-size: 0.75rem; margin-bottom: 4px; display: block; }
-    td.active-month .date-num { color: var(--text-main); }
-    
-    .tag { display: block; padding: 3px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; color: white; margin-top: 2px; line-height: 1.2; word-break: break-word; }
-    .tag.tday { background-color: #c0392b; }
-    .tag.regen { background-color: #27ae60; }
-    .tag.bewaehrung { background-color: #f39c12; color: #fff; }
-    .tag.ausrutscher { background-color: #e74c3c; }
-    .tag.nirvana { background-color: #3498db; }
-    .tag.target-flag { background-color: #8e44ad; color: white; border: 1px solid #732d91;}
-
-    .legend { display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center; margin-top: 1rem; font-size: 0.8rem; color: #666; }
-    .legend span { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 6px; vertical-align: middle; border: 1px solid rgba(0,0,0,0.1); }
-    .legend span.l-tday { background-color: #c0392b; }
-    .legend span.l-aus { background-color: #e74c3c; }
-    .legend span.l-bew { background-color: #f39c12; }
-    .legend span.l-reg { background-color: #27ae60; }
-    .legend span.l-nir { background-color: #3498db; }
-    
-    .setup-overlay { display: none; text-align: center; padding: 2rem; background: #fffcf5; border-radius: 12px; border: 2px dashed #f1c40f; margin-bottom: 1rem;}
-
-    /* --- ARCHIV & STATS STYLES --- */
-    .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 1.5rem;}
-    .stat-box { background: #f8f9fa; border-radius: 12px; padding: 15px; text-align: center; border: 1px solid #e9ecef;}
-    .stat-val { font-size: 1.8rem; font-weight: 800; color: var(--text-main); line-height: 1.2;}
-    .stat-label { font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: #7f8c8d; letter-spacing: 0.5px;}
-    .stat-val.gold { color: #f39c12; }
-    .stat-val.blue { color: #3498db; }
-    .stat-val.danger { color: var(--danger); }
-
-    .trigger-box { background: #fffcf5; border: 1px solid #fcf3cf; border-radius: 12px; padding: 15px; margin-bottom: 1.5rem; font-size: 0.9rem;}
-    .trigger-box ul { padding-left: 20px; margin: 5px 0 0 0;}
-    .trigger-box li { margin-bottom: 8px; color: #555;}
-
-    .archive-card { border: 1px solid #e0e0e0; border-radius: 12px; padding: 15px; margin-bottom: 15px; background: #fafafa; border-left: 5px solid #bdc3c7;}
-    .archive-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 10px;}
-    .archive-title { font-weight: 800; color: #2c3e50; font-size: 1.1rem;}
-    .archive-badge { background: #e9ecef; font-size: 0.75rem; padding: 4px 8px; border-radius: 8px; font-weight: 700; color: #666;}
-    .archive-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.85rem; color: #555;}
-    
-    #fileInput { display: none; }
-
-    /* ================= EASTER EGG: BREATHE MODULE STYLES (Strictly Isolated) ================= */
-    .br-overlay {
-        display: none;
-        position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-        background-color: #1a252f; /* Beruhigendes, tiefes Blau */
-        z-index: 9999;
-        flex-direction: column; align-items: center; justify-content: center;
-        color: #ecf0f1; font-family: inherit;
-        animation: fadeIn 0.4s ease;
-    }
-    .br-close-btn {
-        position: absolute; top: 20px; right: 20px;
-        background: rgba(255,255,255,0.1); border: none; color: white;
-        padding: 8px 15px; border-radius: 20px; font-weight: bold; cursor: pointer;
-        transition: background 0.2s;
-    }
-    .br-close-btn:hover { background: rgba(255,255,255,0.2); }
-    
-    .br-setup-card { text-align: center; max-width: 300px; padding: 20px; }
-    .br-setup-card h2 { margin-top: 0; font-size: 1.8rem; color: #3498db; }
-    .br-setup-card p { opacity: 0.8; font-size: 0.9rem; margin-bottom: 20px; }
-    .br-setup-input {
-        width: 100px; padding: 10px; font-size: 1.5rem; text-align: center;
-        background: rgba(255,255,255,0.05); color: white; border: 2px solid #3498db;
-        border-radius: 12px; margin-bottom: 20px; outline: none;
-    }
-    .br-start-btn {
-        width: 100%; padding: 15px; background: #3498db; color: white; border: none;
-        border-radius: 12px; font-size: 1.1rem; font-weight: 800; cursor: pointer;
-    }
-    
-    .br-active-area { display: none; text-align: center; flex-direction: column; align-items: center;}
-    .br-circle-container {
-        position: relative; width: 250px; height: 250px;
-        display: flex; align-items: center; justify-content: center; margin-bottom: 40px;
-    }
-    .br-circle {
-        position: absolute;
-        width: 100px; height: 100px;
-        border-radius: 50%;
-        background: rgba(52, 152, 219, 0.2);
-        border: 4px solid #3498db;
-        box-shadow: 0 0 30px rgba(52, 152, 219, 0.4);
-    }
-    .br-text { position: relative; z-index: 2; font-size: 1.5rem; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
-    .br-timer { font-size: 1.2rem; font-weight: bold; opacity: 0.5; font-variant-numeric: tabular-nums; }
-    .br-done-msg { display: none; text-align: center; animation: fadeIn 0.5s; }
-  </style>
-</head>
-<body>
-
-  <!-- PWA UPDATE BANNER -->
-  <div id="update-banner">
-      🚀 Eine neue App-Version ist verfügbar!
-      <div class="sandbox-actions">
-          <button class="btn-sandbox" onclick="applyPwaUpdate()">Jetzt aktualisieren</button>
-      </div>
-  </div>
-
-  <div id="sandbox-banner">
-      🧪 SIMULATIONS-MODUS AKTIV
-      <div class="sandbox-actions">
-          <button class="btn-sandbox" onclick="applySandboxGoal()">🎯 Als Ziel für Realität setzen</button>
-          <button class="btn-sandbox danger" onclick="closeSandbox()">❌ Verlassen</button>
-      </div>
-  </div>
-
-  <!-- EASTER EGG ENTRY: Klick auf den Header öffnet die Atemübung -->
-  <header onclick="openBreatheOverlay()" title="Geheime Atem-Übung öffnen">
-    <h1>🧪 ReTrack</h1>
-    <div class="version">Version 8.1 – Journaling & Therapie</div>
-  </header>
-
-  <div class="tabs">
-    <button class="tab-btn active" onclick="switchTab('dashboard')">🏠 Heute</button>
-    <button class="tab-btn" onclick="switchTab('historie')">⚙️ Aktuell</button>
-    <button class="tab-btn" onclick="switchTab('archiv')">🏛️ Archiv</button>
-  </div>
-
-  <!-- Global File Input for Import -->
-  <input type="file" id="fileInput" accept=".json" onchange="importData(this)">
-
-  <!-- ================= TAB 1: DASHBOARD ================= -->
-  <div id="tab-dashboard" class="tab-content active">
-    
-    <div id="setup-warning" class="setup-overlay">
-        <h3>Willkommen bei ReTrack (v8.1)! 👋</h3>
+        <h3>Willkommen bei ReTrack (v8.3)! 👋</h3>
         <p>Lege deinen ersten Zyklus an oder lade ein bestehendes Backup.</p>
         <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 15px;">
             <button class="btn-tool" style="background:var(--header-bg); border:none; color:white;" onclick="switchTab('historie')">✏️ Neuen Zyklus starten</button>
@@ -752,7 +414,6 @@
                 <div id="dash-sub" class="eta-subtext"></div>
             </div>
 
-            <!-- Sandbox Trigger (Ring Klick) -->
             <div class="ring-wrapper" onclick="openSandbox()" title="Geheimes Labor öffnen">
                 <svg viewBox="0 0 36 36" class="circular-chart">
                     <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
@@ -778,13 +439,12 @@
             <div id="daily-done-area" style="display:none; text-align: center; padding: 15px; background: #f0fdf4; border-radius: 12px; color: #155724; border: 1px solid #c3e6cb;">
                 <div style="font-weight: 800; font-size: 1.1rem; margin-bottom: 5px;">✅ Eintrag gespeichert!</div>
                 <div style="font-size: 0.9rem; opacity: 0.9;">Die Statistik wurde aktualisiert.</div>
-                <span class="undo-link" onclick="undoToday()">Eintrag für heute ändern / löschen</span>
+                <span class="undo-link" onclick="editToday()">Eintrag für heute bearbeiten / löschen</span>
             </div>
         </div>
     </div>
   </div>
 
-  <!-- ================= TAB 2: AKTUELLER ZYKLUS ================= -->
   <div id="tab-historie" class="tab-content">
     <div class="card" id="base-form-card">
       <h3>📊 Start des aktuellen Zyklus</h3>
@@ -835,7 +495,6 @@
     </div>
   </div>
 
-  <!-- ================= TAB 3: ARCHIV & STATS ================= -->
   <div id="tab-archiv" class="tab-content">
     <div class="card">
         <h3>📈 Deine Life-Tracker Statistiken</h3>
@@ -861,7 +520,6 @@
             </div>
         </div>
         
-        <!-- NEU IN 8.1: Therapie & Fokus Statistik -->
         <h4 style="color:#7f8c8d; margin-top: 1.5rem; margin-bottom: 10px; font-size:0.85rem; text-transform:uppercase;">🧘‍♂️ Therapie & Fokus</h4>
         <div class="stat-grid" style="margin-bottom: 1.5rem;">
             <div class="stat-box" style="background: #ebf5fb; border-color: #d6eaf8;">
@@ -890,8 +548,6 @@
     </div>
   </div>
 
-  <!-- ================= CUSTOM MODALS ================= -->
-  
   <div id="modal-alert" class="modal-overlay">
     <div class="modal-card" style="text-align:center;">
       <h3>ℹ️ Hinweis</h3>
@@ -911,7 +567,6 @@
     </div>
   </div>
 
-  <!-- Ausrutscher / Pause Modals ... -->
   <div id="modal-ausrutscher" class="modal-overlay">
     <div class="modal-card">
       <h3 style="color:var(--danger)">🔴 Ausrutscher loggen</h3>
@@ -1015,17 +670,16 @@
           </div>
       </div>
       <div class="modal-actions-row" style="margin-top: 20px;">
+          <button class="btn-tool" style="border-color:#fadbd8; color:var(--danger); flex: 0.4; padding: 10px 5px;" onclick="deleteEditDay()" title="Eintrag löschen">🗑️</button>
           <button class="btn-tool" onclick="closeModal('modal-edit-day')">Abbrechen</button>
           <button class="btn-quick btn-pausiert" style="background:var(--text-main)" onclick="submitEditDay()">Speichern</button>
       </div>
     </div>
   </div>
 
-  <!-- ================= EASTER EGG: BREATHE OVERLAY ================= -->
   <div id="breathe-overlay" class="br-overlay">
       <button class="br-close-btn" onclick="abortBreathe()">❌ Beenden</button>
       
-      <!-- Setup Phase -->
       <div id="br-setup" class="br-setup-card">
           <h2>Atem-Meditation</h2>
           <p>Beruhige dein Nervensystem mit der 4-4-4-4 Box-Breathing Methode.</p>
@@ -1034,7 +688,6 @@
           <button class="br-start-btn" onclick="startBreathe()">Starten</button>
       </div>
 
-      <!-- Active Phase -->
       <div id="br-active" class="br-active-area">
           <div class="br-circle-container">
               <div id="br-circle" class="br-circle"></div>
@@ -1043,7 +696,6 @@
           <div id="br-timer" class="br-timer">--:--</div>
       </div>
 
-      <!-- Done Phase -->
       <div id="br-done" class="br-done-msg">
           <div style="font-size:4rem; margin-bottom:10px;">🧘‍♂️</div>
           <h2 style="color:#27ae60; margin:0 0 10px 0;">Sehr gut gemacht.</h2>
@@ -1053,10 +705,8 @@
   </div>
 
 <script>
-  // Haupt-Datenstamm der App. 
-  // In v8.1 neu hinzugefügt: "breatheLogs" als isoliertes Objekt (Datum -> Anzahl)
   let appData = {
-      version: 8.1,
+      version: 8.3,
       cycles: [],
       breatheLogs: {} 
   };
@@ -1065,7 +715,13 @@
   let sandboxData = null;
 
   const getApp = () => isSandbox ? sandboxData : appData;
-  const getActiveCycle = () => getApp().cycles.find(c => c.status === 'active');
+  
+  // V8.3 Crash-Protection: getActiveCycle sicher machen für den Fall fehlerhafter Daten
+  const getActiveCycle = () => {
+      const app = getApp();
+      if (!app || !Array.isArray(app.cycles)) return undefined;
+      return app.cycles.find(c => c.status === 'active');
+  };
   
   let globalSimResults = []; 
   let activeSimResult = null;
@@ -1117,14 +773,11 @@
       }
   });
   
-  // --- VISIBILITY & BACKGROUND HANDLING (Erweitert für Breathe-Feature) ---
+  // --- VISIBILITY & BACKGROUND HANDLING ---
   document.addEventListener("visibilitychange", () => {
-      // 1. Wenn die App in den Hintergrund geht und die Atemübung läuft -> Abbrechen!
       if (document.visibilityState === 'hidden' && isBreatheActive) {
-          abortBreathe(); // Sichert Akku, Audio und Timing
+          abortBreathe(); 
       }
-      
-      // 2. Normale Reload-Logik beim Wiederkehren (wenn nicht in Sandbox)
       if (document.visibilityState === 'visible' && !isSandbox && !isBreatheActive) {
           const nowStr = toIsoString(new Date());
           if (nowStr !== lastRenderDateStr) {
@@ -1137,7 +790,8 @@
   // --- SANDBOX CONTROL ---
   function openSandbox() {
       if(isSandbox) return;
-      if(!appData.cycles || appData.cycles.length === 0) return customAlert("Du musst erst einen echten Zyklus anlegen, bevor du simulieren kannst.");
+      const app = getApp();
+      if(!app || !Array.isArray(app.cycles) || app.cycles.length === 0) return customAlert("Du musst erst einen echten Zyklus anlegen, bevor du simulieren kannst.");
       
       isSandbox = true;
       sandboxData = JSON.parse(JSON.stringify(appData)); 
@@ -1184,27 +838,41 @@
   // --- DATA MANAGEMENT ---
   function loadData() {
       const saved = localStorage.getItem('regenAppData_v6') || localStorage.getItem('regenAppData_v5');
+      
+      // V8.3 FIX: Eiserner Fallback für absolut fehlende oder zerstörte Daten
+      let parsedData = { version: 8.3, cycles: [], breatheLogs: {} };
+      
       if (saved) {
           try { 
               let data = JSON.parse(saved); 
-              // Abwärtskompatibilität und Struktur-Upgrade
-              if (data.version >= 5) {
-                  data.version = 8.1; 
-                  appData = data;
-                  // Sicherstellen, dass das neue breatheLogs Objekt bei alten Backups existiert
-                  appData.breatheLogs = data.breatheLogs || {};
-              } else if (!data.cycles && data.base) { 
-                  appData = { version: 8.1, cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }], breatheLogs: {} };
+              if (data && typeof data === 'object') {
+                  if (data.version >= 5) {
+                      parsedData = data;
+                      parsedData.version = 8.3; 
+                  } else if (!data.cycles && data.base) { 
+                      parsedData.cycles = [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }];
+                  } else if (data.tDays !== undefined && !data.base) {
+                      let base = { start: data.startDate, end: data.endDate, tDays: parseInt(data.tDays)||0, sLevel: parseInt(data.stress)||0, aLevel: parseInt(data.alcohol)||0, isOpen: false };
+                      let logs = {}; if(data.interruptions) { data.interruptions.forEach(int => { logs[int.start] = { type: 'ausrutscher', t: parseInt(int.t)||1, s: parseInt(int.s)||0, a: parseInt(int.a)||0 }; }); }
+                      parsedData.cycles = [{ id: Date.now(), status: 'active', base: base, logs: logs }];
+                  }
               }
-          } catch(e) { console.error("Save data corrupted."); }
+          } catch(e) { console.error("Speicherdaten sind korrupt. Starte mit leerem Safe-State.", e); }
       }
       
+      // V8.3 FIX: Absolute Sicherheits-Garantie für kritische Arrays
+      parsedData.cycles = Array.isArray(parsedData.cycles) ? parsedData.cycles : [];
+      parsedData.breatheLogs = parsedData.breatheLogs || {};
+      
+      appData = parsedData;
+      
       const active = getActiveCycle();
+      
       if (!active) {
           const setupDiv = document.getElementById('setup-warning');
           setupDiv.style.display = 'block';
           
-          if (getApp().cycles.length > 0) {
+          if (appData.cycles.length > 0) {
               setupDiv.innerHTML = `
                   <h3>Bereit für einen neuen Zyklus? 🚀</h3>
                   <p>Dein letzter Zyklus ist abgeschlossen. Du findest deine Historie im Archiv.</p>
@@ -1249,8 +917,7 @@
           localStorage.removeItem('regenAppData_v5'); 
           localStorage.removeItem('regenAppData_v6'); 
           localStorage.removeItem('regenAppData_v7');
-          // Auch breatheLogs werden hier sauber geleert
-          appData = { version: 8.1, cycles: [], breatheLogs: {} };
+          appData = { version: 8.3, cycles: [], breatheLogs: {} };
           
           customAlert("Alle Daten wurden erfolgreich gelöscht. Die App startet nun sauber neu.", () => {
               window.location.href = window.location.href.split('?')[0];
@@ -1288,7 +955,7 @@
       let showSandboxLockWarning = false;
       if (isSandbox) {
           const realActive = appData.cycles.find(c => c.status === 'active');
-          if (active.id === realActive.id && realActive && activeSimResult && activeSimResult.dashState && activeSimResult.dashState.debt > 0) {
+          if (active.id === realActive?.id && realActive && activeSimResult && activeSimResult.dashState && activeSimResult.dashState.debt > 0) {
               isBaseLocked = true;
               showSandboxLockWarning = true;
           }
@@ -1360,20 +1027,9 @@
       saveData();
   }
 
-  function undoToday() {
+  function editToday() {
       const todayStr = toIsoString(new Date());
-      let active = getActiveCycle();
-      if (active && active.base.start === todayStr && Object.keys(active.logs).length === 0 && getApp().cycles.length > 1) {
-          getApp().cycles.pop(); 
-          active = getApp().cycles[getApp().cycles.length - 1];
-          active.status = 'active'; 
-          saveData();
-          return;
-      }
-      if(active && active.logs[todayStr]) {
-          delete active.logs[todayStr];
-          saveData();
-      }
+      openDiaryEdit(todayStr);
   }
 
   function openAusrutscherModal(isPast = false) { 
@@ -1400,10 +1056,14 @@
       if(!isSandbox && dStr > todayStr) return customAlert("Keine Logs in der Zukunft möglich!");
 
       let active = getActiveCycle();
+      
       if (activeSimResult && activeSimResult.dashState && activeSimResult.dashState.debt <= 0) {
           if (dStr > toIsoString(activeSimResult.finalEnd)) {
               active.status = 'archived';
               const newCycle = { id: Date.now(), status: 'active', base: { start: dStr, end: addDays(parseLocal(dStr), t-1).toISOString().split('T')[0], tDays: t, sLevel: s, aLevel: a, isOpen: true }, logs: {} };
+              if (mood > 0 || note !== "") {
+                  newCycle.logs[dStr] = { mood: mood, note: note };
+              }
               getApp().cycles.push(newCycle);
               closeModal('modal-ausrutscher');
               saveData(); return;
@@ -1463,7 +1123,6 @@
           let formattedDate = curr.toLocaleDateString('de-DE', {weekday: 'short', day: '2-digit', month: '2-digit'});
           let monthYear = curr.toLocaleDateString('de-DE', {month: 'long', year: 'numeric'});
           
-          // Neu in 8.1: Hole den Atemübungs-Zähler für diesen Tag sicher aus der globalen Datenbank
           let breatheCount = getApp().breatheLogs?.[dStr] || 0;
 
           if (isBaseDay) {
@@ -1474,7 +1133,6 @@
                   curr.setDate(curr.getDate() + log.t - 1); 
               }
           } else if (dStr <= todayStr) {
-              // Auch an impliziten Pausentagen (ohne händischen Log) kann meditiert worden sein!
               items.push({dStr, formattedDate, monthYear, log: null, isImplicit: true, isBase: false, breatheCount});
           }
           curr.setDate(curr.getDate() + 1);
@@ -1510,7 +1168,6 @@
               let noteStr = (item.log && item.log.note) ? `<div class="diary-note">${escapeHTML(item.log.note)}</div>` : "";
               let moodStr = (item.log && item.log.mood > 0) ? moodEmojis[item.log.mood] : "➖";
               
-              // Zeigt den blauen Meditations-Badge, falls geatmet wurde
               let breatheStr = item.breatheCount > 0 ? `<span style="color:#2980b9; font-weight:900; margin-left:8px;">🧘‍♂️ ${item.breatheCount}x</span>` : "";
 
               if (item.isBase) {
@@ -1603,6 +1260,40 @@
       if(document.getElementById('diary-container').style.display === 'block') renderDiaryList();
   }
 
+  function deleteEditDay() {
+      const active = getActiveCycle();
+      const dStr = document.getElementById('edit-day-date').value;
+
+      if (active.base.start === dStr && getApp().cycles.length > 1) {
+          let hasRealLogs = Object.keys(active.logs).some(k => active.logs[k].type === 'pause' || active.logs[k].type === 'ausrutscher');
+          
+          if (!hasRealLogs) {
+              customConfirm("Möchtest du diesen neu gestarteten Zyklus komplett löschen und deinen alten Zyklus aus dem Archiv zurückholen?", () => {
+                  getApp().cycles.pop(); 
+                  getApp().cycles[getApp().cycles.length - 1].status = 'active'; 
+                  closeModal('modal-edit-day');
+                  saveData();
+                  if(document.getElementById('diary-container').style.display === 'block') renderDiaryList();
+              });
+              return;
+          } else {
+              customAlert("Dieser Zyklus hat bereits weitere Einträge. Du kannst das Startdatum nicht löschen. Ändere stattdessen die Start-Parameter im 'Aktuell'-Tab.");
+              return;
+          }
+      }
+
+      if (active.logs[dStr]) {
+          customConfirm("Möchtest du den Tagebucheintrag für diesen Tag unwiderruflich löschen?", () => {
+              delete active.logs[dStr];
+              closeModal('modal-edit-day');
+              saveData();
+              if(document.getElementById('diary-container').style.display === 'block') renderDiaryList();
+          });
+      } else {
+          customAlert("An diesem Tag gibt es keinen spezifischen Eintrag zum Löschen.");
+      }
+  }
+
   function exportDiaryTxt() {
       const active = getActiveCycle();
       if(!active || !active.base || !active.base.start) return customAlert("Es gibt noch keinen aktiven Zyklus zum Exportieren.");
@@ -1641,8 +1332,9 @@
 
   // --- ENGINE ---
   function runAllSimulations() {
-      globalSimResults = getApp().cycles.map(cycle => simulateCycle(cycle));
-      activeSimResult = globalSimResults[globalSimResults.length - 1];
+      // V8.3 FIX: Safe map über cycles um crashes zu vermeiden
+      globalSimResults = (getApp().cycles || []).map(cycle => simulateCycle(cycle));
+      activeSimResult = globalSimResults.length > 0 ? globalSimResults[globalSimResults.length - 1] : null;
       updateUI();
   }
 
@@ -1821,7 +1513,7 @@
 
       const activeCycle = getActiveCycle();
       
-      if (!isSandbox && activeCycle.targetETA) {
+      if (!isSandbox && activeCycle && activeCycle.targetETA) {
           const targetDateObj = parseLocal(activeCycle.targetETA);
           const diff = diffDays(res.finalEnd, targetDateObj);
           targetTracker.style.display = 'block';
@@ -1963,7 +1655,8 @@
 
       let allPastAusrutscherDates = [];
 
-      getApp().cycles.forEach((cycle, index) => {
+      // V8.3 FIX: Safe iteration
+      (getApp().cycles || []).forEach((cycle, index) => {
           const res = globalSimResults[index];
           if(!res) return;
 
@@ -2034,8 +1727,7 @@
       document.getElementById('stat-total-days').textContent = pastDaysTracked;
       document.getElementById('stat-avg-ausrutscher').textContent = avgAus;
 
-      // ================= NEU IN 8.1 =================
-      // Berechne die globalen Atemübungs-Statistiken
+      // Therapie & Fokus Statistik
       let totalBreatheSessions = 0;
       if (getApp().breatheLogs) {
           Object.values(getApp().breatheLogs).forEach(count => totalBreatheSessions += count);
@@ -2047,7 +1739,6 @@
       
       document.getElementById('stat-breathe-total').textContent = totalBreatheSessions;
       document.getElementById('stat-breathe-avg').textContent = avgBreathePerWeek;
-      // ==============================================
 
       let triggersHtml = "";
       allPastAusrutscherDates.sort();
@@ -2116,7 +1807,7 @@
       // Archiv-Karten
       const archContainer = document.getElementById('archive-container');
       archContainer.innerHTML = "";
-      const archived = getApp().cycles.filter(c => c.status === 'archived');
+      const archived = (getApp().cycles || []).filter(c => c.status === 'archived');
       if (archived.length === 0) {
           archContainer.innerHTML = "<p style='color:#7f8c8d; text-align:center;'>Noch keine Zyklen abgeschlossen.</p>";
       } else {
@@ -2165,19 +1856,22 @@
                   input.value = '';
                   customAlert("Simulation erfolgreich in die Sandbox geladen!");
               } else {
+                  // V8.3 Import-Sanierung
                   if (data.version >= 5) { 
-                      data.version = 8.1; appData = data; 
-                      if(!appData.breatheLogs) appData.breatheLogs = {};
+                      data.version = 8.3; appData = data; 
                   } else if (data.base && !data.cycles) { 
-                      appData = { version: 8.1, cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }], breatheLogs: {} };
+                      appData = { version: 8.3, cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }] };
                   } else if (data.tDays !== undefined && !data.base) {
                       let base = { start: data.startDate, end: data.endDate, tDays: parseInt(data.tDays)||0, sLevel: parseInt(data.stress)||0, aLevel: parseInt(data.alcohol)||0, isOpen: false };
                       let logs = {}; if(data.interruptions) { data.interruptions.forEach(int => { logs[int.start] = { type: 'ausrutscher', t: parseInt(int.t)||1, s: parseInt(int.s)||0, a: parseInt(int.a)||0 }; }); }
-                      appData = { version: 8.1, cycles: [{ id: Date.now(), status: 'active', base: base, logs: logs }], breatheLogs: {} };
+                      appData = { version: 8.3, cycles: [{ id: Date.now(), status: 'active', base: base, logs: logs }] };
                   } else { 
                       appData = data; 
-                      if(!appData.breatheLogs) appData.breatheLogs = {};
                   }
+                  
+                  // Absichern des Imports
+                  appData.cycles = Array.isArray(appData.cycles) ? appData.cycles : [];
+                  appData.breatheLogs = appData.breatheLogs || {};
                   
                   saveData(true); 
                   
@@ -2213,7 +1907,7 @@
       const sLevels = ['Kein', 'Moderat', 'Hoch'];
       const aLevels = ['Kein', 'Moderat', 'Hoch'];
       
-      let desc = isSandbox ? `ReTrack SIMULATION\n\n` : `ReTrack V8.1\n\n`;
+      let desc = isSandbox ? `ReTrack SIMULATION\n\n` : `ReTrack V8.3\n\n`;
       desc += `--- Basis-Phase ---\n`;
       desc += `Start: ${parseLocal(activeCycle.base.start).toLocaleDateString('de-DE')}\n`;
       desc += `T-Tage: ${activeCycle.base.tDays}d\n`;
@@ -2281,7 +1975,7 @@
   }
 
   // =========================================================================
-  // EASTER EGG: BREATHE MODULE (Isoliert von restlicher App, Sandbox-Immun)
+  // EASTER EGG: BREATHE MODULE
   // =========================================================================
   
   let isBreatheActive = false;
@@ -2336,10 +2030,9 @@
       const now = audioCtx.currentTime;
 
       if (phase === 0) { 
-          // Phase 1: Einatmen (Heller, ansteigender Gong)
           osc.type = 'sine';
-          osc.frequency.setValueAtTime(261.63, now); // C4
-          osc.frequency.linearRampToValueAtTime(329.63, now + 4); // E4
+          osc.frequency.setValueAtTime(261.63, now); 
+          osc.frequency.linearRampToValueAtTime(329.63, now + 4); 
           gain.gain.setValueAtTime(0, now);
           gain.gain.linearRampToValueAtTime(0.3, now + 1);
           gain.gain.setValueAtTime(0.3, now + 3);
@@ -2347,19 +2040,17 @@
           osc.start(now);
           osc.stop(now + 4);
       } else if (phase === 1) { 
-          // Phase 2: Halten Oben (Heller Triangel-Ping)
           osc.type = 'triangle';
-          osc.frequency.setValueAtTime(659.25, now); // E5
+          osc.frequency.setValueAtTime(659.25, now); 
           gain.gain.setValueAtTime(0, now);
           gain.gain.linearRampToValueAtTime(0.15, now + 0.05);
           gain.gain.exponentialRampToValueAtTime(0.001, now + 2); 
           osc.start(now);
           osc.stop(now + 2);
       } else if (phase === 2) { 
-          // Phase 3: Ausatmen (Tiefer, absteigender Gong)
           osc.type = 'sine';
-          osc.frequency.setValueAtTime(329.63, now); // E4
-          osc.frequency.linearRampToValueAtTime(196.00, now + 4); // G3
+          osc.frequency.setValueAtTime(329.63, now); 
+          osc.frequency.linearRampToValueAtTime(196.00, now + 4); 
           gain.gain.setValueAtTime(0, now);
           gain.gain.linearRampToValueAtTime(0.3, now + 1);
           gain.gain.setValueAtTime(0.3, now + 3);
@@ -2367,12 +2058,11 @@
           osc.start(now);
           osc.stop(now + 4);
       } else if (phase === 3) { 
-          // Phase 4: Halten Unten (Angepasst für V8.1: Klarer A4 Ping statt dumpfem Ton)
           osc.type = 'triangle'; 
-          osc.frequency.setValueAtTime(440.00, now); // A4 (Perfekt hörbar auf Handys)
+          osc.frequency.setValueAtTime(440.00, now); 
           gain.gain.setValueAtTime(0, now);
-          gain.gain.linearRampToValueAtTime(0.2, now + 0.05); // Zügiger Attack
-          gain.gain.exponentialRampToValueAtTime(0.001, now + 1.5); // Sauberes Ausklingen
+          gain.gain.linearRampToValueAtTime(0.2, now + 0.05); 
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 1.5); 
           osc.start(now);
           osc.stop(now + 1.5);
       }
@@ -2448,13 +2138,11 @@
       brAnimationId = requestAnimationFrame(breatheLoop);
   }
 
-  // Erfolgreiches Ende - Sandbox-Bypass und Speicherung in Version 8.1
   function finishBreathe() {
       isBreatheActive = false;
       cancelAnimationFrame(brAnimationId);
       releaseWakeLock();
       
-      // Abschluss-Ton
       if (audioCtx) {
           const now = audioCtx.currentTime;
           const osc = audioCtx.createOscillator();
@@ -2468,22 +2156,17 @@
       document.getElementById('br-active').style.display = 'none';
       document.getElementById('br-done').style.display = 'block';
 
-      // --- LOGIK V8.1: ATEMÜBUNG SICHER SPEICHERN ---
       const todayStr = toIsoString(new Date());
       
-      // Egal ob Sandbox oder nicht, appData.breatheLogs ist die echte Realität!
       if (!appData.breatheLogs) appData.breatheLogs = {};
       appData.breatheLogs[todayStr] = (appData.breatheLogs[todayStr] || 0) + 1;
       
-      // Sandbox Bypass: Erzwinge sofortiges Speichern der Realität
       localStorage.setItem('regenAppData_v6', JSON.stringify(appData));
       
-      // Damit die UI auch in der Sandbox sofort aktualisiert wird, falls offen:
       if (isSandbox && sandboxData) {
           sandboxData.breatheLogs = JSON.parse(JSON.stringify(appData.breatheLogs));
       }
 
-      // UI im Hintergrund aktualisieren (Tagebuch und Archiv-Stats)
       updateUI();
       if (document.getElementById('diary-container').style.display === 'block') {
           renderDiaryList();
@@ -2529,3 +2212,4 @@
 </script>
 </body>
 </html>
+
