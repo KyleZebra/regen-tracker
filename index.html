@@ -9,7 +9,7 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
 
-  <title>ReTrack 8.0</title>
+  <title>ReTrack 8.1</title>
   
   <!-- PWA Setup -->
   <link rel="manifest" href="./manifest.json" />
@@ -72,9 +72,9 @@
       margin-bottom: 1rem;
       box-shadow: 0 4px 15px rgba(0,0,0,0.1);
       transition: background 0.3s ease, color 0.3s ease;
-      cursor: pointer; /* Signalisiert, dass der Header (für das Easter Egg) klickbar ist */
+      cursor: pointer; /* Signalisiert, dass der Header klickbar ist */
     }
-    header:active { transform: scale(0.98); } /* Kleines Klick-Feedback */
+    header:active { transform: scale(0.98); }
     header h1 { margin: 0; font-size: 1.6rem; font-weight: 800; text-transform: uppercase; letter-spacing: -0.5px; }
     header .version { font-weight: 600; opacity: 0.8; font-size: 0.85rem; margin-top: 0.2rem; }
 
@@ -90,7 +90,6 @@
       box-shadow: 0 4px 15px rgba(0,0,0,0.2);
     }
     
-    /* Update Banner Styles */
     #update-banner {
       display: none;
       background: #3498db;
@@ -357,7 +356,6 @@
         background: rgba(52, 152, 219, 0.2);
         border: 4px solid #3498db;
         box-shadow: 0 0 30px rgba(52, 152, 219, 0.4);
-        /* Animation wird via JS `transform: scale()` gesteuert für butterweiche 60fps */
     }
     .br-text { position: relative; z-index: 2; font-size: 1.5rem; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
     .br-timer { font-size: 1.2rem; font-weight: bold; opacity: 0.5; font-variant-numeric: tabular-nums; }
@@ -385,7 +383,7 @@
   <!-- EASTER EGG ENTRY: Klick auf den Header öffnet die Atemübung -->
   <header onclick="openBreatheOverlay()" title="Geheime Atem-Übung öffnen">
     <h1>🧪 ReTrack</h1>
-    <div class="version">Version 8.0 – Journaling & Therapie</div>
+    <div class="version">Version 8.1 – Journaling & Therapie</div>
   </header>
 
   <div class="tabs">
@@ -394,15 +392,14 @@
     <button class="tab-btn" onclick="switchTab('archiv')">🏛️ Archiv</button>
   </div>
 
-  <!-- Global File Input for Import (ONLY ONE IN ENTIRE DOM) -->
+  <!-- Global File Input for Import -->
   <input type="file" id="fileInput" accept=".json" onchange="importData(this)">
 
   <!-- ================= TAB 1: DASHBOARD ================= -->
   <div id="tab-dashboard" class="tab-content active">
     
-    <!-- Empty State / Setup Warning -->
     <div id="setup-warning" class="setup-overlay">
-        <h3>Willkommen bei ReTrack (v8.0)! 👋</h3>
+        <h3>Willkommen bei ReTrack (v8.1)! 👋</h3>
         <p>Lege deinen ersten Zyklus an oder lade ein bestehendes Backup.</p>
         <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 15px;">
             <button class="btn-tool" style="background:var(--header-bg); border:none; color:white;" onclick="switchTab('historie')">✏️ Neuen Zyklus starten</button>
@@ -530,6 +527,19 @@
             </div>
         </div>
         
+        <!-- NEU IN 8.1: Therapie & Fokus Statistik -->
+        <h4 style="color:#7f8c8d; margin-top: 1.5rem; margin-bottom: 10px; font-size:0.85rem; text-transform:uppercase;">🧘‍♂️ Therapie & Fokus</h4>
+        <div class="stat-grid" style="margin-bottom: 1.5rem;">
+            <div class="stat-box" style="background: #ebf5fb; border-color: #d6eaf8;">
+                <div class="stat-val" style="color: #2980b9;" id="stat-breathe-total">0</div>
+                <div class="stat-label">Atemübungen</div>
+            </div>
+            <div class="stat-box" style="background: #ebf5fb; border-color: #d6eaf8;">
+                <div class="stat-val" style="color: #2980b9;" id="stat-breathe-avg">0</div>
+                <div class="stat-label">Ø pro Woche</div>
+            </div>
+        </div>
+        
         <div class="trigger-box">
             <strong>🧠 Intelligente Verhaltensanalyse:</strong>
             <ul id="trigger-list">
@@ -548,7 +558,6 @@
 
   <!-- ================= CUSTOM MODALS ================= -->
   
-  <!-- Alert Modal -->
   <div id="modal-alert" class="modal-overlay">
     <div class="modal-card" style="text-align:center;">
       <h3>ℹ️ Hinweis</h3>
@@ -557,7 +566,6 @@
     </div>
   </div>
 
-  <!-- Confirm Modal -->
   <div id="modal-confirm" class="modal-overlay">
     <div class="modal-card" style="text-align:center;">
       <h3 style="color:var(--danger)">⚠️ Achtung</h3>
@@ -569,7 +577,7 @@
     </div>
   </div>
 
-  <!-- Ausrutscher Modal -->
+  <!-- Ausrutscher / Pause Modals ... -->
   <div id="modal-ausrutscher" class="modal-overlay">
     <div class="modal-card">
       <h3 style="color:var(--danger)">🔴 Ausrutscher loggen</h3>
@@ -603,7 +611,6 @@
     </div>
   </div>
 
-  <!-- Pause/Clean Modal -->
   <div id="modal-pause" class="modal-overlay">
     <div class="modal-card">
       <h3 style="color:var(--btn-calc)">🟢 Tagesabschluss</h3>
@@ -638,7 +645,6 @@
     </div>
   </div>
 
-  <!-- Universal Edit Modal (Tagebuch) -->
   <div id="modal-edit-day" class="modal-overlay">
     <div class="modal-card">
       <h3 id="edit-day-title">✏️ Tag bearbeiten</h3>
@@ -713,9 +719,12 @@
   </div>
 
 <script>
+  // Haupt-Datenstamm der App. 
+  // In v8.1 neu hinzugefügt: "breatheLogs" als isoliertes Objekt (Datum -> Anzahl)
   let appData = {
-      version: 8.0,
-      cycles: [] 
+      version: 8.1,
+      cycles: [],
+      breatheLogs: {} 
   };
   
   let isSandbox = false;
@@ -844,11 +853,14 @@
       if (saved) {
           try { 
               let data = JSON.parse(saved); 
+              // Abwärtskompatibilität und Struktur-Upgrade
               if (data.version >= 5) {
-                  data.version = 8.0; 
+                  data.version = 8.1; 
                   appData = data;
+                  // Sicherstellen, dass das neue breatheLogs Objekt bei alten Backups existiert
+                  appData.breatheLogs = data.breatheLogs || {};
               } else if (!data.cycles && data.base) { 
-                  appData = { version: 8.0, cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }] };
+                  appData = { version: 8.1, cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }], breatheLogs: {} };
               }
           } catch(e) { console.error("Save data corrupted."); }
       }
@@ -903,7 +915,8 @@
           localStorage.removeItem('regenAppData_v5'); 
           localStorage.removeItem('regenAppData_v6'); 
           localStorage.removeItem('regenAppData_v7');
-          appData = { version: 8.0, cycles: [] };
+          // Auch breatheLogs werden hier sauber geleert
+          appData = { version: 8.1, cycles: [], breatheLogs: {} };
           
           customAlert("Alle Daten wurden erfolgreich gelöscht. Die App startet nun sauber neu.", () => {
               window.location.href = window.location.href.split('?')[0];
@@ -1116,15 +1129,19 @@
           let formattedDate = curr.toLocaleDateString('de-DE', {weekday: 'short', day: '2-digit', month: '2-digit'});
           let monthYear = curr.toLocaleDateString('de-DE', {month: 'long', year: 'numeric'});
           
+          // Neu in 8.1: Hole den Atemübungs-Zähler für diesen Tag sicher aus der globalen Datenbank
+          let breatheCount = getApp().breatheLogs?.[dStr] || 0;
+
           if (isBaseDay) {
-              items.push({dStr, formattedDate, monthYear, log: log || {}, isImplicit: false, isBase: true});
+              items.push({dStr, formattedDate, monthYear, log: log || {}, isImplicit: false, isBase: true, breatheCount});
           } else if (log) {
-              items.push({dStr, formattedDate, monthYear, log, isImplicit: false, isBase: false});
+              items.push({dStr, formattedDate, monthYear, log, isImplicit: false, isBase: false, breatheCount});
               if (log.type === 'ausrutscher' && log.t > 1) {
                   curr.setDate(curr.getDate() + log.t - 1); 
               }
           } else if (dStr <= todayStr) {
-              items.push({dStr, formattedDate, monthYear, log: null, isImplicit: true, isBase: false});
+              // Auch an impliziten Pausentagen (ohne händischen Log) kann meditiert worden sein!
+              items.push({dStr, formattedDate, monthYear, log: null, isImplicit: true, isBase: false, breatheCount});
           }
           curr.setDate(curr.getDate() + 1);
       }
@@ -1158,19 +1175,22 @@
               let meta = "";
               let noteStr = (item.log && item.log.note) ? `<div class="diary-note">${escapeHTML(item.log.note)}</div>` : "";
               let moodStr = (item.log && item.log.mood > 0) ? moodEmojis[item.log.mood] : "➖";
+              
+              // Zeigt den blauen Meditations-Badge, falls geatmet wurde
+              let breatheStr = item.breatheCount > 0 ? `<span style="color:#2980b9; font-weight:900; margin-left:8px;">🧘‍♂️ ${item.breatheCount}x</span>` : "";
 
               if (item.isBase) {
                   badge = `<span class="diary-badge badge-base">⭐ Basis-Phase</span>`;
-                  meta = `Mood: ${moodStr}`;
+                  meta = `Mood: ${moodStr}${breatheStr}`;
               } else if (!item.isImplicit) {
                   badge = item.log.type === 'ausrutscher' ? `<span class="diary-badge badge-aus">🔴 Konsum (${item.log.t}d)</span>` : `<span class="diary-badge badge-pause">🟢 Pause</span>`;
-                  meta = `${sLevels[item.log.s||0]} | ${aLevels[item.log.a||0]} | Mood: ${moodStr}`;
+                  meta = `${sLevels[item.log.s||0]} | ${aLevels[item.log.a||0]} | Mood: ${moodStr}${breatheStr}`;
               } else {
                   badge = `<span class="diary-badge badge-pause" style="background:#e9ecef; color:#666;">⚪ Pause (Auto)</span>`;
-                  meta = `Fehlender Eintrag`;
+                  meta = `Kein Eintrag${breatheStr}`;
               }
 
-              html += `<div class="diary-item" style="${item.isImplicit ? 'opacity: 0.7;' : ''}">
+              html += `<div class="diary-item" style="${item.isImplicit && item.breatheCount === 0 ? 'opacity: 0.7;' : ''}">
                   <div style="flex:1;">
                       <div class="diary-date">${item.formattedDate}</div>
                       ${badge}
@@ -1680,6 +1700,21 @@
       document.getElementById('stat-total-days').textContent = pastDaysTracked;
       document.getElementById('stat-avg-ausrutscher').textContent = avgAus;
 
+      // ================= NEU IN 8.1 =================
+      // Berechne die globalen Atemübungs-Statistiken
+      let totalBreatheSessions = 0;
+      if (getApp().breatheLogs) {
+          Object.values(getApp().breatheLogs).forEach(count => totalBreatheSessions += count);
+      }
+      let avgBreathePerWeek = 0;
+      if (pastDaysTracked > 0) {
+          avgBreathePerWeek = (totalBreatheSessions / (pastDaysTracked / 7)).toFixed(1);
+      }
+      
+      document.getElementById('stat-breathe-total').textContent = totalBreatheSessions;
+      document.getElementById('stat-breathe-avg').textContent = avgBreathePerWeek;
+      // ==============================================
+
       let triggersHtml = "";
       allPastAusrutscherDates.sort();
 
@@ -1797,14 +1832,18 @@
                   customAlert("Simulation erfolgreich in die Sandbox geladen!");
               } else {
                   if (data.version >= 5) { 
-                      data.version = 8.0; appData = data; 
+                      data.version = 8.1; appData = data; 
+                      if(!appData.breatheLogs) appData.breatheLogs = {};
                   } else if (data.base && !data.cycles) { 
-                      appData = { version: 8.0, cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }] };
+                      appData = { version: 8.1, cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }], breatheLogs: {} };
                   } else if (data.tDays !== undefined && !data.base) {
                       let base = { start: data.startDate, end: data.endDate, tDays: parseInt(data.tDays)||0, sLevel: parseInt(data.stress)||0, aLevel: parseInt(data.alcohol)||0, isOpen: false };
                       let logs = {}; if(data.interruptions) { data.interruptions.forEach(int => { logs[int.start] = { type: 'ausrutscher', t: parseInt(int.t)||1, s: parseInt(int.s)||0, a: parseInt(int.a)||0 }; }); }
-                      appData = { version: 8.0, cycles: [{ id: Date.now(), status: 'active', base: base, logs: logs }] };
-                  } else { appData = data; }
+                      appData = { version: 8.1, cycles: [{ id: Date.now(), status: 'active', base: base, logs: logs }], breatheLogs: {} };
+                  } else { 
+                      appData = data; 
+                      if(!appData.breatheLogs) appData.breatheLogs = {};
+                  }
                   
                   saveData(true); 
                   
@@ -1840,7 +1879,7 @@
       const sLevels = ['Kein', 'Moderat', 'Hoch'];
       const aLevels = ['Kein', 'Moderat', 'Hoch'];
       
-      let desc = isSandbox ? `ReTrack SIMULATION\n\n` : `ReTrack V8.0\n\n`;
+      let desc = isSandbox ? `ReTrack SIMULATION\n\n` : `ReTrack V8.1\n\n`;
       desc += `--- Basis-Phase ---\n`;
       desc += `Start: ${parseLocal(activeCycle.base.start).toLocaleDateString('de-DE')}\n`;
       desc += `T-Tage: ${activeCycle.base.tDays}d\n`;
@@ -1908,28 +1947,26 @@
   }
 
   // =========================================================================
-  // EASTER EGG: BREATHE MODULE (Isoliert von restlicher App)
+  // EASTER EGG: BREATHE MODULE (Isoliert von restlicher App, Sandbox-Immun)
   // =========================================================================
   
   let isBreatheActive = false;
   let brAnimationId = null;
   let brStartTime = 0;
-  let brTotalDuration = 0; // In Millisekunden
+  let brTotalDuration = 0; 
   let brCurrentPhase = -1;
   let brWakeLock = null;
   let audioCtx = null;
 
-  // Öffnet das Overlay
   function openBreatheOverlay() {
       if (isBreatheActive) return;
       document.getElementById('breathe-overlay').style.display = 'flex';
       document.getElementById('br-setup').style.display = 'block';
       document.getElementById('br-active').style.display = 'none';
       document.getElementById('br-done').style.display = 'none';
-      document.getElementById('br-duration').value = 3; // Reset auf 3 Min
+      document.getElementById('br-duration').value = 3; 
   }
 
-  // Wake Lock anfragen (Display anlassen)
   async function requestWakeLock() {
       try {
           if ('wakeLock' in navigator) {
@@ -1947,7 +1984,6 @@
       }
   }
 
-  // Audio Context initialisieren (Muss durch User-Klick passieren)
   function initAudio() {
       if (!audioCtx) {
           audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -1957,7 +1993,6 @@
       }
   }
 
-  // Sound-Engine für die 4 Phasen
   function playPhaseSound(phase) {
       if (!audioCtx) return;
       const osc = audioCtx.createOscillator();
@@ -1982,8 +2017,8 @@
           osc.type = 'triangle';
           osc.frequency.setValueAtTime(659.25, now); // E5
           gain.gain.setValueAtTime(0, now);
-          gain.gain.linearRampToValueAtTime(0.15, now + 0.05); // Harter Attack
-          gain.gain.exponentialRampToValueAtTime(0.001, now + 2); // Sanftes Ausklingen
+          gain.gain.linearRampToValueAtTime(0.15, now + 0.05);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 2); 
           osc.start(now);
           osc.stop(now + 2);
       } else if (phase === 2) { 
@@ -1998,18 +2033,17 @@
           osc.start(now);
           osc.stop(now + 4);
       } else if (phase === 3) { 
-          // Phase 4: Halten Unten (Tiefer, hölzerner Block)
-          osc.type = 'sine';
-          osc.frequency.setValueAtTime(130.81, now); // C3
+          // Phase 4: Halten Unten (Angepasst für V8.1: Klarer A4 Ping statt dumpfem Ton)
+          osc.type = 'triangle'; 
+          osc.frequency.setValueAtTime(440.00, now); // A4 (Perfekt hörbar auf Handys)
           gain.gain.setValueAtTime(0, now);
-          gain.gain.linearRampToValueAtTime(0.4, now + 0.02); // Sehr harter Attack
-          gain.gain.exponentialRampToValueAtTime(0.001, now + 1); // Schnelles Ausklingen
+          gain.gain.linearRampToValueAtTime(0.2, now + 0.05); // Zügiger Attack
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 1.5); // Sauberes Ausklingen
           osc.start(now);
-          osc.stop(now + 1);
+          osc.stop(now + 1.5);
       }
   }
 
-  // Start der Übung
   function startBreathe() {
       const minutes = parseInt(document.getElementById('br-duration').value);
       if (isNaN(minutes) || minutes < 1 || minutes > 60) return customAlert("Bitte eine Dauer zwischen 1 und 60 Minuten wählen.");
@@ -2019,43 +2053,36 @@
       brStartTime = 0;
       brCurrentPhase = -1;
 
-      // UI Umschalten
       document.getElementById('br-setup').style.display = 'none';
       document.getElementById('br-active').style.display = 'flex';
       
       initAudio();
       requestWakeLock();
       
-      // Starte die 60FPS Animationsschleife
       brAnimationId = requestAnimationFrame(breatheLoop);
   }
 
-  // Die Haupt-Animationsschleife (Hochpräzise)
   function breatheLoop(timestamp) {
-      if (!isBreatheActive) return; // Sicherheits-Abbruch
+      if (!isBreatheActive) return; 
       if (!brStartTime) brStartTime = timestamp;
       
       const elapsed = timestamp - brStartTime;
       const timeLeft = brTotalDuration - elapsed;
 
-      // Ist die Zeit abgelaufen?
       if (timeLeft <= 0) {
           finishBreathe();
           return;
       }
 
-      // 1. Timer UI aktualisieren
       const secsLeft = Math.ceil(timeLeft / 1000);
       const m = String(Math.floor(secsLeft / 60)).padStart(2, '0');
       const s = String(secsLeft % 60).padStart(2, '0');
       document.getElementById('br-timer').textContent = `${m}:${s}`;
 
-      // 2. Phasen-Logik (Ein kompletter Box-Zyklus hat 16000ms)
       const cycleTime = elapsed % 16000;
-      let phase = Math.floor(cycleTime / 4000); // Ergibt 0, 1, 2 oder 3
-      let phaseProgress = (cycleTime % 4000) / 4000; // Fortschritt innerhalb der Phase (0.0 bis 1.0)
+      let phase = Math.floor(cycleTime / 4000); 
+      let phaseProgress = (cycleTime % 4000) / 4000; 
 
-      // Phase hat sich geändert -> Sound abspielen & Text anpassen
       if (phase !== brCurrentPhase) {
           brCurrentPhase = phase;
           playPhaseSound(phase);
@@ -2067,37 +2094,33 @@
           else if (phase === 3) { textEl.textContent = "Halten"; textEl.style.color = "#95a5a6"; }
       }
 
-      // 3. Kreis visualisieren (sanfte Skalierung)
       const circle = document.getElementById('br-circle');
       let scale = 1;
       
       if (phase === 0) {
-          // Wächst sanft (EaseInOut)
           const ease = phaseProgress < 0.5 ? 2 * phaseProgress * phaseProgress : 1 - Math.pow(-2 * phaseProgress + 2, 2) / 2;
-          scale = 1 + ease * 1.8; // Skaliert von 1 bis 2.8
+          scale = 1 + ease * 1.8; 
       } else if (phase === 1) {
-          scale = 2.8; // Bleibt groß
+          scale = 2.8; 
       } else if (phase === 2) {
-          // Schrumpft sanft (EaseInOut)
           const ease = phaseProgress < 0.5 ? 2 * phaseProgress * phaseProgress : 1 - Math.pow(-2 * phaseProgress + 2, 2) / 2;
-          scale = 2.8 - ease * 1.8; // Skaliert von 2.8 bis 1
+          scale = 2.8 - ease * 1.8; 
       } else if (phase === 3) {
-          scale = 1; // Bleibt klein
+          scale = 1; 
       }
       
       circle.style.transform = `scale(${scale})`;
 
-      // Nächster Frame
       brAnimationId = requestAnimationFrame(breatheLoop);
   }
 
-  // Erfolgreiches Ende
+  // Erfolgreiches Ende - Sandbox-Bypass und Speicherung in Version 8.1
   function finishBreathe() {
       isBreatheActive = false;
       cancelAnimationFrame(brAnimationId);
       releaseWakeLock();
       
-      // Abschluss-Ton (Doppel-Gong)
+      // Abschluss-Ton
       if (audioCtx) {
           const now = audioCtx.currentTime;
           const osc = audioCtx.createOscillator();
@@ -2110,15 +2133,33 @@
 
       document.getElementById('br-active').style.display = 'none';
       document.getElementById('br-done').style.display = 'block';
+
+      // --- LOGIK V8.1: ATEMÜBUNG SICHER SPEICHERN ---
+      const todayStr = toIsoString(new Date());
+      
+      // Egal ob Sandbox oder nicht, appData.breatheLogs ist die echte Realität!
+      if (!appData.breatheLogs) appData.breatheLogs = {};
+      appData.breatheLogs[todayStr] = (appData.breatheLogs[todayStr] || 0) + 1;
+      
+      // Sandbox Bypass: Erzwinge sofortiges Speichern der Realität
+      localStorage.setItem('regenAppData_v6', JSON.stringify(appData));
+      
+      // Damit die UI auch in der Sandbox sofort aktualisiert wird, falls offen:
+      if (isSandbox && sandboxData) {
+          sandboxData.breatheLogs = JSON.parse(JSON.stringify(appData.breatheLogs));
+      }
+
+      // UI im Hintergrund aktualisieren (Tagebuch und Archiv-Stats)
+      updateUI();
+      if (document.getElementById('diary-container').style.display === 'block') {
+          renderDiaryList();
+      }
   }
 
-  // Harter Abbruch (z.B. durch Button oder Wechsel in Hintergrund)
   function abortBreathe() {
       isBreatheActive = false;
       if (brAnimationId) cancelAnimationFrame(brAnimationId);
       releaseWakeLock();
-      
-      // Overlay komplett verstecken
       document.getElementById('breathe-overlay').style.display = 'none';
   }
   
