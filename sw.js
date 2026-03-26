@@ -1,4 +1,4 @@
-const CACHE_NAME = 'regen-tracker-v7.4';
+const CACHE_NAME = 'regen-tracker-v7.5';
 const urlsToCache = [
   './',
   './index.html',
