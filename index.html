@@ -8,7 +8,7 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
 
-  <title>ReTrack 8.8</title>
+  <title>ReTrack 8.9</title>
   
   <link rel="manifest" href="./manifest.json" />
   <meta name="theme-color" content="#f1c40f" />
@@ -272,7 +272,6 @@
 </head>
 <body>
 
-  <!-- PWA UPDATE BANNER -->
   <div id="update-banner">
       🚀 Eine neue App-Version ist verfügbar!
       <div class="sandbox-actions">
@@ -280,7 +279,6 @@
       </div>
   </div>
 
-  <!-- SANDBOX BANNER -->
   <div id="sandbox-banner">
       🧪 SIMULATIONS-MODUS AKTIV
       <div class="sandbox-actions">
@@ -291,7 +289,7 @@
 
   <header onclick="openBreatheOverlay()" title="Geheime Atem-Übung öffnen">
     <h1>🧪 ReTrack</h1>
-    <div class="version">Version 8.8 – Fair Play & Stotter-Logik</div>
+    <div class="version">Version 8.9 – Healing Calendar & Replay</div>
   </header>
 
   <div class="tabs">
@@ -302,11 +300,10 @@
 
   <input type="file" id="fileInput" accept=".json" onchange="importData(this)">
 
-  <!-- ================= TAB 1: DASHBOARD ================= -->
   <div id="tab-dashboard" class="tab-content active">
     
     <div id="setup-warning" class="setup-overlay">
-        <h3>Willkommen bei ReTrack (v8.8)! 👋</h3>
+        <h3>Willkommen bei ReTrack (v8.9)! 👋</h3>
         <p>Lege deinen ersten Zyklus an oder lade ein bestehendes Backup.</p>
         <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 15px;">
             <button class="btn-tool" style="background:var(--header-bg); border:none; color:white;" onclick="switchTab('historie')">✏️ Neuen Zyklus starten</button>
@@ -325,7 +322,6 @@
                 <div id="dash-sub" class="eta-subtext"></div>
             </div>
 
-            <!-- Ring (Klick öffnet Sandbox) -->
             <div class="ring-wrapper" onclick="openSandbox()" title="Geheimes Labor öffnen">
                 <svg viewBox="0 0 36 36" class="circular-chart">
                     <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
@@ -358,7 +354,6 @@
     </div>
   </div>
 
-  <!-- ================= TAB 2: AKTUELLER ZYKLUS ================= -->
   <div id="tab-historie" class="tab-content">
     <div class="card" id="base-form-card">
       <h3>📊 Start des aktuellen Zyklus</h3>
@@ -375,7 +370,6 @@
       <button class="btn-tool" style="width:100%; margin-top: 15px; background: var(--header-bg); border: none; color: white;" onclick="saveBase(true)">💾 Speichern & Neu berechnen</button>
     </div>
 
-    <!-- ZUKUNFTS-SIMULATOR -->
     <div class="card" id="sandbox-planner-card">
         <h3 style="color:#9b59b6; border-bottom-color:#e8daef;">🔮 Zukunfts-Simulator</h3>
         <p style="font-size:0.8rem; color:#666; margin-top:-10px;">Plane fiktive Ausrutscher für das laufende Jahr, um die Auswirkungen zu testen.</p>
@@ -396,8 +390,8 @@
             <div class="legend">
                 <div><span class="l-tday"></span>1. Konsum</div>
                 <div><span class="l-aus"></span>weiterer Konsum</div>
-                <div><span class="l-bew"></span>Bewährung</div>
-                <div><span class="l-reg"></span>Regeneration</div>
+                <div><span class="l-bew"></span>Bewährung (offen)</div>
+                <div><span class="l-reg"></span>Regen. / bestanden</div>
                 <div><span class="l-nir"></span>Nirvana</div>
             </div>
             <div class="calendar-wrapper"><div id="calendar"></div></div>
@@ -418,7 +412,6 @@
     </div>
   </div>
 
-  <!-- ================= TAB 3: ARCHIV & STATS ================= -->
   <div id="tab-archiv" class="tab-content">
     <div class="card">
         <h3>📈 Deine Life-Tracker Statistiken</h3>
@@ -449,7 +442,6 @@
     </div>
   </div>
 
-  <!-- ================= CUSTOM MODALS ================= -->
   <div id="modal-alert" class="modal-overlay">
     <div class="modal-card" style="text-align:center;">
       <h3>ℹ️ Hinweis</h3>
@@ -469,7 +461,6 @@
     </div>
   </div>
 
-  <!-- Ausrutscher Modal -->
   <div id="modal-ausrutscher" class="modal-overlay">
     <div class="modal-card"><h3 style="color:var(--danger)">🔴 Ausrutscher loggen</h3>
       <div class="form-grid">
@@ -499,7 +490,6 @@
     </div>
   </div>
 
-  <!-- Pause Modal -->
   <div id="modal-pause" class="modal-overlay">
     <div class="modal-card"><h3 style="color:var(--btn-calc)">🟢 Tagesabschluss</h3>
       <p style="font-size:0.8rem; color:#666; margin-bottom: 15px;">Pausentage mit Stress/Alkohol drosseln <strong>nicht</strong> deine Heilungsdauer, füttern aber die Statistik.</p>
@@ -530,7 +520,6 @@
     </div>
   </div>
 
-  <!-- Edit Modal -->
   <div id="modal-edit-day" class="modal-overlay">
     <div class="modal-card"><h3 id="edit-day-title">✏️ Tag bearbeiten</h3>
       <input type="hidden" id="edit-day-date">
@@ -567,7 +556,6 @@
     </div>
   </div>
 
-  <!-- Breathe Overlay -->
   <div id="breathe-overlay" class="br-overlay">
       <button class="br-close-btn" onclick="abortBreathe()">❌ Beenden</button>
       <div id="br-setup" class="br-setup-card">
@@ -593,7 +581,7 @@
   </div>
 
 <script>
-  let appData = { version: 8.8, cycles: [], breatheLogs: {} };
+  let appData = { version: 8.9, cycles: [], breatheLogs: {} };
   let isSandbox = false; 
   let sandboxData = null;
 
@@ -693,14 +681,14 @@
 
   function loadData() {
       const saved = localStorage.getItem('regenAppData_v6') || localStorage.getItem('regenAppData_v5');
-      let parsedData = { version: 8.8, cycles: [], breatheLogs: {} };
+      let parsedData = { version: 8.9, cycles: [], breatheLogs: {} };
       if (saved) {
           try { 
               let data = JSON.parse(saved); 
               if (data && typeof data === 'object') {
                   if (data.version >= 5) { 
                       parsedData = data; 
-                      parsedData.version = 8.8; 
+                      parsedData.version = 8.9; 
                   } else if (!data.cycles && data.base) { 
                       parsedData.cycles = [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }];
                   } else if (data.tDays !== undefined && !data.base) {
@@ -748,7 +736,7 @@
       if (isSandbox) return customAlert("Im Simulations-Modus kannst du keinen Hard-Reset durchführen.");
       customConfirm("ACHTUNG: Möchtest du wirklich ALLE Daten löschen? (Werkseinstellungen)", () => {
           localStorage.removeItem('regenAppData_v5'); localStorage.removeItem('regenAppData_v6'); localStorage.removeItem('regenAppData_v7');
-          appData = { version: 8.8, cycles: [], breatheLogs: {} }; 
+          appData = { version: 8.9, cycles: [], breatheLogs: {} }; 
           customAlert("Gelöscht.", () => { window.location.href = window.location.href.split('?')[0]; });
       });
   }
@@ -848,6 +836,9 @@
       const active = getActiveCycle(); 
       if(active && active.base.isOpen && dStr > active.base.end) { active.base.isOpen = false; }
       
+      // V8.9 FIX: Konfetti Replay - Blocker löschen
+      if (dStr === todayStr) sessionStorage.removeItem('bonusShown_' + todayStr);
+
       active.logs[dStr] = { type: 'pause', s, a, mood, note }; 
       closeModal('modal-pause'); 
       saveData();
@@ -885,11 +876,14 @@
               active.status = 'archived';
               const newCycle = { id: Date.now(), status: 'active', base: { start: dStr, end: addDays(parseLocal(dStr), t-1).toISOString().split('T')[0], tDays: t, sLevel: s, aLevel: a, isOpen: true }, logs: {} };
               if (mood > 0 || note !== "") { newCycle.logs[dStr] = { mood: mood, note: note }; }
+              
+              // V8.9 FIX: Konfetti Replay
+              if (dStr === todayStr) sessionStorage.removeItem('bonusShown_' + todayStr);
+              
               getApp().cycles.push(newCycle); closeModal('modal-ausrutscher'); saveData(); return;
           }
       }
 
-      // V8.8 FIX: Basis-Phase ist starr
       if(active.base.start && dStr >= active.base.start && dStr <= active.base.end) { 
           if (!active.base.isOpen) return customAlert("Datum liegt in bereits geschlossener initialer T-Phase."); 
       }
@@ -901,11 +895,16 @@
               active.base.tDays += t; 
               active.base.sLevel = Math.max(active.base.sLevel, s); 
               active.base.aLevel = Math.max(active.base.aLevel, a); 
+              
+              if (dStr === todayStr) sessionStorage.removeItem('bonusShown_' + todayStr);
               closeModal('modal-ausrutscher'); saveData(); return;
           } else if (dStr > expectedNext) { 
               active.base.isOpen = false; 
           }
       }
+
+      // V8.9 FIX: Konfetti Replay
+      if (dStr === todayStr) sessionStorage.removeItem('bonusShown_' + todayStr);
 
       active.logs[dStr] = { type: 'ausrutscher', t, s, a, mood, note }; 
       closeModal('modal-ausrutscher'); saveData();
@@ -1081,6 +1080,10 @@
               active.logs[dStr] = { type: 'pause', s, a, mood, note }; 
           }
       }
+      
+      // V8.9 FIX: Konfetti Replay
+      if (dStr === toIsoString(new Date())) sessionStorage.removeItem('bonusShown_' + dStr);
+
       closeModal('modal-edit-day'); 
       saveData(); 
       if(document.getElementById('diary-container').style.display === 'block') renderDiaryList();
@@ -1096,6 +1099,9 @@
               customConfirm("Möchtest du diesen neu gestarteten Zyklus komplett löschen und deinen alten Zyklus aus dem Archiv zurückholen?", () => { 
                   getApp().cycles.pop(); 
                   getApp().cycles[getApp().cycles.length - 1].status = 'active'; 
+                  
+                  if (dStr === toIsoString(new Date())) sessionStorage.removeItem('bonusShown_' + dStr);
+                  
                   closeModal('modal-edit-day'); 
                   saveData(); 
                   if(document.getElementById('diary-container').style.display === 'block') renderDiaryList(); 
@@ -1110,6 +1116,10 @@
       if (active.logs[dStr]) { 
           customConfirm("Eintrag unwiderruflich löschen?", () => { 
               delete active.logs[dStr]; 
+              
+              // V8.9 FIX: Konfetti Replay - Blocker löschen
+              if (dStr === toIsoString(new Date())) sessionStorage.removeItem('bonusShown_' + dStr);
+              
               closeModal('modal-edit-day'); 
               saveData(); 
               if(document.getElementById('diary-container').style.display === 'block') renderDiaryList(); 
@@ -1119,7 +1129,7 @@
       }
   }
 
-  // --- ENGINE V8.8: Stotter-Logik & Harte Mitternacht ---
+  // --- ENGINE V8.9: Heilender Kalender & Stotter-Logik ---
   function runAllSimulations() {
       globalSimResults = (getApp().cycles || []).map(cycle => simulateCycle(cycle));
       activeSimResult = globalSimResults.length > 0 ? globalSimResults[globalSimResults.length - 1] : null;
@@ -1146,12 +1156,14 @@
       let totalDebtEver = debt; 
       let totalTDaysEver = cycle.base.tDays;
 
-      // V8.8: Zwingende Post-Basis Bewährung (3 Tage)
+      // Bewährung erzwingen
       let state = 'BEWAEHRUNG'; 
       let bewTimer = 3; 
       let withheldBonus = 0; 
-      // Flag für die Stotter-Logik
       let hasPaidPauschaleThisCluster = false; 
+      
+      // V8.9 FIX: Der "Warteraum" für Bewährungstage (Heilender Kalender)
+      let currentBewDays = [];
       
       let simDate = parseLocal(cycle.base.end); 
       simDate.setDate(simDate.getDate() + 1);
@@ -1189,8 +1201,6 @@
       let finalDebtZeroDate = null;
       let gotBonusForToday = false;
 
-      // V8.8: Der "letzte echte Tag" entscheidet das Dashboard.
-      // Wenn heute geloggt ist -> heute. Ansonsten -> gestern.
       let lastRealDayStr = (cycle.logs[todayStr] && cycle.logs[todayStr].type !== undefined) ? todayStr : yesterdayStr;
 
       while ((debt > 0 || toIsoString(simDate) <= endSimLimit) && safety < 5000) {
@@ -1213,19 +1223,21 @@
               let iA = log.t < 4 ? (log.a===1 ? 1 : log.a===2 ? 2 : 0) : Math.ceil(iBase * (log.a===1 ? 0.1 : log.a===2 ? 0.25 : 0));
               let iC = (log.s===2 && log.a===2) ? 1 : 0;
               
-              // V8.8 Stotter-Logik: Pauschale nur, wenn der Cluster noch keine hatte!
               let pauschale = hasPaidPauschaleThisCluster ? 0 : 1; 
               
               let penalty = iBase + iS + iA + iC + pauschale;
               debt += penalty; 
               totalDebtEver += penalty; 
               
-              // Neustart der Bewährung
               state = 'BEWAEHRUNG'; 
               bewTimer = log.t * 3; 
-              hasPaidPauschaleThisCluster = true; // Cluster läuft jetzt!
+              hasPaidPauschaleThisCluster = true; 
               
-              // V8.8: Stottern in der Bewährung killt den angesammelten Bonus gnadenlos!
+              // V8.9 FIX: Bewährung gebrochen! Warteraum-Tage werden als gescheitert (Orange) markiert. Bonus verfällt.
+              if (currentBewDays.length > 0) {
+                  history.b.push(...currentBewDays);
+                  currentBewDays = [];
+              }
               withheldBonus = 0; 
               
               history.logDetails.push({ date: dStr, p: penalty, t: log.t, b: iBase, s: iS, a: iA, f: pauschale });
@@ -1237,16 +1249,16 @@
               
               history.a.push(new Date(simDate));
           } else {
-              // Regulärer Pausentag (implizit oder explizit)
               if (debt > 0) {
                   if (state === 'BEWAEHRUNG') {
                       debt -= 0.5; 
                       withheldBonus += 0.5; 
                       bewTimer--; 
-                      history.b.push(new Date(simDate));
+                      
+                      // V8.9 FIX: Tag in Warteraum schieben
+                      currentBewDays.push(new Date(simDate));
                       
                       if (bewTimer <= 0) { 
-                          // V8.8 Bonus Payout Regel
                           let canPayout = !isFuture || isSandbox; 
 
                           if (canPayout) {
@@ -1254,11 +1266,18 @@
                               if (debt < 0) debt = 0; 
                               if (dStr === todayStr && isLogged) gotBonusForToday = true; 
                               if (withheldBonus > 0) history.bonusDict[dStr] = `🎉 Bonus gesichert: -${withheldBonus} Tage`;
+                              
+                              // V8.9 FIX: Bewährung bestanden! Rückwirkend in Regeneration (Grün) umfärben!
+                              history.r.push(...currentBewDays);
+                          } else {
+                              // V8.9 FIX: In der pessimistischen Zukunft werden sie in Orange gezeichnet
+                              history.b.push(...currentBewDays);
                           }
                           
+                          currentBewDays = []; // Warteraum leeren
                           withheldBonus = 0; 
                           state = 'REGEN'; 
-                          hasPaidPauschaleThisCluster = false; // Zurücksetzen für den nächsten Ausrutscher!
+                          hasPaidPauschaleThisCluster = false; 
                       }
                   } else { 
                       debt -= 1.0; 
@@ -1271,7 +1290,6 @@
               }
           }
 
-          // V8.8: Dashboard Snapshot am "letzten echten Tag"
           if (dStr === lastRealDayStr && cycle.status === 'active') { 
               dashState = { 
                   debt, 
@@ -1285,7 +1303,11 @@
           simDate.setDate(simDate.getDate() + 1);
       }
       
-      // Fallback, falls der Zyklus heute erst gestartet wurde und noch ungeloggt ist
+      // V8.9 FIX: Falls der Zyklus abrupt endet, schiebe restliche offene Bewährungstage ins Orange
+      if (currentBewDays.length > 0) {
+          history.b.push(...currentBewDays);
+      }
+      
       if (!dashState && cycle.status === 'active') { 
           dashState = { debt: initialDebtTotal, totalDebtEver: initialDebtTotal, state: 'BEWAEHRUNG', bewTimer: 3, gotBonusToday: false }; 
       }
@@ -1345,7 +1367,6 @@
       const targetTracker = document.getElementById('dash-target-tracker'); 
       const progressTxt = document.getElementById('dash-progress');
       
-      // V8.8: Keine Puffer mehr. Die Engine regelt die Zeit.
       let displayDebt = ds.debt;
       let displayETA = res.finalEnd;
       
@@ -1360,10 +1381,8 @@
       percentTxt.classList.remove('nirvana');
       streakBadge.className = 'streak-badge';
 
-      // V8.8: Dezimalstellen bei Fortschritts-Tracker
       if (ds.totalDebtEver > 0 && displayDebt > 0 && !res.isOpen) {
           let geschafft = ds.totalDebtEver - displayDebt;
-          // JavaScript Float-Ungenauigkeiten abfangen
           geschafft = Math.round(geschafft * 10) / 10;
           let totalStr = Math.round(ds.totalDebtEver * 10) / 10;
           
@@ -1376,7 +1395,6 @@
           progressTxt.style.display = 'none'; 
       }
 
-      // V8.8: Dezimalstellen bei Schulden-Text
       let cleanDebt = Math.round(displayDebt * 10) / 10;
       let formattedDebt = Number.isInteger(cleanDebt) ? cleanDebt : cleanDebt.toFixed(1).replace('.', ',');
 
@@ -1693,14 +1711,14 @@
                   customAlert("Simulation erfolgreich in die Sandbox geladen!");
               } else {
                   if (data.version >= 5) { 
-                      data.version = 8.8; appData = data; 
+                      data.version = 8.9; appData = data; 
                   } else if (data.base && !data.cycles) { 
-                      appData = { version: 8.8, cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }], breatheLogs: {} };
+                      appData = { version: 8.9, cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }], breatheLogs: {} };
                   } else if (data.tDays !== undefined && !data.base) {
                       let base = { start: data.startDate, end: data.endDate, tDays: parseInt(data.tDays)||0, sLevel: parseInt(data.stress)||0, aLevel: parseInt(data.alcohol)||0, isOpen: false };
                       let logs = {}; 
                       if(data.interruptions) { data.interruptions.forEach(int => { logs[int.start] = { type: 'ausrutscher', t: parseInt(int.t)||1, s: parseInt(int.s)||0, a: parseInt(int.a)||0 }; }); }
-                      appData = { version: 8.8, cycles: [{ id: Date.now(), status: 'active', base: base, logs: logs }], breatheLogs: {} };
+                      appData = { version: 8.9, cycles: [{ id: Date.now(), status: 'active', base: base, logs: logs }], breatheLogs: {} };
                   } else { 
                       appData = data; 
                   }
@@ -1733,7 +1751,7 @@
       const sLevels = ['Kein', 'Moderat', 'Hoch']; 
       const aLevels = ['Kein', 'Moderat', 'Hoch'];
       
-      let desc = isSandbox ? `ReTrack SIMULATION\n\n` : `ReTrack V8.8\n\n`;
+      let desc = isSandbox ? `ReTrack SIMULATION\n\n` : `ReTrack V8.9\n\n`;
       desc += `--- Basis-Phase ---\n`;
       desc += `Start: ${parseLocal(activeCycle.base.start).toLocaleDateString('de-DE')}\n`;
       desc += `Ende: ${parseLocal(activeCycle.base.end).toLocaleDateString('de-DE')}\n`;
