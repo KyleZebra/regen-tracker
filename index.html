@@ -8,7 +8,7 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
 
-  <title>ReTrack 9.0</title>
+  <title>ReTrack 9.1</title>
   
   <link rel="manifest" href="./manifest.json" />
   <meta name="theme-color" content="#f1c40f" />
@@ -76,7 +76,7 @@
     #update-banner { display: none; background: #3498db; color: white; padding: 15px; border-radius: var(--border-radius); margin-bottom: 1rem; text-align: center; font-weight: bold; box-shadow: 0 4px 15px rgba(52, 152, 219, 0.4); animation: slideDown 0.5s ease-out; }
     @keyframes slideDown { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
     
-    .sandbox-actions { display: flex; gap: 10px; margin-top: 10px; justify-content: center; }
+    .sandbox-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; justify-content: center; }
     .btn-sandbox { background: white; color: #2c3e50; border: none; padding: 6px 12px; border-radius: 8px; font-weight: 700; cursor: pointer; }
     .btn-sandbox.danger { background: #e74c3c; color: white; }
 
@@ -160,6 +160,11 @@
     /* Zukunfts-Simulator */
     #sandbox-planner-card { display: none; }
     body.sandbox-mode #sandbox-planner-card { display: block; border: 2px dashed #9b59b6; background: #fdfafb; }
+    #sandbox-sim-list { margin-top: 15px; }
+    
+    .sim-list-item { display:flex; justify-content:space-between; align-items:center; background:#fff; padding:10px 12px; border-radius:8px; margin-bottom:8px; border:1px solid #e8daef; box-shadow: 0 2px 5px rgba(0,0,0,0.02);}
+    .btn-delete-sim { background:var(--danger); color:white; border:none; border-radius:6px; padding:6px 10px; cursor:pointer; font-weight:bold; font-size:0.8rem; transition:0.2s;}
+    .btn-delete-sim:hover { background:#c0392b; }
 
     /* Diary */
     .diary-list { margin-top: 1rem; border-top: 1px solid #eee; padding-top: 1rem; display: flex; flex-direction: column; gap: 10px;}
@@ -200,7 +205,7 @@
     .tag.ausrutscher { background-color: #e74c3c; } 
     .tag.nirvana { background-color: #3498db; } 
     .tag.target-flag { background-color: #8e44ad; color: white; border: 1px solid #732d91;}
-    .tag.optimistic-flag { background-color: #f1c40f; color: #2c3e50; border: 1px dashed #e67e22; box-shadow: 0 0 5px rgba(241,196,15,0.4); } /* V9.0 Best-Case Tag */
+    .tag.optimistic-flag { background-color: #f1c40f; color: #2c3e50; border: 1px dashed #e67e22; box-shadow: 0 0 5px rgba(241,196,15,0.4); } 
     
     .legend { display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center; margin-top: 1rem; font-size: 0.8rem; color: #666; }
     .legend span { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 6px; vertical-align: middle; border: 1px solid rgba(0,0,0,0.1); }
@@ -287,13 +292,14 @@
       🧪 SIMULATIONS-MODUS AKTIV
       <div class="sandbox-actions">
           <button class="btn-sandbox" onclick="applySandboxGoal()">🎯 Als Ziel setzen</button>
+          <button class="btn-sandbox" onclick="resetSandbox()">🔄 Labor-Reset</button>
           <button class="btn-sandbox danger" onclick="closeSandbox()">❌ Verlassen</button>
       </div>
   </div>
 
   <header onclick="openBreatheOverlay()" title="Geheime Atem-Übung öffnen">
     <h1>🧪 ReTrack</h1>
-    <div class="version">Version 9.0 – Best-Case & Polish</div>
+    <div class="version">Version 9.1 – Sandbox & UX Polish</div>
   </header>
 
   <div class="tabs">
@@ -308,7 +314,7 @@
   <div id="tab-dashboard" class="tab-content active">
     
     <div id="setup-warning" class="setup-overlay">
-        <h3>Willkommen bei ReTrack (v9.0)! 👋</h3>
+        <h3>Willkommen bei ReTrack (v9.1)! 👋</h3>
         <p>Lege deinen ersten Zyklus an oder lade ein bestehendes Backup.</p>
         <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 15px;">
             <button class="btn-tool" style="background:var(--header-bg); border:none; color:white;" onclick="switchTab('historie')">✏️ Neuen Zyklus starten</button>
@@ -388,6 +394,9 @@
             <div><label>Alkohol</label><select id="sim-a-a"><option value="0">Kein</option><option value="1">Moderat</option><option value="2">Hoch</option></select></div>
         </div>
         <button class="btn-tool" style="width:100%; margin-top: 15px; background: #9b59b6; border: none; color: white; font-weight: 800;" onclick="submitFutureSim()">Zukunft berechnen</button>
+        
+        <!-- V9.1: Sandbox Manager für 1-Klick-Löschen -->
+        <div id="sandbox-sim-list"></div>
     </div>
 
     <div id="historie-output" style="display:none;">
@@ -596,7 +605,7 @@
   </div>
 
 <script>
-  let appData = { version: 9.0, cycles: [], breatheLogs: {} };
+  let appData = { version: 9.1, cycles: [], breatheLogs: {} };
   let isSandbox = false; 
   let sandboxData = null;
 
@@ -667,6 +676,24 @@
       switchTab('historie'); // Direkt zum Planer wechseln
   }
 
+  // V9.1 FIX: Global Labor Reset
+  function resetSandbox() {
+      if(!isSandbox) return;
+      sandboxData = JSON.parse(JSON.stringify(appData)); // Holt das saubere Abbild zurück
+      clearSandboxForm();
+      runAllSimulations();
+      updateUI();
+      customAlert("Labor wurde auf deinen realen Stand zurückgesetzt.");
+  }
+
+  // V9.1 FIX: Stilles Cleanup der Eingabefelder
+  function clearSandboxForm() {
+      document.getElementById('sim-a-date').value = '';
+      document.getElementById('sim-a-t').value = '1';
+      document.getElementById('sim-a-s').value = '0';
+      document.getElementById('sim-a-a').value = '0';
+  }
+
   function closeSandbox() {
       if(!isSandbox) return;
       isSandbox = false; 
@@ -674,6 +701,7 @@
       document.body.classList.remove('sandbox-mode'); 
       document.getElementById('sandbox-banner').style.display = 'none';
       
+      clearSandboxForm(); // V9.1 FIX: Keine Geister mehr im Formular
       populateBaseForm(); // Stumm auf echte Daten zurücksetzen
       runAllSimulations(); 
       updateUI(); 
@@ -696,14 +724,14 @@
 
   function loadData() {
       const saved = localStorage.getItem('regenAppData_v6') || localStorage.getItem('regenAppData_v5');
-      let parsedData = { version: 9.0, cycles: [], breatheLogs: {} };
+      let parsedData = { version: 9.1, cycles: [], breatheLogs: {} };
       if (saved) {
           try { 
               let data = JSON.parse(saved); 
               if (data && typeof data === 'object') {
                   if (data.version >= 5) { 
                       parsedData = data; 
-                      parsedData.version = 9.0; 
+                      parsedData.version = 9.1; 
                   } else if (!data.cycles && data.base) { 
                       parsedData.cycles = [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }];
                   } else if (data.tDays !== undefined && !data.base) {
@@ -751,7 +779,7 @@
       if (isSandbox) return customAlert("Im Simulations-Modus kannst du keinen Hard-Reset durchführen.");
       customConfirm("ACHTUNG: Möchtest du wirklich ALLE Daten löschen? (Werkseinstellungen)", () => {
           localStorage.removeItem('regenAppData_v5'); localStorage.removeItem('regenAppData_v6'); localStorage.removeItem('regenAppData_v7');
-          appData = { version: 9.0, cycles: [], breatheLogs: {} }; 
+          appData = { version: 9.1, cycles: [], breatheLogs: {} }; 
           customAlert("Gelöscht.", () => { window.location.href = window.location.href.split('?')[0]; });
       });
   }
@@ -850,8 +878,6 @@
 
       const active = getActiveCycle(); 
       if(active && active.base.isOpen && dStr > active.base.end) { active.base.isOpen = false; }
-      
-      if (dStr === todayStr) sessionStorage.removeItem('bonusShown_' + todayStr);
 
       active.logs[dStr] = { type: 'pause', s, a, mood, note }; 
       closeModal('modal-pause'); 
@@ -891,8 +917,6 @@
               const newCycle = { id: Date.now(), status: 'active', base: { start: dStr, end: addDays(parseLocal(dStr), t-1).toISOString().split('T')[0], tDays: t, sLevel: s, aLevel: a, isOpen: true }, logs: {} };
               if (mood > 0 || note !== "") { newCycle.logs[dStr] = { mood: mood, note: note }; }
               
-              if (dStr === todayStr) sessionStorage.removeItem('bonusShown_' + todayStr);
-              
               getApp().cycles.push(newCycle); closeModal('modal-ausrutscher'); saveData(); return;
           }
       }
@@ -909,19 +933,17 @@
               active.base.sLevel = Math.max(active.base.sLevel, s); 
               active.base.aLevel = Math.max(active.base.aLevel, a); 
               
-              if (dStr === todayStr) sessionStorage.removeItem('bonusShown_' + todayStr);
               closeModal('modal-ausrutscher'); saveData(); return;
           } else if (dStr > expectedNext) { 
               active.base.isOpen = false; 
           }
       }
 
-      if (dStr === todayStr) sessionStorage.removeItem('bonusShown_' + todayStr);
-
       active.logs[dStr] = { type: 'ausrutscher', t, s, a, mood, note }; 
       closeModal('modal-ausrutscher'); saveData();
   }
 
+  // V9.1 FIX: Sandbox Log Flag
   function submitFutureSim() {
       const dStr = document.getElementById('sim-a-date').value; 
       const t = parseInt(document.getElementById('sim-a-t').value) || 1; 
@@ -937,9 +959,47 @@
       if(dStr > `${currentYear}-12-31`) return customAlert(`Planung nur bis zum 31.12.${currentYear} möglich, um Rendering-Crashes zu verhindern.`);
       
       let active = getActiveCycle(); 
-      active.logs[dStr] = { type: 'ausrutscher', t, s, a, mood: 0, note: "🔮 Zukunftssimulation" }; 
+      // isSimulated-Flag markiert Einträge exklusiv für den Manager
+      active.logs[dStr] = { type: 'ausrutscher', t, s, a, mood: 0, note: "🔮 Zukunftssimulation", isSimulated: true }; 
       saveData(); 
       customAlert("Zukunft berechnet! Wirf einen Blick auf den Kalender.");
+  }
+
+  // V9.1 FIX: Sandbox Manager Delete Function
+  function deleteSimulation(dStr) {
+      const active = getActiveCycle();
+      if(active && active.logs[dStr]) {
+          delete active.logs[dStr];
+          saveData();
+      }
+  }
+
+  // V9.1 FIX: Sandbox Manager UI rendering
+  function renderSandboxManager() {
+      const container = document.getElementById('sandbox-sim-list');
+      if(!isSandbox) { container.innerHTML = ''; return; }
+      
+      const active = getActiveCycle();
+      if(!active) return;
+      
+      let html = '';
+      let hasSims = false;
+      Object.keys(active.logs).sort().forEach(dStr => {
+          if(active.logs[dStr].isSimulated) {
+              hasSims = true;
+              const l = active.logs[dStr];
+              html += `<div class="sim-list-item">
+                  <div><strong style="color:#8e44ad;">${parseLocal(dStr).toLocaleDateString('de-DE')}</strong> (${l.t} Tage)</div>
+                  <button class="btn-delete-sim" onclick="deleteSimulation('${dStr}')" title="Simulation löschen">X</button>
+              </div>`;
+          }
+      });
+      
+      if(hasSims) {
+          container.innerHTML = `<h4 style="margin-top:15px; margin-bottom:10px; color:#8e44ad; border-bottom:1px solid #e8daef; padding-bottom:5px;">🧪 Aktive Simulationen</h4>` + html;
+      } else {
+          container.innerHTML = '';
+      }
   }
 
   function toggleDiary() { 
@@ -1092,18 +1152,19 @@
               active.logs[dStr] = { type: 'pause', s, a, mood, note }; 
           }
       }
-      
-      // V9.0 FIX: Konfetti Replay Sperre aufheben
-      if (dStr === toIsoString(new Date())) sessionStorage.removeItem('bonusShown_' + dStr);
 
       closeModal('modal-edit-day'); 
       saveData(); 
       if(document.getElementById('diary-container').style.display === 'block') renderDiaryList();
   }
 
+  // V9.1 FIX: Papierkorb Logik entkoppelt die Modals sauber!
   function deleteEditDay() {
       const active = getActiveCycle(); 
       const dStr = document.getElementById('edit-day-date').value;
+      
+      // FIX: Das Editier-Fenster schließt sofort, um Doppel-Klicks zu vermeiden!
+      closeModal('modal-edit-day'); 
 
       if (active.base.start === dStr && getApp().cycles.length > 1) {
           let hasRealLogs = Object.keys(active.logs).some(k => active.logs[k].type === 'pause' || active.logs[k].type === 'ausrutscher');
@@ -1114,7 +1175,6 @@
                   
                   if (dStr === toIsoString(new Date())) sessionStorage.removeItem('bonusShown_' + dStr);
                   
-                  closeModal('modal-edit-day'); 
                   saveData(); 
                   if(document.getElementById('diary-container').style.display === 'block') renderDiaryList(); 
               }); 
@@ -1131,7 +1191,6 @@
               
               if (dStr === toIsoString(new Date())) sessionStorage.removeItem('bonusShown_' + dStr);
               
-              closeModal('modal-edit-day'); 
               saveData(); 
               if(document.getElementById('diary-container').style.display === 'block') renderDiaryList(); 
           });
@@ -1140,7 +1199,7 @@
       }
   }
 
-  // --- ENGINE V9.0: Best-Case Target & Robust Confetti ---
+  // --- ENGINE V9.1 ---
   function runAllSimulations() {
       globalSimResults = (getApp().cycles || []).map(cycle => simulateCycle(cycle));
       activeSimResult = globalSimResults.length > 0 ? globalSimResults[globalSimResults.length - 1] : null;
@@ -1173,8 +1232,6 @@
       let hasPaidPauschaleThisCluster = false; 
       
       let currentBewDays = [];
-      
-      // V9.0: Tracken der in der Zukunft weggeworfenen Boni für das Best-Case Datum
       let totalDiscardedBonus = 0;
       
       let simDate = parseLocal(cycle.base.end); 
@@ -1274,14 +1331,13 @@
                           if (canPayout) {
                               debt -= withheldBonus; 
                               if (debt < 0) debt = 0; 
+                              // Bonus Animation greift sicher nur an DIESEM Tag
                               if (dStr === todayStr && isLogged) gotBonusForToday = true; 
                               if (withheldBonus > 0) history.bonusDict[dStr] = `🎉 Bonus gesichert: -${withheldBonus} Tage`;
                               
                               history.r.push(...currentBewDays);
                           } else {
                               history.b.push(...currentBewDays);
-                              // V9.0 FIX: Wir verwerfen einen Bonus, da er in der pessimistischen Zukunft liegt.
-                              // Das ist die Differenz zwischen pessimistischem und optimistischem Datum!
                               totalDiscardedBonus += withheldBonus;
                           }
                           
@@ -1307,7 +1363,7 @@
                   totalDebtEver, 
                   state, 
                   bewTimer, 
-                  // V9.0 BUGFIX: Das Konfetti-Signal wird streng nur dann true, wenn der Snapshot HEUTE betrifft
+                  // Strikt! Löschen eines Eintrags wirft kein Konfetti mehr.
                   gotBonusToday: (dStr === todayStr) ? gotBonusForToday : false 
               }; 
           }
@@ -1326,7 +1382,6 @@
       let nirvanaStreak = 0; 
       if (debt <= 0 && history.n.length > 0) { nirvanaStreak = history.n.length; }
       
-      // V9.0 FIX: Berechnung des optimistischen Datums (Leuchtturm im Kalender)
       let pessimisticEnd = finalDebtZeroDate || addDays(simDate, -1);
       let optimisticEndStr = null;
       if (totalDiscardedBonus > 0) {
@@ -1345,6 +1400,7 @@
       renderDashboard(); 
       renderHistorie(); 
       renderArchiv(); 
+      renderSandboxManager(); // V9.1 FIX: UI Element
   }
 
   function triggerBonusConfetti() {
@@ -1462,7 +1518,6 @@
           document.getElementById('daily-done-area').style.display = 'none'; 
       }
       
-      // Das Konfetti fliegt nur noch, wenn das Signal WIRKLICH von heute kommt
       if (!isSandbox && ds.gotBonusToday) { triggerBonusConfetti(); }
   }
 
@@ -1503,8 +1558,6 @@
       const realEnd = new Date(rawMaxDate.getFullYear(), rawMaxDate.getMonth() + 1, 0);
       const todayStr = new Date().toDateString(); 
       const targetStrCheck = active.targetETA ? parseLocal(active.targetETA).toDateString() : null;
-      
-      // V9.0 FIX: Das Best-Case Datum für den Kalender aufbereiten
       const optimisticStrCheck = res.optimisticEndStr ? parseLocal(res.optimisticEndStr).toDateString() : null;
 
       let calHtml = "<table><thead><tr><th>Mo</th><th>Di</th><th>Mi</th><th>Do</th><th>Fr</th><th>Sa</th><th>So</th></tr></thead><tbody><tr>";
@@ -1527,8 +1580,6 @@
         if (log && log.note) tagText += " 📝";
         
         if (targetStrCheck && dStr === targetStrCheck) { tagText += " 🏁 Ziel"; tagClass += " target-flag"; }
-        
-        // V9.0 FIX: Den Leuchtturm-Tag im Kalender markieren
         if (optimisticStrCheck && dStr === optimisticStrCheck && dStr !== targetStrCheck) { 
             tagText += " 🌟 Best-Case"; 
             tagClass += " optimistic-flag"; 
@@ -1741,14 +1792,14 @@
                   customAlert("Simulation erfolgreich in die Sandbox geladen!");
               } else {
                   if (data.version >= 5) { 
-                      data.version = 9.0; appData = data; 
+                      data.version = 9.1; appData = data; 
                   } else if (data.base && !data.cycles) { 
-                      appData = { version: 9.0, cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }], breatheLogs: {} };
+                      appData = { version: 9.1, cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }], breatheLogs: {} };
                   } else if (data.tDays !== undefined && !data.base) {
                       let base = { start: data.startDate, end: data.endDate, tDays: parseInt(data.tDays)||0, sLevel: parseInt(data.stress)||0, aLevel: parseInt(data.alcohol)||0, isOpen: false };
                       let logs = {}; 
                       if(data.interruptions) { data.interruptions.forEach(int => { logs[int.start] = { type: 'ausrutscher', t: parseInt(int.t)||1, s: parseInt(int.s)||0, a: parseInt(int.a)||0 }; }); }
-                      appData = { version: 9.0, cycles: [{ id: Date.now(), status: 'active', base: base, logs: logs }], breatheLogs: {} };
+                      appData = { version: 9.1, cycles: [{ id: Date.now(), status: 'active', base: base, logs: logs }], breatheLogs: {} };
                   } else { 
                       appData = data; 
                   }
@@ -1781,7 +1832,7 @@
       const sLevels = ['Kein', 'Moderat', 'Hoch']; 
       const aLevels = ['Kein', 'Moderat', 'Hoch'];
       
-      let desc = isSandbox ? `ReTrack SIMULATION\n\n` : `ReTrack V9.0\n\n`;
+      let desc = isSandbox ? `ReTrack SIMULATION\n\n` : `ReTrack V9.1\n\n`;
       desc += `--- Basis-Phase ---\n`;
       desc += `Start: ${parseLocal(activeCycle.base.start).toLocaleDateString('de-DE')}\n`;
       desc += `Ende: ${parseLocal(activeCycle.base.end).toLocaleDateString('de-DE')}\n`;
