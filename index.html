@@ -8,7 +8,7 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
 
-  <title>ReTrack 8.7</title>
+  <title>ReTrack 8.8</title>
   
   <link rel="manifest" href="./manifest.json" />
   <meta name="theme-color" content="#f1c40f" />
@@ -291,7 +291,7 @@
 
   <header onclick="openBreatheOverlay()" title="Geheime Atem-Übung öffnen">
     <h1>🧪 ReTrack</h1>
-    <div class="version">Version 8.7 – Smart UI & Engine</div>
+    <div class="version">Version 8.8 – Fair Play & Stotter-Logik</div>
   </header>
 
   <div class="tabs">
@@ -306,7 +306,7 @@
   <div id="tab-dashboard" class="tab-content active">
     
     <div id="setup-warning" class="setup-overlay">
-        <h3>Willkommen bei ReTrack (v8.7)! 👋</h3>
+        <h3>Willkommen bei ReTrack (v8.8)! 👋</h3>
         <p>Lege deinen ersten Zyklus an oder lade ein bestehendes Backup.</p>
         <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 15px;">
             <button class="btn-tool" style="background:var(--header-bg); border:none; color:white;" onclick="switchTab('historie')">✏️ Neuen Zyklus starten</button>
@@ -593,7 +593,7 @@
   </div>
 
 <script>
-  let appData = { version: 8.7, cycles: [], breatheLogs: {} };
+  let appData = { version: 8.8, cycles: [], breatheLogs: {} };
   let isSandbox = false; 
   let sandboxData = null;
 
@@ -661,7 +661,7 @@
       document.getElementById('sandbox-banner').style.display = 'block';
       
       runAllSimulations(); 
-      switchTab('historie'); // Switch directly to planner tab
+      switchTab('historie'); // Direkt zum Planer wechseln
   }
 
   function closeSandbox() {
@@ -671,10 +671,10 @@
       document.body.classList.remove('sandbox-mode'); 
       document.getElementById('sandbox-banner').style.display = 'none';
       
-      populateBaseForm(); // Restore original planner form silently
+      populateBaseForm(); // Stumm auf echte Daten zurücksetzen
       runAllSimulations(); 
       updateUI(); 
-      switchTab('dashboard'); // Switch back to today tab
+      switchTab('dashboard'); // Zurück ins Heute
   }
 
   function clearTargetETA() { 
@@ -693,14 +693,14 @@
 
   function loadData() {
       const saved = localStorage.getItem('regenAppData_v6') || localStorage.getItem('regenAppData_v5');
-      let parsedData = { version: 8.7, cycles: [], breatheLogs: {} };
+      let parsedData = { version: 8.8, cycles: [], breatheLogs: {} };
       if (saved) {
           try { 
               let data = JSON.parse(saved); 
               if (data && typeof data === 'object') {
                   if (data.version >= 5) { 
                       parsedData = data; 
-                      parsedData.version = 8.7; 
+                      parsedData.version = 8.8; 
                   } else if (!data.cycles && data.base) { 
                       parsedData.cycles = [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }];
                   } else if (data.tDays !== undefined && !data.base) {
@@ -748,7 +748,7 @@
       if (isSandbox) return customAlert("Im Simulations-Modus kannst du keinen Hard-Reset durchführen.");
       customConfirm("ACHTUNG: Möchtest du wirklich ALLE Daten löschen? (Werkseinstellungen)", () => {
           localStorage.removeItem('regenAppData_v5'); localStorage.removeItem('regenAppData_v6'); localStorage.removeItem('regenAppData_v7');
-          appData = { version: 8.7, cycles: [], breatheLogs: {} }; 
+          appData = { version: 8.8, cycles: [], breatheLogs: {} }; 
           customAlert("Gelöscht.", () => { window.location.href = window.location.href.split('?')[0]; });
       });
   }
@@ -889,8 +889,9 @@
           }
       }
 
+      // V8.8 FIX: Basis-Phase ist starr
       if(active.base.start && dStr >= active.base.start && dStr <= active.base.end) { 
-          if (!active.base.isOpen) return customAlert("Datum liegt in der initialen T-Phase. Die Engine absorbiert spätere Ausrutscher automatisch in die Basis."); 
+          if (!active.base.isOpen) return customAlert("Datum liegt in bereits geschlossener initialer T-Phase."); 
       }
 
       if (active.base.isOpen) {
@@ -949,23 +950,16 @@
       const aLevels = ['A:0', 'A:1', 'A:2']; 
       let items = [];
 
-      // V8.7 FIX: Use effectiveBaseEndStr to properly label absorbed ausrutscher days
-      let effectiveEndStr = active.base.end;
-      if (activeSimResult && activeSimResult.cycleId === active.id) {
-          effectiveEndStr = activeSimResult.effectiveBaseEndStr || active.base.end;
-      }
-
       while (toIsoString(curr) <= endStr) {
           let dStr = toIsoString(curr); 
           let log = active.logs[dStr]; 
-          let isBaseDay = (dStr >= active.base.start && dStr <= effectiveEndStr);
+          let isBaseDay = (dStr >= active.base.start && dStr <= active.base.end);
           let formattedDate = curr.toLocaleDateString('de-DE', {weekday: 'short', day: '2-digit', month: '2-digit'}); 
           let monthYear = curr.toLocaleDateString('de-DE', {month: 'long', year: 'numeric'});
           let breatheCount = getApp().breatheLogs?.[dStr] || 0;
           
           if (isBaseDay) { 
               items.push({dStr, formattedDate, monthYear, log: log || {}, isImplicit: false, isBase: true, breatheCount}); 
-              // Skip multiple days if log has t > 1
               if (log && log.type === 'ausrutscher' && log.t > 1) { curr.setDate(curr.getDate() + log.t - 1); }
           } else if (log) { 
               items.push({dStr, formattedDate, monthYear, log, isImplicit: false, isBase: false, breatheCount}); 
@@ -1007,7 +1001,7 @@
               let basePenalty = "";
               
               if (item.isBase) { 
-                  let isLastBaseDay = item.dStr === effectiveEndStr; 
+                  let isLastBaseDay = item.dStr === active.base.end; 
                   let isTodayWhenOpen = active.base.isOpen && item.dStr === todayStr; 
                   if (isLastBaseDay || isTodayWhenOpen) { 
                       basePenalty = `<div class="diary-meta" style="color: #8e44ad; font-weight: bold; font-size: 0.75rem;">${activeSimResult.basePenaltyStr}</div>`; 
@@ -1036,11 +1030,7 @@
 
   function openDiaryEdit(dateStr) {
       const active = getActiveCycle(); 
-      let effectiveEndStr = active.base.end;
-      const res = globalSimResults.find(r => r.cycleId === active.id);
-      if (res && res.effectiveBaseEndStr) effectiveEndStr = res.effectiveBaseEndStr;
-      
-      const isBase = (dateStr >= active.base.start && dateStr <= effectiveEndStr);
+      const isBase = (dateStr >= active.base.start && dateStr <= active.base.end);
       
       document.getElementById('edit-day-title').innerHTML = `✏️ Tag bearbeiten: <span style="color:var(--accent)">${parseLocal(dateStr).toLocaleDateString('de-DE')}</span>`;
       document.getElementById('edit-day-date').value = dateStr; 
@@ -1129,7 +1119,7 @@
       }
   }
 
-  // --- ENGINE V8.7 ---
+  // --- ENGINE V8.8: Stotter-Logik & Harte Mitternacht ---
   function runAllSimulations() {
       globalSimResults = (getApp().cycles || []).map(cycle => simulateCycle(cycle));
       activeSimResult = globalSimResults.length > 0 ? globalSimResults[globalSimResults.length - 1] : null;
@@ -1137,61 +1127,40 @@
   }
 
   function simulateCycle(cycle) {
-      // V8.7 FIX: Basis-Verlängerung. 
-      // Absorbiert Ausrutscher, die nahtlos an die Basisphase andocken.
-      let effectiveBaseEndStr = cycle.base.end;
-      let effectiveBaseT = cycle.base.tDays;
-      let effectiveMaxS = cycle.base.sLevel;
-      let effectiveMaxA = cycle.base.aLevel;
-
-      let checkDate = parseLocal(effectiveBaseEndStr);
-      checkDate.setDate(checkDate.getDate() + 1);
-
-      while (true) {
-          let dStr = toIsoString(checkDate);
-          let log = cycle.logs[dStr];
-          if (log && log.type === 'ausrutscher') {
-              effectiveBaseEndStr = addDays(checkDate, log.t - 1).toISOString().split('T')[0];
-              effectiveBaseT += log.t;
-              effectiveMaxS = Math.max(effectiveMaxS, log.s);
-              effectiveMaxA = Math.max(effectiveMaxA, log.a);
-              checkDate = addDays(checkDate, log.t);
-          } else {
-              break;
-          }
-      }
-
-      const baseVal = effectiveBaseT * 3;
+      const baseVal = cycle.base.tDays * 3;
       let sAdd = 0, aAdd = 0;
       
-      if (effectiveBaseT < 4) { 
-          sAdd = (effectiveMaxS===1 ? 1 : effectiveMaxS===2 ? 2 : 0); 
-          aAdd = (effectiveMaxA===1 ? 1 : effectiveMaxA===2 ? 2 : 0); 
+      if (cycle.base.tDays < 4) { 
+          sAdd = (cycle.base.sLevel===1 ? 1 : cycle.base.sLevel===2 ? 2 : 0); 
+          aAdd = (cycle.base.aLevel===1 ? 1 : cycle.base.aLevel===2 ? 2 : 0); 
       } else { 
-          sAdd = Math.ceil(baseVal * (effectiveMaxS===1 ? 0.1 : effectiveMaxS===2 ? 0.25 : 0)); 
-          aAdd = Math.ceil(baseVal * (effectiveMaxA===1 ? 0.1 : effectiveMaxA===2 ? 0.25 : 0)); 
+          sAdd = Math.ceil(baseVal * (cycle.base.sLevel===1 ? 0.1 : cycle.base.sLevel===2 ? 0.25 : 0)); 
+          aAdd = Math.ceil(baseVal * (cycle.base.aLevel===1 ? 0.1 : cycle.base.aLevel===2 ? 0.25 : 0)); 
       }
-      const comboAdd = (effectiveMaxS===2 && effectiveMaxA===2) ? 1 : 0;
+      const comboAdd = (cycle.base.sLevel===2 && cycle.base.aLevel===2) ? 1 : 0;
       
       const initialDebtTotal = baseVal + sAdd + aAdd + comboAdd;
       let basePenaltyStr = `Start-Schuld: ${initialDebtTotal} Tage (Basis: ${baseVal}, Stress: ${sAdd}, Alk: ${aAdd}, Kombi: ${comboAdd})`;
 
       let debt = initialDebtTotal; 
       let totalDebtEver = debt; 
-      let totalTDaysEver = effectiveBaseT;
+      let totalTDaysEver = cycle.base.tDays;
 
-      // V8.7 FIX: Engine startet zwingend in der Bewährung!
+      // V8.8: Zwingende Post-Basis Bewährung (3 Tage)
       let state = 'BEWAEHRUNG'; 
-      let clusterTDays = effectiveBaseT; 
-      let bewaehrungTimer = Math.min(Math.max(clusterTDays * 3, 3), 21); 
+      let bewTimer = 3; 
       let withheldBonus = 0; 
+      // Flag für die Stotter-Logik
+      let hasPaidPauschaleThisCluster = false; 
       
-      let simDate = parseLocal(effectiveBaseEndStr); 
+      let simDate = parseLocal(cycle.base.end); 
       simDate.setDate(simDate.getDate() + 1);
       
-      const todayStr = toIsoString(new Date());
-      const nextCycle = getApp().cycles[getApp().cycles.findIndex(c => c.id === cycle.id) + 1];
+      const todayObj = new Date();
+      const todayStr = toIsoString(todayObj);
+      const yesterdayStr = toIsoString(addDays(todayObj, -1));
       
+      const nextCycle = getApp().cycles[getApp().cycles.findIndex(c => c.id === cycle.id) + 1];
       let endSimLimit = nextCycle ? toIsoString(addDays(parseLocal(nextCycle.base.start), -1)) : todayStr;
       
       if (isSandbox && !nextCycle) {
@@ -1208,9 +1177,8 @@
       let history = { t: [], r: [], b: [], a: [], n: [], logDetails: [], penaltyDict: {}, bonusDict: {} }; 
       
       let cBase = parseLocal(cycle.base.start); 
-      let endBase = parseLocal(effectiveBaseEndStr);
+      let endBase = parseLocal(cycle.base.end);
       
-      // Basisphase in die Kalender-Historie pushen
       while (cBase <= endBase) { 
           history.t.push(new Date(cBase)); 
           cBase.setDate(cBase.getDate() + 1); 
@@ -1219,19 +1187,25 @@
       let safety = 0; 
       let dashState = null; 
       let finalDebtZeroDate = null;
+      let gotBonusForToday = false;
+
+      // V8.8: Der "letzte echte Tag" entscheidet das Dashboard.
+      // Wenn heute geloggt ist -> heute. Ansonsten -> gestern.
+      let lastRealDayStr = (cycle.logs[todayStr] && cycle.logs[todayStr].type !== undefined) ? todayStr : yesterdayStr;
 
       while ((debt > 0 || toIsoString(simDate) <= endSimLimit) && safety < 5000) {
           safety++; 
           let dStr = toIsoString(simDate); 
           let log = cycle.logs[dStr];
-          let gotBonusForToday = false;
+          
+          let isLogged = log && log.type !== undefined;
+          let isFuture = dStr > todayStr || (dStr === todayStr && !isLogged);
 
-          // isBaseDay ist hier immer false, da simDate nach effectiveBaseEndStr startet, 
-          // aber zur Sicherheit filtern wir es.
-          let isBaseDay = dStr >= cycle.base.start && dStr <= effectiveBaseEndStr;
-
-          if (log && log.type === 'ausrutscher' && !isBaseDay) {
-              activeAusrutscherDays = log.t; 
+          if (activeAusrutscherDays > 0) {
+              history.a.push(new Date(simDate)); 
+              activeAusrutscherDays--;
+          } else if (log && log.type === 'ausrutscher') {
+              activeAusrutscherDays = log.t - 1; 
               totalTDaysEver += log.t;
               
               let iBase = log.t * 3;
@@ -1239,53 +1213,52 @@
               let iA = log.t < 4 ? (log.a===1 ? 1 : log.a===2 ? 2 : 0) : Math.ceil(iBase * (log.a===1 ? 0.1 : log.a===2 ? 0.25 : 0));
               let iC = (log.s===2 && log.a===2) ? 1 : 0;
               
-              // V8.7 Logik: Cluster in Bewährung bekommt keine Pauschale
-              let isStottern = (state === 'BEWAEHRUNG'); 
-              let pauschale = isStottern ? 0 : 1; 
-              
-              if (isStottern) clusterTDays += log.t; else clusterTDays = log.t; 
+              // V8.8 Stotter-Logik: Pauschale nur, wenn der Cluster noch keine hatte!
+              let pauschale = hasPaidPauschaleThisCluster ? 0 : 1; 
               
               let penalty = iBase + iS + iA + iC + pauschale;
               debt += penalty; 
               totalDebtEver += penalty; 
+              
+              // Neustart der Bewährung
               state = 'BEWAEHRUNG'; 
-              bewaehrungTimer = Math.min(Math.max(clusterTDays * 3, 3), 21); 
+              bewTimer = log.t * 3; 
+              hasPaidPauschaleThisCluster = true; // Cluster läuft jetzt!
+              
+              // V8.8: Stottern in der Bewährung killt den angesammelten Bonus gnadenlos!
               withheldBonus = 0; 
               
               history.logDetails.push({ date: dStr, p: penalty, t: log.t, b: iBase, s: iS, a: iA, f: pauschale });
               
               let pStr = `+${penalty} Tage (Basis: ${iBase}, S: ${iS}, A: ${iA}, Kombi: ${iC}`;
-              if (pauschale > 0) pStr += `, Setup: ${pauschale}`;
-              history.penaltyDict[dStr] = pStr + `)`;
-          }
-
-          if (activeAusrutscherDays > 0) {
-              history.a.push(new Date(simDate)); 
-              activeAusrutscherDays--;
+              if (pauschale > 0) pStr += `, Setup: ${pauschale})`;
+              else pStr += `, Setup: 0 - Stottern)`;
+              history.penaltyDict[dStr] = pStr;
+              
+              history.a.push(new Date(simDate));
           } else {
+              // Regulärer Pausentag (implizit oder explizit)
               if (debt > 0) {
                   if (state === 'BEWAEHRUNG') {
                       debt -= 0.5; 
                       withheldBonus += 0.5; 
-                      bewaehrungTimer--; 
+                      bewTimer--; 
                       history.b.push(new Date(simDate));
                       
-                      if (bewaehrungTimer <= 0) { 
-                          let applyBonus = false;
-                          if (dStr < todayStr) applyBonus = true; 
-                          else if (dStr === todayStr && log && log.type === 'pause') applyBonus = true; 
-                          else if (dStr > todayStr && isSandbox) applyBonus = true; 
+                      if (bewTimer <= 0) { 
+                          // V8.8 Bonus Payout Regel
+                          let canPayout = !isFuture || isSandbox; 
 
-                          if (applyBonus) {
+                          if (canPayout) {
                               debt -= withheldBonus; 
                               if (debt < 0) debt = 0; 
-                              if (dStr === todayStr) gotBonusForToday = true; 
+                              if (dStr === todayStr && isLogged) gotBonusForToday = true; 
                               if (withheldBonus > 0) history.bonusDict[dStr] = `🎉 Bonus gesichert: -${withheldBonus} Tage`;
-                              withheldBonus = 0; 
                           }
                           
+                          withheldBonus = 0; 
                           state = 'REGEN'; 
-                          clusterTDays = 0;
+                          hasPaidPauschaleThisCluster = false; // Zurücksetzen für den nächsten Ausrutscher!
                       }
                   } else { 
                       debt -= 1.0; 
@@ -1298,23 +1271,23 @@
               }
           }
 
-          if (dStr === todayStr && cycle.status === 'active') { 
+          // V8.8: Dashboard Snapshot am "letzten echten Tag"
+          if (dStr === lastRealDayStr && cycle.status === 'active') { 
               dashState = { 
                   debt, 
                   totalDebtEver, 
                   state, 
-                  bewaehrungTimer, 
-                  pendingBonus: withheldBonus, 
-                  gotBonusToday: gotBonusForToday, 
-                  logToday: log 
+                  bewTimer, 
+                  gotBonusToday: gotBonusForToday
               }; 
           }
           
           simDate.setDate(simDate.getDate() + 1);
       }
       
+      // Fallback, falls der Zyklus heute erst gestartet wurde und noch ungeloggt ist
       if (!dashState && cycle.status === 'active') { 
-          dashState = { debt, totalDebtEver, state, bewaehrungTimer, pendingBonus: 0, gotBonusToday: false, logToday: null }; 
+          dashState = { debt: initialDebtTotal, totalDebtEver: initialDebtTotal, state: 'BEWAEHRUNG', bewTimer: 3, gotBonusToday: false }; 
       }
       
       let nirvanaStreak = 0; 
@@ -1323,8 +1296,7 @@
       return {
           cycleId: cycle.id, status: cycle.status, isOpen: cycle.base.isOpen, history, 
           finalEnd: finalDebtZeroDate || addDays(simDate, -1), totalTDaysEver, totalDebtEver, 
-          dashState, nirvanaStreak, initialDebtTotal, basePenaltyStr, 
-          effectiveBaseEndStr, effectiveBaseT // V8.7: Zur korrekten Darstellung im UI zurückgeben
+          dashState, nirvanaStreak, initialDebtTotal, basePenaltyStr
       };
   }
 
@@ -1373,14 +1345,9 @@
       const targetTracker = document.getElementById('dash-target-tracker'); 
       const progressTxt = document.getElementById('dash-progress');
       
-      // V8.7 FIX: Restschuld ist flüssig (KEIN Puffer mehr addiert)
+      // V8.8: Keine Puffer mehr. Die Engine regelt die Zeit.
       let displayDebt = ds.debt;
-      
-      // ETA behält den pessimistischen Puffer
-      let displayETA = new Date(res.finalEnd);
-      if (ds.pendingBonus > 0 && (!ds.logToday || ds.logToday.type !== 'pause')) {
-          displayETA.setDate(displayETA.getDate() + Math.ceil(ds.pendingBonus));
-      }
+      let displayETA = res.finalEnd;
       
       let progress = 100;
       if (displayDebt > 0 && ds.totalDebtEver > 0) {
@@ -1393,19 +1360,25 @@
       percentTxt.classList.remove('nirvana');
       streakBadge.className = 'streak-badge';
 
-      // V8.7 FIX: Dezimalstellen bei Fortschritts-Tracker
+      // V8.8: Dezimalstellen bei Fortschritts-Tracker
       if (ds.totalDebtEver > 0 && displayDebt > 0 && !res.isOpen) {
           let geschafft = ds.totalDebtEver - displayDebt;
+          // JavaScript Float-Ungenauigkeiten abfangen
+          geschafft = Math.round(geschafft * 10) / 10;
+          let totalStr = Math.round(ds.totalDebtEver * 10) / 10;
+          
           let geschafftStr = Number.isInteger(geschafft) ? geschafft : geschafft.toFixed(1).replace('.', ',');
-          let totalStr = Number.isInteger(ds.totalDebtEver) ? ds.totalDebtEver : ds.totalDebtEver.toFixed(1).replace('.', ',');
+          totalStr = Number.isInteger(totalStr) ? totalStr : totalStr.toFixed(1).replace('.', ',');
+          
           progressTxt.textContent = `Tag ${geschafftStr} von ${totalStr} geschafft`;
           progressTxt.style.display = 'inline-block';
       } else { 
           progressTxt.style.display = 'none'; 
       }
 
-      // V8.7 FIX: Dezimalstellen bei Schulden-Text
-      let formattedDebt = Number.isInteger(displayDebt) ? displayDebt : displayDebt.toFixed(1).replace('.', ',');
+      // V8.8: Dezimalstellen bei Schulden-Text
+      let cleanDebt = Math.round(displayDebt * 10) / 10;
+      let formattedDebt = Number.isInteger(cleanDebt) ? cleanDebt : cleanDebt.toFixed(1).replace('.', ',');
 
       if (res.isOpen) {
           badge.className = 'status-badge status-open'; badge.textContent = "Konsumphase Aktiv";
@@ -1422,7 +1395,7 @@
           badge.className = 'status-badge status-bewaehrung'; badge.textContent = `Bewährungsphase`;
           ring.classList.add('bewaehrung'); ringLbl.textContent = "HEILUNG";
           daysLeftTxt.textContent = `Schulden: ${formattedDebt} Tage`; targetTxt.textContent = `Ziel: ${displayETA.toLocaleDateString('de-DE')}`;
-          sub.textContent = `Heilung: 0,5x. Halte noch ${ds.bewaehrungTimer} Tag(e) durch für den Bonus!`; streakBadge.style.display = 'none';
+          sub.textContent = `Heilung: 0,5x. Halte noch ${ds.bewTimer} Tag(e) durch für den Bonus!`; streakBadge.style.display = 'none';
       } else {
           badge.className = 'status-badge status-regen'; badge.textContent = "Tiefe Regeneration";
           ring.classList.add('regen'); ringLbl.textContent = "HEILUNG";
@@ -1557,7 +1530,7 @@
               if(cycle.base.sLevel === 2) highStressAusrutscher++;
               
               let baseD = parseLocal(cycle.base.start); 
-              let baseEnd = parseLocal(res.effectiveBaseEndStr || cycle.base.end); // V8.7 Fix für Archiv
+              let baseEnd = parseLocal(cycle.base.end); 
               
               while (baseD <= baseEnd && toIsoString(baseD) < todayStr) {
                   sumAusrutscherDays++; 
@@ -1568,8 +1541,7 @@
           
           Object.entries(cycle.logs).forEach(([dStr, log]) => {
               if (dStr >= todayStr) return; 
-              let effectiveEndStr = res.effectiveBaseEndStr || cycle.base.end;
-              let isBaseDay = (dStr >= cycle.base.start && dStr <= effectiveEndStr);
+              let isBaseDay = (dStr >= cycle.base.start && dStr <= cycle.base.end);
               
               if (log.mood && log.mood > 0) { 
                   if (log.type === 'pause') { sumMoodPause += parseInt(log.mood); countMoodPause++; } 
@@ -1683,7 +1655,7 @@
               const card = document.createElement('div'); 
               card.className = 'archive-card';
               card.innerHTML = `<div class="archive-header"><div class="archive-title">Zyklus: ${startStr} – ${endStr}</div><div class="archive-badge">${allArchDates.length} Tage Total</div></div>
-                <div class="archive-stats"><div><strong>Start-Konsum:</strong> ${res.effectiveBaseT || cycle.base.tDays} Tage</div><div><strong>Ausrutscher in Phase:</strong> ${ausCount}</div>
+                <div class="archive-stats"><div><strong>Start-Konsum:</strong> ${cycle.base.tDays} Tage</div><div><strong>Ausrutscher in Phase:</strong> ${ausCount}</div>
                 <div><strong>Heilungsdauer:</strong> ${res.history.b.length + res.history.r.length} Tage</div><div><strong>Nirvana-Streak danach:</strong> ${res.nirvanaStreak} Tage</div></div>`;
               archContainer.appendChild(card);
           });
@@ -1721,14 +1693,14 @@
                   customAlert("Simulation erfolgreich in die Sandbox geladen!");
               } else {
                   if (data.version >= 5) { 
-                      data.version = 8.7; appData = data; 
+                      data.version = 8.8; appData = data; 
                   } else if (data.base && !data.cycles) { 
-                      appData = { version: 8.7, cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }], breatheLogs: {} };
+                      appData = { version: 8.8, cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }], breatheLogs: {} };
                   } else if (data.tDays !== undefined && !data.base) {
                       let base = { start: data.startDate, end: data.endDate, tDays: parseInt(data.tDays)||0, sLevel: parseInt(data.stress)||0, aLevel: parseInt(data.alcohol)||0, isOpen: false };
                       let logs = {}; 
                       if(data.interruptions) { data.interruptions.forEach(int => { logs[int.start] = { type: 'ausrutscher', t: parseInt(int.t)||1, s: parseInt(int.s)||0, a: parseInt(int.a)||0 }; }); }
-                      appData = { version: 8.7, cycles: [{ id: Date.now(), status: 'active', base: base, logs: logs }], breatheLogs: {} };
+                      appData = { version: 8.8, cycles: [{ id: Date.now(), status: 'active', base: base, logs: logs }], breatheLogs: {} };
                   } else { 
                       appData = data; 
                   }
@@ -1761,11 +1733,11 @@
       const sLevels = ['Kein', 'Moderat', 'Hoch']; 
       const aLevels = ['Kein', 'Moderat', 'Hoch'];
       
-      let desc = isSandbox ? `ReTrack SIMULATION\n\n` : `ReTrack V8.7\n\n`;
+      let desc = isSandbox ? `ReTrack SIMULATION\n\n` : `ReTrack V8.8\n\n`;
       desc += `--- Basis-Phase ---\n`;
       desc += `Start: ${parseLocal(activeCycle.base.start).toLocaleDateString('de-DE')}\n`;
-      desc += `Ende: ${parseLocal(res.effectiveBaseEndStr || activeCycle.base.end).toLocaleDateString('de-DE')}\n`;
-      desc += `T-Tage: ${res.effectiveBaseT || activeCycle.base.tDays}d\n`;
+      desc += `Ende: ${parseLocal(activeCycle.base.end).toLocaleDateString('de-DE')}\n`;
+      desc += `T-Tage: ${activeCycle.base.tDays}d\n`;
       desc += `Stress (Max): ${sLevels[activeCycle.base.sLevel]}\n`;
       desc += `Alkohol (Max): ${aLevels[activeCycle.base.aLevel]}\n`;
       desc += `${res.basePenaltyStr}\n`;
