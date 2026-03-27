@@ -8,7 +8,7 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
 
-  <title>ReTrack 8.9</title>
+  <title>ReTrack 9.0</title>
   
   <link rel="manifest" href="./manifest.json" />
   <meta name="theme-color" content="#f1c40f" />
@@ -200,6 +200,7 @@
     .tag.ausrutscher { background-color: #e74c3c; } 
     .tag.nirvana { background-color: #3498db; } 
     .tag.target-flag { background-color: #8e44ad; color: white; border: 1px solid #732d91;}
+    .tag.optimistic-flag { background-color: #f1c40f; color: #2c3e50; border: 1px dashed #e67e22; box-shadow: 0 0 5px rgba(241,196,15,0.4); } /* V9.0 Best-Case Tag */
     
     .legend { display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center; margin-top: 1rem; font-size: 0.8rem; color: #666; }
     .legend span { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 6px; vertical-align: middle; border: 1px solid rgba(0,0,0,0.1); }
@@ -208,6 +209,7 @@
     .legend span.l-bew { background-color: #f39c12; } 
     .legend span.l-reg { background-color: #27ae60; } 
     .legend span.l-nir { background-color: #3498db; }
+    .legend span.l-opt { background-color: #f1c40f; border: 1px dashed #e67e22; }
     
     /* Stats & Archive */
     .setup-overlay { display: none; text-align: center; padding: 2rem; background: #fffcf5; border-radius: 12px; border: 2px dashed #f1c40f; margin-bottom: 1rem;}
@@ -272,6 +274,7 @@
 </head>
 <body>
 
+  <!-- PWA UPDATE BANNER -->
   <div id="update-banner">
       🚀 Eine neue App-Version ist verfügbar!
       <div class="sandbox-actions">
@@ -279,6 +282,7 @@
       </div>
   </div>
 
+  <!-- SANDBOX BANNER -->
   <div id="sandbox-banner">
       🧪 SIMULATIONS-MODUS AKTIV
       <div class="sandbox-actions">
@@ -289,7 +293,7 @@
 
   <header onclick="openBreatheOverlay()" title="Geheime Atem-Übung öffnen">
     <h1>🧪 ReTrack</h1>
-    <div class="version">Version 8.9 – Healing Calendar & Replay</div>
+    <div class="version">Version 9.0 – Best-Case & Polish</div>
   </header>
 
   <div class="tabs">
@@ -300,10 +304,11 @@
 
   <input type="file" id="fileInput" accept=".json" onchange="importData(this)">
 
+  <!-- ================= TAB 1: DASHBOARD ================= -->
   <div id="tab-dashboard" class="tab-content active">
     
     <div id="setup-warning" class="setup-overlay">
-        <h3>Willkommen bei ReTrack (v8.9)! 👋</h3>
+        <h3>Willkommen bei ReTrack (v9.0)! 👋</h3>
         <p>Lege deinen ersten Zyklus an oder lade ein bestehendes Backup.</p>
         <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 15px;">
             <button class="btn-tool" style="background:var(--header-bg); border:none; color:white;" onclick="switchTab('historie')">✏️ Neuen Zyklus starten</button>
@@ -322,6 +327,7 @@
                 <div id="dash-sub" class="eta-subtext"></div>
             </div>
 
+            <!-- Ring (Klick öffnet Sandbox) -->
             <div class="ring-wrapper" onclick="openSandbox()" title="Geheimes Labor öffnen">
                 <svg viewBox="0 0 36 36" class="circular-chart">
                     <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
@@ -354,6 +360,7 @@
     </div>
   </div>
 
+  <!-- ================= TAB 2: AKTUELLER ZYKLUS ================= -->
   <div id="tab-historie" class="tab-content">
     <div class="card" id="base-form-card">
       <h3>📊 Start des aktuellen Zyklus</h3>
@@ -370,6 +377,7 @@
       <button class="btn-tool" style="width:100%; margin-top: 15px; background: var(--header-bg); border: none; color: white;" onclick="saveBase(true)">💾 Speichern & Neu berechnen</button>
     </div>
 
+    <!-- ZUKUNFTS-SIMULATOR -->
     <div class="card" id="sandbox-planner-card">
         <h3 style="color:#9b59b6; border-bottom-color:#e8daef;">🔮 Zukunfts-Simulator</h3>
         <p style="font-size:0.8rem; color:#666; margin-top:-10px;">Plane fiktive Ausrutscher für das laufende Jahr, um die Auswirkungen zu testen.</p>
@@ -393,6 +401,7 @@
                 <div><span class="l-bew"></span>Bewährung (offen)</div>
                 <div><span class="l-reg"></span>Regen. / bestanden</div>
                 <div><span class="l-nir"></span>Nirvana</div>
+                <div><span class="l-opt"></span>Best-Case Ziel</div>
             </div>
             <div class="calendar-wrapper"><div id="calendar"></div></div>
         </div>
@@ -412,6 +421,7 @@
     </div>
   </div>
 
+  <!-- ================= TAB 3: ARCHIV & STATS ================= -->
   <div id="tab-archiv" class="tab-content">
     <div class="card">
         <h3>📈 Deine Life-Tracker Statistiken</h3>
@@ -442,6 +452,7 @@
     </div>
   </div>
 
+  <!-- ================= CUSTOM MODALS ================= -->
   <div id="modal-alert" class="modal-overlay">
     <div class="modal-card" style="text-align:center;">
       <h3>ℹ️ Hinweis</h3>
@@ -461,6 +472,7 @@
     </div>
   </div>
 
+  <!-- Ausrutscher Modal -->
   <div id="modal-ausrutscher" class="modal-overlay">
     <div class="modal-card"><h3 style="color:var(--danger)">🔴 Ausrutscher loggen</h3>
       <div class="form-grid">
@@ -490,6 +502,7 @@
     </div>
   </div>
 
+  <!-- Pause Modal -->
   <div id="modal-pause" class="modal-overlay">
     <div class="modal-card"><h3 style="color:var(--btn-calc)">🟢 Tagesabschluss</h3>
       <p style="font-size:0.8rem; color:#666; margin-bottom: 15px;">Pausentage mit Stress/Alkohol drosseln <strong>nicht</strong> deine Heilungsdauer, füttern aber die Statistik.</p>
@@ -520,6 +533,7 @@
     </div>
   </div>
 
+  <!-- Edit Modal -->
   <div id="modal-edit-day" class="modal-overlay">
     <div class="modal-card"><h3 id="edit-day-title">✏️ Tag bearbeiten</h3>
       <input type="hidden" id="edit-day-date">
@@ -556,6 +570,7 @@
     </div>
   </div>
 
+  <!-- Breathe Overlay -->
   <div id="breathe-overlay" class="br-overlay">
       <button class="br-close-btn" onclick="abortBreathe()">❌ Beenden</button>
       <div id="br-setup" class="br-setup-card">
@@ -581,7 +596,7 @@
   </div>
 
 <script>
-  let appData = { version: 8.9, cycles: [], breatheLogs: {} };
+  let appData = { version: 9.0, cycles: [], breatheLogs: {} };
   let isSandbox = false; 
   let sandboxData = null;
 
@@ -681,14 +696,14 @@
 
   function loadData() {
       const saved = localStorage.getItem('regenAppData_v6') || localStorage.getItem('regenAppData_v5');
-      let parsedData = { version: 8.9, cycles: [], breatheLogs: {} };
+      let parsedData = { version: 9.0, cycles: [], breatheLogs: {} };
       if (saved) {
           try { 
               let data = JSON.parse(saved); 
               if (data && typeof data === 'object') {
                   if (data.version >= 5) { 
                       parsedData = data; 
-                      parsedData.version = 8.9; 
+                      parsedData.version = 9.0; 
                   } else if (!data.cycles && data.base) { 
                       parsedData.cycles = [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }];
                   } else if (data.tDays !== undefined && !data.base) {
@@ -736,7 +751,7 @@
       if (isSandbox) return customAlert("Im Simulations-Modus kannst du keinen Hard-Reset durchführen.");
       customConfirm("ACHTUNG: Möchtest du wirklich ALLE Daten löschen? (Werkseinstellungen)", () => {
           localStorage.removeItem('regenAppData_v5'); localStorage.removeItem('regenAppData_v6'); localStorage.removeItem('regenAppData_v7');
-          appData = { version: 8.9, cycles: [], breatheLogs: {} }; 
+          appData = { version: 9.0, cycles: [], breatheLogs: {} }; 
           customAlert("Gelöscht.", () => { window.location.href = window.location.href.split('?')[0]; });
       });
   }
@@ -836,7 +851,6 @@
       const active = getActiveCycle(); 
       if(active && active.base.isOpen && dStr > active.base.end) { active.base.isOpen = false; }
       
-      // V8.9 FIX: Konfetti Replay - Blocker löschen
       if (dStr === todayStr) sessionStorage.removeItem('bonusShown_' + todayStr);
 
       active.logs[dStr] = { type: 'pause', s, a, mood, note }; 
@@ -877,7 +891,6 @@
               const newCycle = { id: Date.now(), status: 'active', base: { start: dStr, end: addDays(parseLocal(dStr), t-1).toISOString().split('T')[0], tDays: t, sLevel: s, aLevel: a, isOpen: true }, logs: {} };
               if (mood > 0 || note !== "") { newCycle.logs[dStr] = { mood: mood, note: note }; }
               
-              // V8.9 FIX: Konfetti Replay
               if (dStr === todayStr) sessionStorage.removeItem('bonusShown_' + todayStr);
               
               getApp().cycles.push(newCycle); closeModal('modal-ausrutscher'); saveData(); return;
@@ -903,7 +916,6 @@
           }
       }
 
-      // V8.9 FIX: Konfetti Replay
       if (dStr === todayStr) sessionStorage.removeItem('bonusShown_' + todayStr);
 
       active.logs[dStr] = { type: 'ausrutscher', t, s, a, mood, note }; 
@@ -1081,7 +1093,7 @@
           }
       }
       
-      // V8.9 FIX: Konfetti Replay
+      // V9.0 FIX: Konfetti Replay Sperre aufheben
       if (dStr === toIsoString(new Date())) sessionStorage.removeItem('bonusShown_' + dStr);
 
       closeModal('modal-edit-day'); 
@@ -1117,7 +1129,6 @@
           customConfirm("Eintrag unwiderruflich löschen?", () => { 
               delete active.logs[dStr]; 
               
-              // V8.9 FIX: Konfetti Replay - Blocker löschen
               if (dStr === toIsoString(new Date())) sessionStorage.removeItem('bonusShown_' + dStr);
               
               closeModal('modal-edit-day'); 
@@ -1129,7 +1140,7 @@
       }
   }
 
-  // --- ENGINE V8.9: Heilender Kalender & Stotter-Logik ---
+  // --- ENGINE V9.0: Best-Case Target & Robust Confetti ---
   function runAllSimulations() {
       globalSimResults = (getApp().cycles || []).map(cycle => simulateCycle(cycle));
       activeSimResult = globalSimResults.length > 0 ? globalSimResults[globalSimResults.length - 1] : null;
@@ -1156,14 +1167,15 @@
       let totalDebtEver = debt; 
       let totalTDaysEver = cycle.base.tDays;
 
-      // Bewährung erzwingen
       let state = 'BEWAEHRUNG'; 
       let bewTimer = 3; 
       let withheldBonus = 0; 
       let hasPaidPauschaleThisCluster = false; 
       
-      // V8.9 FIX: Der "Warteraum" für Bewährungstage (Heilender Kalender)
       let currentBewDays = [];
+      
+      // V9.0: Tracken der in der Zukunft weggeworfenen Boni für das Best-Case Datum
+      let totalDiscardedBonus = 0;
       
       let simDate = parseLocal(cycle.base.end); 
       simDate.setDate(simDate.getDate() + 1);
@@ -1233,7 +1245,6 @@
               bewTimer = log.t * 3; 
               hasPaidPauschaleThisCluster = true; 
               
-              // V8.9 FIX: Bewährung gebrochen! Warteraum-Tage werden als gescheitert (Orange) markiert. Bonus verfällt.
               if (currentBewDays.length > 0) {
                   history.b.push(...currentBewDays);
                   currentBewDays = [];
@@ -1255,7 +1266,6 @@
                       withheldBonus += 0.5; 
                       bewTimer--; 
                       
-                      // V8.9 FIX: Tag in Warteraum schieben
                       currentBewDays.push(new Date(simDate));
                       
                       if (bewTimer <= 0) { 
@@ -1267,14 +1277,15 @@
                               if (dStr === todayStr && isLogged) gotBonusForToday = true; 
                               if (withheldBonus > 0) history.bonusDict[dStr] = `🎉 Bonus gesichert: -${withheldBonus} Tage`;
                               
-                              // V8.9 FIX: Bewährung bestanden! Rückwirkend in Regeneration (Grün) umfärben!
                               history.r.push(...currentBewDays);
                           } else {
-                              // V8.9 FIX: In der pessimistischen Zukunft werden sie in Orange gezeichnet
                               history.b.push(...currentBewDays);
+                              // V9.0 FIX: Wir verwerfen einen Bonus, da er in der pessimistischen Zukunft liegt.
+                              // Das ist die Differenz zwischen pessimistischem und optimistischem Datum!
+                              totalDiscardedBonus += withheldBonus;
                           }
                           
-                          currentBewDays = []; // Warteraum leeren
+                          currentBewDays = []; 
                           withheldBonus = 0; 
                           state = 'REGEN'; 
                           hasPaidPauschaleThisCluster = false; 
@@ -1296,14 +1307,14 @@
                   totalDebtEver, 
                   state, 
                   bewTimer, 
-                  gotBonusToday: gotBonusForToday
+                  // V9.0 BUGFIX: Das Konfetti-Signal wird streng nur dann true, wenn der Snapshot HEUTE betrifft
+                  gotBonusToday: (dStr === todayStr) ? gotBonusForToday : false 
               }; 
           }
           
           simDate.setDate(simDate.getDate() + 1);
       }
       
-      // V8.9 FIX: Falls der Zyklus abrupt endet, schiebe restliche offene Bewährungstage ins Orange
       if (currentBewDays.length > 0) {
           history.b.push(...currentBewDays);
       }
@@ -1314,10 +1325,18 @@
       
       let nirvanaStreak = 0; 
       if (debt <= 0 && history.n.length > 0) { nirvanaStreak = history.n.length; }
+      
+      // V9.0 FIX: Berechnung des optimistischen Datums (Leuchtturm im Kalender)
+      let pessimisticEnd = finalDebtZeroDate || addDays(simDate, -1);
+      let optimisticEndStr = null;
+      if (totalDiscardedBonus > 0) {
+          let optEnd = addDays(pessimisticEnd, -Math.ceil(totalDiscardedBonus));
+          optimisticEndStr = toIsoString(optEnd);
+      }
 
       return {
           cycleId: cycle.id, status: cycle.status, isOpen: cycle.base.isOpen, history, 
-          finalEnd: finalDebtZeroDate || addDays(simDate, -1), totalTDaysEver, totalDebtEver, 
+          finalEnd: pessimisticEnd, optimisticEndStr, totalTDaysEver, totalDebtEver, 
           dashState, nirvanaStreak, initialDebtTotal, basePenaltyStr
       };
   }
@@ -1443,6 +1462,7 @@
           document.getElementById('daily-done-area').style.display = 'none'; 
       }
       
+      // Das Konfetti fliegt nur noch, wenn das Signal WIRKLICH von heute kommt
       if (!isSandbox && ds.gotBonusToday) { triggerBonusConfetti(); }
   }
 
@@ -1483,6 +1503,9 @@
       const realEnd = new Date(rawMaxDate.getFullYear(), rawMaxDate.getMonth() + 1, 0);
       const todayStr = new Date().toDateString(); 
       const targetStrCheck = active.targetETA ? parseLocal(active.targetETA).toDateString() : null;
+      
+      // V9.0 FIX: Das Best-Case Datum für den Kalender aufbereiten
+      const optimisticStrCheck = res.optimisticEndStr ? parseLocal(res.optimisticEndStr).toDateString() : null;
 
       let calHtml = "<table><thead><tr><th>Mo</th><th>Di</th><th>Mi</th><th>Do</th><th>Fr</th><th>Sa</th><th>So</th></tr></thead><tbody><tr>";
       let startDay = current.getDay() === 0 ? 6 : current.getDay() - 1;
@@ -1498,11 +1521,18 @@
         if (res.history.t.some(d => d.toDateString() === dStr)) { tagClass = "tday"; tagText="1. Konsum"; }
         else if (res.history.a.some(d => d.toDateString() === dStr)) { tagClass = "ausrutscher"; tagText="weiterer Konsum"; }
         else if (res.history.b.some(d => d.toDateString() === dStr)) { tagClass = "bewaehrung"; tagText="Bewährung"; }
-        else if (res.history.r.some(d => d.toDateString() === dStr)) { tagClass = "regen"; tagText="Regeneration"; }
+        else if (res.history.r.some(d => d.toDateString() === dStr)) { tagClass = "regen"; tagText="Regen."; }
         else if (res.history.n.some(d => d.toDateString() === dStr)) { tagClass = "nirvana"; tagText="Nirvana"; }
         
         if (log && log.note) tagText += " 📝";
-        if (targetStrCheck && dStr === targetStrCheck) { tagText += " 🏁"; tagClass += " target-flag"; }
+        
+        if (targetStrCheck && dStr === targetStrCheck) { tagText += " 🏁 Ziel"; tagClass += " target-flag"; }
+        
+        // V9.0 FIX: Den Leuchtturm-Tag im Kalender markieren
+        if (optimisticStrCheck && dStr === optimisticStrCheck && dStr !== targetStrCheck) { 
+            tagText += " 🌟 Best-Case"; 
+            tagClass += " optimistic-flag"; 
+        }
 
         calHtml += `<td class="active-month ${isTodayClass}"><span class="date-num">${current.getDate()}.</span>${tagText ? `<span class="tag ${tagClass}">${tagText.trim()}</span>` : ''}</td>`;
         if (current.getDay() === 0 && current < realEnd) calHtml += "</tr><tr>"; 
@@ -1711,14 +1741,14 @@
                   customAlert("Simulation erfolgreich in die Sandbox geladen!");
               } else {
                   if (data.version >= 5) { 
-                      data.version = 8.9; appData = data; 
+                      data.version = 9.0; appData = data; 
                   } else if (data.base && !data.cycles) { 
-                      appData = { version: 8.9, cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }], breatheLogs: {} };
+                      appData = { version: 9.0, cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }], breatheLogs: {} };
                   } else if (data.tDays !== undefined && !data.base) {
                       let base = { start: data.startDate, end: data.endDate, tDays: parseInt(data.tDays)||0, sLevel: parseInt(data.stress)||0, aLevel: parseInt(data.alcohol)||0, isOpen: false };
                       let logs = {}; 
                       if(data.interruptions) { data.interruptions.forEach(int => { logs[int.start] = { type: 'ausrutscher', t: parseInt(int.t)||1, s: parseInt(int.s)||0, a: parseInt(int.a)||0 }; }); }
-                      appData = { version: 8.9, cycles: [{ id: Date.now(), status: 'active', base: base, logs: logs }], breatheLogs: {} };
+                      appData = { version: 9.0, cycles: [{ id: Date.now(), status: 'active', base: base, logs: logs }], breatheLogs: {} };
                   } else { 
                       appData = data; 
                   }
@@ -1751,7 +1781,7 @@
       const sLevels = ['Kein', 'Moderat', 'Hoch']; 
       const aLevels = ['Kein', 'Moderat', 'Hoch'];
       
-      let desc = isSandbox ? `ReTrack SIMULATION\n\n` : `ReTrack V8.9\n\n`;
+      let desc = isSandbox ? `ReTrack SIMULATION\n\n` : `ReTrack V9.0\n\n`;
       desc += `--- Basis-Phase ---\n`;
       desc += `Start: ${parseLocal(activeCycle.base.start).toLocaleDateString('de-DE')}\n`;
       desc += `Ende: ${parseLocal(activeCycle.base.end).toLocaleDateString('de-DE')}\n`;
@@ -1779,7 +1809,8 @@
       desc += `Zusätzlicher Aufschlag: +${aufschlag} Tage\n`; 
       desc += `Regenerationsschuld gesamt: ${totalRegenDebt} Tage\n`;
       desc += `\nEmpfohlene M-freie Tage: ${Math.min(res.totalTDaysEver * 2, 14)}\n`;
-      desc += `Prognostiziertes Ziel: ${res.finalEnd.toLocaleDateString('de-DE')}\n`;
+      desc += `Pessimistisches Ziel: ${res.finalEnd.toLocaleDateString('de-DE')}\n`;
+      if(res.optimisticEndStr) desc += `Best-Case Ziel: ${parseLocal(res.optimisticEndStr).toLocaleDateString('de-DE')}\n`;
 
       const exportDates = [...res.history.b, ...res.history.r].sort((a,b) => a-b);
       if(exportDates.length === 0) return customAlert("Keine Erholungstage zum Exportieren gefunden.");
