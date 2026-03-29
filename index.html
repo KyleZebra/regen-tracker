@@ -8,7 +8,7 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
 
-  <title>ReTrack 9.3</title>
+  <title>ReTrack 9.4</title>
   
   <link rel="manifest" href="./manifest.json" />
   <meta name="theme-color" content="#f1c40f" />
@@ -309,13 +309,13 @@
 
   <header onclick="openBreatheOverlay()" title="Geheime Atem-Übung öffnen">
     <h1>🧪 ReTrack</h1>
-    <div class="version">Version 9.3 – Nudging & Trophies</div>
+    <div class="version">Version 9.4 – Architecture & Security Update</div>
   </header>
 
   <div class="tabs">
-    <button class="tab-btn active" onclick="switchTab('dashboard')">🏠 Heute</button>
-    <button class="tab-btn" onclick="switchTab('historie')">⚙️ Aktuell</button>
-    <button class="tab-btn" onclick="switchTab('archiv')">🏛️ Archiv</button>
+    <button class="tab-btn active" data-tab="dashboard" onclick="switchTab('dashboard')">🏠 Heute</button>
+    <button class="tab-btn" data-tab="historie" onclick="switchTab('historie')">⚙️ Aktuell</button>
+    <button class="tab-btn" data-tab="archiv" onclick="switchTab('archiv')">🏛️ Archiv</button>
   </div>
 
   <input type="file" id="fileInput" accept=".json" onchange="importData(this)">
@@ -324,7 +324,7 @@
   <div id="tab-dashboard" class="tab-content active">
     
     <div id="setup-warning" class="setup-overlay">
-        <h3>Willkommen bei ReTrack (v9.3)! 👋</h3>
+        <h3>Willkommen bei ReTrack (v9.4)! 👋</h3>
         <p>Lege deinen ersten Zyklus an oder lade ein bestehendes Backup.</p>
         <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 15px;">
             <button class="btn-tool" style="background:var(--header-bg); border:none; color:white;" onclick="switchTab('historie')">✏️ Neuen Zyklus starten</button>
@@ -360,7 +360,6 @@
 
             <div id="dash-target-tracker" class="target-tracker" style="display:none;"></div>
             
-            <!-- V9.3: Tagesausblick Modul -->
             <div id="dash-outlook" class="outlook-box" style="display:none;"></div>
 
             <div id="daily-action-area">
@@ -454,7 +453,6 @@
             <div class="stat-box"><div class="stat-val" id="stat-avg-ausrutscher">0</div><div class="stat-label">Ø T-Dauer</div></div>
         </div>
         
-        <!-- V9.3: Nirwana & Meilensteine Block -->
         <h4 style="color:#7f8c8d; margin-top: 1.5rem; margin-bottom: 10px; font-size:0.85rem; text-transform:uppercase;">🌟 Nirwana & Meilensteine</h4>
         <div class="stat-grid" style="margin-bottom: 1.5rem;">
             <div class="stat-box" style="background: #fef9e7; border-color: #fdebd0;"><div class="stat-val" style="color: #f39c12;" id="stat-avg-nirvana">0</div><div class="stat-label">Ø Tage im Nirwana</div></div>
@@ -624,7 +622,7 @@
   </div>
 
 <script>
-  let appData = { version: 9.3, cycles: [], breatheLogs: {} };
+  let appData = { version: 9.4, cycles: [], breatheLogs: {} };
   let isSandbox = false; 
   let sandboxData = null;
 
@@ -733,22 +731,28 @@
   function applySandboxGoal() {
       if(!activeSimResult) return; 
       const targetStr = toIsoString(activeSimResult.finalEnd); 
-      appData.cycles[appData.cycles.length - 1].targetETA = targetStr;
-      closeSandbox(); 
-      saveData(); 
-      customAlert("Zielvorgabe (" + parseLocal(targetStr).toLocaleDateString('de-DE') + ") wurde erfolgreich in deine Realität übertragen!");
+      // V9.4 FIX: Gezielt den aktiven Zyklus suchen statt blind das letzte Element zu nehmen
+      const realActive = appData.cycles.find(c => c.status === 'active');
+      if (realActive) {
+          realActive.targetETA = targetStr;
+          closeSandbox(); 
+          saveData(); 
+          customAlert("Zielvorgabe (" + parseLocal(targetStr).toLocaleDateString('de-DE') + ") wurde erfolgreich in deine Realität übertragen!");
+      } else {
+          customAlert("Fehler: Kein aktiver Zyklus zum Speichern des Ziels gefunden.");
+      }
   }
 
   function loadData() {
       const saved = localStorage.getItem('regenAppData_v6') || localStorage.getItem('regenAppData_v5');
-      let parsedData = { version: 9.3, cycles: [], breatheLogs: {} };
+      let parsedData = { version: 9.4, cycles: [], breatheLogs: {} };
       if (saved) {
           try { 
               let data = JSON.parse(saved); 
               if (data && typeof data === 'object') {
                   if (data.version >= 5) { 
                       parsedData = data; 
-                      parsedData.version = 9.3; 
+                      parsedData.version = 9.4; 
                   } else if (!data.cycles && data.base) { 
                       parsedData.cycles = [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }];
                   } else if (data.tDays !== undefined && !data.base) {
@@ -796,16 +800,18 @@
       if (isSandbox) return customAlert("Im Simulations-Modus kannst du keinen Hard-Reset durchführen.");
       customConfirm("ACHTUNG: Möchtest du wirklich ALLE Daten löschen? (Werkseinstellungen)", () => {
           localStorage.removeItem('regenAppData_v5'); localStorage.removeItem('regenAppData_v6'); localStorage.removeItem('regenAppData_v7');
-          appData = { version: 9.3, cycles: [], breatheLogs: {} }; 
+          appData = { version: 9.4, cycles: [], breatheLogs: {} }; 
           customAlert("Gelöscht.", () => { window.location.href = window.location.href.split('?')[0]; });
       });
   }
 
   function switchTab(tabId) {
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); 
+      // V9.4 FIX: Robustere Tab-Navigation per data-tab Attribut statt toString-Hack
+      document.querySelectorAll('.tab-btn').forEach(b => {
+          if(b.dataset.tab === tabId) b.classList.add('active');
+          else b.classList.remove('active');
+      });
       document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-      const activeBtn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.onclick.toString().includes(tabId)); 
-      if(activeBtn) activeBtn.classList.add('active');
       document.getElementById('tab-' + tabId).classList.add('active'); 
       if(activeSimResult) updateUI();
   }
@@ -861,6 +867,12 @@
       const t = parseInt(document.getElementById('base-t').value);
       if(!s || !e || isNaN(t)) { if(force) customAlert("Bitte Start und Ende eintragen."); return; }
       
+      // V9.4 FIX: Harte Absicherung gegen unplausible Zyklen (0 Tage oder Start > Ende)
+      if (t < 1 || s > e) {
+          if(force) customAlert("Das Startdatum darf nicht nach dem Enddatum liegen und die Dauer muss mindestens 1 Tag betragen.");
+          return;
+      }
+
       if (t > 21) {
           customAlert("Eine initiale Konsumphase von mehr als drei Wochen überlastet die Simulation. Bitte schließe deinen aktuellen Konsum zunächst ab, pausiere diesen dann für drei bis sechs Wochen und logge dann erst wieder frischen Konsum.");
           populateBaseForm();
@@ -900,7 +912,10 @@
       if(!isSandbox && dStr > todayStr) return customAlert("Keine Logs in der Zukunft möglich!");
 
       const active = getActiveCycle(); 
-      if(active && active.base.isOpen && dStr > active.base.end) { active.base.isOpen = false; }
+      // V9.4 FIX: Fehlende Absicherung ergänzt
+      if(!active) return customAlert("Kein aktiver Zyklus gefunden!");
+
+      if(active.base.isOpen && dStr > active.base.end) { active.base.isOpen = false; }
       
       if (dStr === todayStr) sessionStorage.removeItem('bonusShown_' + todayStr);
 
@@ -940,11 +955,15 @@
       if(!isSandbox && dStr > todayStr) return customAlert("Keine Logs in der Zukunft möglich!");
       
       let active = getActiveCycle();
+      // V9.4 FIX: Fehlende Absicherung ergänzt
+      if(!active) return customAlert("Kein aktiver Zyklus gefunden!");
       
       if (activeSimResult && activeSimResult.dashState && activeSimResult.dashState.debt <= 0) {
           if (dStr > toIsoString(activeSimResult.finalEnd)) {
               active.status = 'archived';
-              const newCycle = { id: Date.now(), status: 'active', base: { start: dStr, end: addDays(parseLocal(dStr), t-1).toISOString().split('T')[0], tDays: t, sLevel: s, aLevel: a, isOpen: true }, logs: {} };
+              // V9.4 FIX: toISOString() zu toIsoString() geändert für korrekte Zeitzonen-Handhabung
+              const newEndStr = toIsoString(addDays(parseLocal(dStr), t-1));
+              const newCycle = { id: Date.now(), status: 'active', base: { start: dStr, end: newEndStr, tDays: t, sLevel: s, aLevel: a, isOpen: true }, logs: {} };
               if (mood > 0 || note !== "") { newCycle.logs[dStr] = { mood: mood, note: note }; }
               
               if (dStr === todayStr) sessionStorage.removeItem('bonusShown_' + todayStr);
@@ -960,7 +979,8 @@
       if (active.base.isOpen) {
           const expectedNext = toIsoString(addDays(parseLocal(active.base.end), 1));
           if (dStr === expectedNext) { 
-              active.base.end = addDays(parseLocal(dStr), t-1).toISOString().split('T')[0]; 
+              // V9.4 FIX: toISOString() Zeitzonen-Bug behoben
+              active.base.end = toIsoString(addDays(parseLocal(dStr), t-1)); 
               active.base.tDays += t; 
               active.base.sLevel = Math.max(active.base.sLevel, s); 
               active.base.aLevel = Math.max(active.base.aLevel, a); 
@@ -998,11 +1018,15 @@
       if(dStr > `${currentYear}-12-31`) return customAlert(`Planung nur bis zum 31.12.${currentYear} möglich, um Rendering-Crashes zu verhindern.`);
       
       let active = getActiveCycle(); 
+      // V9.4 FIX: Fehlende Absicherung ergänzt
+      if(!active) return customAlert("Kein aktiver Zyklus gefunden!");
       
       if (activeSimResult && activeSimResult.dashState && activeSimResult.dashState.debt <= 0) {
           if (dStr > toIsoString(activeSimResult.finalEnd)) {
               active.status = 'archived';
-              const newCycle = { id: Date.now(), status: 'active', base: { start: dStr, end: addDays(parseLocal(dStr), t-1).toISOString().split('T')[0], tDays: t, sLevel: s, aLevel: a, isOpen: true }, logs: {} };
+              // V9.4 FIX: toISOString() Zeitzonen-Bug behoben
+              const newEndStr = toIsoString(addDays(parseLocal(dStr), t-1));
+              const newCycle = { id: Date.now(), status: 'active', base: { start: dStr, end: newEndStr, tDays: t, sLevel: s, aLevel: a, isOpen: true }, logs: {} };
               newCycle.logs[dStr] = { type: 'ausrutscher', t, s, a, mood: 0, note: "🔮 Zukunftssimulation", isSimulated: true };
               getApp().cycles.push(newCycle);
               saveData();
@@ -1059,7 +1083,8 @@
 
   function renderDiaryList() {
       const active = getActiveCycle(); 
-      if(!active || !active.base.start) return;
+      // V9.4 FIX: Zusätzliche Absicherung
+      if(!active || !active.base || !active.base.start) return;
       
       let curr = parseLocal(active.base.start); 
       const todayStr = toIsoString(new Date());
@@ -1150,6 +1175,9 @@
 
   function openDiaryEdit(dateStr) {
       const active = getActiveCycle(); 
+      // V9.4 FIX: Fehlende Absicherung
+      if(!active) return;
+
       const isBase = (dateStr >= active.base.start && dateStr <= active.base.end);
       
       document.getElementById('edit-day-title').innerHTML = `✏️ Tag bearbeiten: <span style="color:var(--accent)">${parseLocal(dateStr).toLocaleDateString('de-DE')}</span>`;
@@ -1181,6 +1209,9 @@
 
   function submitEditDay() {
       const active = getActiveCycle(); 
+      // V9.4 FIX: Fehlende Absicherung
+      if(!active) return;
+
       const dStr = document.getElementById('edit-day-date').value; 
       const isBase = document.getElementById('edit-is-base').value === "1"; 
       const mood = parseInt(document.getElementById('edit-day-mood').value) || 0; 
@@ -1216,6 +1247,9 @@
 
   function deleteEditDay() {
       const active = getActiveCycle(); 
+      // V9.4 FIX: Fehlende Absicherung
+      if(!active) return;
+
       const dStr = document.getElementById('edit-day-date').value;
       
       closeModal('modal-edit-day'); 
@@ -1253,7 +1287,7 @@
       }
   }
 
-  // --- ENGINE V9.3: Bugfixes & Nudging ---
+  // --- ENGINE V9.4: Architecture & Security Fixes ---
   function runAllSimulations() {
       globalSimResults = (getApp().cycles || []).map(cycle => simulateCycle(cycle));
       activeSimResult = globalSimResults.length > 0 ? globalSimResults[globalSimResults.length - 1] : null;
@@ -1410,7 +1444,6 @@
                   
                   if (debt <= 0 && !finalDebtZeroDate) finalDebtZeroDate = new Date(simDate);
               } else {
-                  // V9.3 FIX: Nirwana-Mitternachts-Regel. Zählt nicht für heute, wenn ungeloggt.
                   let canCountNirvana = !isFuture || isSandbox;
                   if (canCountNirvana) {
                       history.n.push(new Date(simDate));
@@ -1594,7 +1627,6 @@
           sub.textContent = "Du heilst mit 1,0x Geschwindigkeit."; streakBadge.style.display = 'none';
       }
 
-      // V9.3: Der objektive Tagesausblick (Phantom-Klone)
       const todayStr = toIsoString(new Date());
       const activeCycle = getActiveCycle();
       const isLoggedToday = activeCycle?.logs[todayStr] && activeCycle.logs[todayStr].type !== undefined;
@@ -1745,7 +1777,6 @@
       let sumMoodPause = 0; let countMoodPause = 0; let sumMoodAus = 0; let countMoodAus = 0;
       let allPastAusrutscherDates = [];
       
-      // V9.3: Nirwana Tracker Variables
       let cyclesWithNirvana = 0;
       let totalNirvanaDays = 0;
       let totalMilestones = 0;
@@ -1768,7 +1799,6 @@
           }
           maxNirvana = Math.max(maxNirvana, currentStreak);
           
-          // V9.3: Track Nirvana averages and milestones safely
           let cycleNirvanaStreak = res.nirvanaStreak;
           if (cycleNirvanaStreak > 0) {
               cyclesWithNirvana++;
@@ -1823,7 +1853,6 @@
       document.getElementById('stat-total-days').textContent = pastDaysTracked; 
       document.getElementById('stat-avg-ausrutscher').textContent = avgAus;
       
-      // V9.3: Inject into new Nirvana DOM elements
       document.getElementById('stat-avg-nirvana').textContent = avgNirvana;
       document.getElementById('stat-total-milestones').textContent = totalMilestones;
 
@@ -1937,6 +1966,15 @@
       reader.onload = function(e) {
           try {
               let data = JSON.parse(e.target.result);
+              
+              // V9.4 FIX: Validiere grundlegende Backup-Struktur vor der Zuweisung
+              if (!data || typeof data !== 'object' || (!data.cycles && !data.base && data.tDays === undefined)) {
+                  throw new Error("Ungültiges Dateiformat. Keine App-Daten gefunden.");
+              }
+              if (data.cycles && !Array.isArray(data.cycles)) {
+                  throw new Error("Ungültiges Dateiformat. Zyklen müssen eine Liste sein.");
+              }
+
               if (!isSandbox && data.isSandbox) { 
                   input.value = ''; 
                   return customAlert("Achtung: Dies ist eine Simulations-Datei. Du kannst sie nur im Labor (Ring klicken) laden!"); 
@@ -1949,14 +1987,14 @@
                   customAlert("Simulation erfolgreich in die Sandbox geladen!");
               } else {
                   if (data.version >= 5) { 
-                      data.version = 9.3; appData = data; 
+                      data.version = 9.4; appData = data; 
                   } else if (data.base && !data.cycles) { 
-                      appData = { version: 9.3, cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }], breatheLogs: {} };
+                      appData = { version: 9.4, cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }], breatheLogs: {} };
                   } else if (data.tDays !== undefined && !data.base) {
                       let base = { start: data.startDate, end: data.endDate, tDays: parseInt(data.tDays)||0, sLevel: parseInt(data.stress)||0, aLevel: parseInt(data.alcohol)||0, isOpen: false };
                       let logs = {}; 
                       if(data.interruptions) { data.interruptions.forEach(int => { logs[int.start] = { type: 'ausrutscher', t: parseInt(int.t)||1, s: parseInt(int.s)||0, a: parseInt(int.a)||0 }; }); }
-                      appData = { version: 9.3, cycles: [{ id: Date.now(), status: 'active', base: base, logs: logs }], breatheLogs: {} };
+                      appData = { version: 9.4, cycles: [{ id: Date.now(), status: 'active', base: base, logs: logs }], breatheLogs: {} };
                   } else { 
                       appData = data; 
                   }
@@ -1974,7 +2012,7 @@
               }
           } catch(err) { 
               input.value = ''; 
-              customAlert("Fehler beim Laden: " + err); 
+              customAlert("Fehler beim Laden: " + err.message || err); 
           }
       };
       reader.onerror = function() { input.value = ''; customAlert("Fehler beim Lesen der Datei auf dem Gerät."); };
@@ -1989,7 +2027,7 @@
       const sLevels = ['Kein', 'Moderat', 'Hoch']; 
       const aLevels = ['Kein', 'Moderat', 'Hoch'];
       
-      let desc = isSandbox ? `ReTrack SIMULATION\n\n` : `ReTrack V9.3\n\n`;
+      let desc = isSandbox ? `ReTrack SIMULATION\n\n` : `ReTrack V9.4\n\n`;
       desc += `--- Basis-Phase ---\n`;
       desc += `Start: ${parseLocal(activeCycle.base.start).toLocaleDateString('de-DE')}\n`;
       desc += `Ende: ${parseLocal(activeCycle.base.end).toLocaleDateString('de-DE')}\n`;
