@@ -8,7 +8,7 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
 
-  <title>ReTrack 9.1</title>
+  <title>ReTrack 9.2</title>
   
   <link rel="manifest" href="./manifest.json" />
   <meta name="theme-color" content="#f1c40f" />
@@ -299,7 +299,7 @@
 
   <header onclick="openBreatheOverlay()" title="Geheime Atem-Übung öffnen">
     <h1>🧪 ReTrack</h1>
-    <div class="version">Version 9.1 – Sandbox & UX Polish</div>
+    <div class="version">Version 9.2 – Long-Term Nirvana & Limits</div>
   </header>
 
   <div class="tabs">
@@ -314,7 +314,7 @@
   <div id="tab-dashboard" class="tab-content active">
     
     <div id="setup-warning" class="setup-overlay">
-        <h3>Willkommen bei ReTrack (v9.1)! 👋</h3>
+        <h3>Willkommen bei ReTrack (v9.2)! 👋</h3>
         <p>Lege deinen ersten Zyklus an oder lade ein bestehendes Backup.</p>
         <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 15px;">
             <button class="btn-tool" style="background:var(--header-bg); border:none; color:white;" onclick="switchTab('historie')">✏️ Neuen Zyklus starten</button>
@@ -352,8 +352,8 @@
 
             <div id="daily-action-area">
                 <div class="quick-actions">
-                    <button class="btn-quick btn-pausiert" onclick="openPauseModal()">Stark geblieben</button>
-                    <button class="btn-quick btn-ausrutscher" onclick="openAusrutscherModal(false)">Ausrutscher</button>
+                    <button class="btn-quick btn-pausiert" onclick="openPauseModal()">🟢 Stark geblieben</button>
+                    <button class="btn-quick btn-ausrutscher" onclick="openAusrutscherModal(false)">🔴 Ausrutscher</button>
                 </div>
             </div>
             
@@ -395,7 +395,6 @@
         </div>
         <button class="btn-tool" style="width:100%; margin-top: 15px; background: #9b59b6; border: none; color: white; font-weight: 800;" onclick="submitFutureSim()">Zukunft berechnen</button>
         
-        <!-- V9.1: Sandbox Manager für 1-Klick-Löschen -->
         <div id="sandbox-sim-list"></div>
     </div>
 
@@ -605,7 +604,7 @@
   </div>
 
 <script>
-  let appData = { version: 9.1, cycles: [], breatheLogs: {} };
+  let appData = { version: 9.2, cycles: [], breatheLogs: {} };
   let isSandbox = false; 
   let sandboxData = null;
 
@@ -676,17 +675,15 @@
       switchTab('historie'); // Direkt zum Planer wechseln
   }
 
-  // V9.1 FIX: Global Labor Reset
   function resetSandbox() {
       if(!isSandbox) return;
-      sandboxData = JSON.parse(JSON.stringify(appData)); // Holt das saubere Abbild zurück
+      sandboxData = JSON.parse(JSON.stringify(appData));
       clearSandboxForm();
       runAllSimulations();
       updateUI();
       customAlert("Labor wurde auf deinen realen Stand zurückgesetzt.");
   }
 
-  // V9.1 FIX: Stilles Cleanup der Eingabefelder
   function clearSandboxForm() {
       document.getElementById('sim-a-date').value = '';
       document.getElementById('sim-a-t').value = '1';
@@ -701,8 +698,8 @@
       document.body.classList.remove('sandbox-mode'); 
       document.getElementById('sandbox-banner').style.display = 'none';
       
-      clearSandboxForm(); // V9.1 FIX: Keine Geister mehr im Formular
-      populateBaseForm(); // Stumm auf echte Daten zurücksetzen
+      clearSandboxForm();
+      populateBaseForm();
       runAllSimulations(); 
       updateUI(); 
       switchTab('dashboard'); // Zurück ins Heute
@@ -724,14 +721,14 @@
 
   function loadData() {
       const saved = localStorage.getItem('regenAppData_v6') || localStorage.getItem('regenAppData_v5');
-      let parsedData = { version: 9.1, cycles: [], breatheLogs: {} };
+      let parsedData = { version: 9.2, cycles: [], breatheLogs: {} };
       if (saved) {
           try { 
               let data = JSON.parse(saved); 
               if (data && typeof data === 'object') {
                   if (data.version >= 5) { 
                       parsedData = data; 
-                      parsedData.version = 9.1; 
+                      parsedData.version = 9.2; 
                   } else if (!data.cycles && data.base) { 
                       parsedData.cycles = [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }];
                   } else if (data.tDays !== undefined && !data.base) {
@@ -779,7 +776,7 @@
       if (isSandbox) return customAlert("Im Simulations-Modus kannst du keinen Hard-Reset durchführen.");
       customConfirm("ACHTUNG: Möchtest du wirklich ALLE Daten löschen? (Werkseinstellungen)", () => {
           localStorage.removeItem('regenAppData_v5'); localStorage.removeItem('regenAppData_v6'); localStorage.removeItem('regenAppData_v7');
-          appData = { version: 9.1, cycles: [], breatheLogs: {} }; 
+          appData = { version: 9.2, cycles: [], breatheLogs: {} }; 
           customAlert("Gelöscht.", () => { window.location.href = window.location.href.split('?')[0]; });
       });
   }
@@ -844,6 +841,13 @@
       const t = parseInt(document.getElementById('base-t').value);
       if(!s || !e || isNaN(t)) { if(force) customAlert("Bitte Start und Ende eintragen."); return; }
       
+      // V9.2 FIX: Harter Schutz vor Browser-Crashes (Max. 21 Tage Basisphase)
+      if (t > 21) {
+          customAlert("Eine initiale Konsumphase von mehr als drei Wochen überlastet die Simulation. Bitte schließe deinen aktuellen Konsum zunächst ab, pausiere diesen dann für drei bis sechs Wochen und logge dann erst wieder frischen Konsum.");
+          populateBaseForm();
+          return;
+      }
+      
       let active = getActiveCycle(); 
       if (!active) { active = { id: Date.now(), status: 'active', logs: {}, base: {} }; getApp().cycles.push(active); }
       active.base.start = s; active.base.end = e; active.base.tDays = t;
@@ -878,6 +882,8 @@
 
       const active = getActiveCycle(); 
       if(active && active.base.isOpen && dStr > active.base.end) { active.base.isOpen = false; }
+      
+      if (dStr === todayStr) sessionStorage.removeItem('bonusShown_' + todayStr);
 
       active.logs[dStr] = { type: 'pause', s, a, mood, note }; 
       closeModal('modal-pause'); 
@@ -906,6 +912,12 @@
 
       if(!dStr) return customAlert("Datum fehlt!"); 
       
+      // V9.2 FIX: Harter Schutz vor Browser-Crashes (Max. 21 Tage Ausrutscher)
+      if (t > 21) {
+          customAlert("Eine initiale Konsumphase von mehr als drei Wochen überlastet die Simulation. Bitte schließe deinen aktuellen Konsum zunächst ab, pausiere diesen dann für drei bis sechs Wochen und logge dann erst wieder frischen Konsum.");
+          return;
+      }
+      
       const todayStr = toIsoString(new Date());
       if(!isSandbox && dStr > todayStr) return customAlert("Keine Logs in der Zukunft möglich!");
       
@@ -916,6 +928,8 @@
               active.status = 'archived';
               const newCycle = { id: Date.now(), status: 'active', base: { start: dStr, end: addDays(parseLocal(dStr), t-1).toISOString().split('T')[0], tDays: t, sLevel: s, aLevel: a, isOpen: true }, logs: {} };
               if (mood > 0 || note !== "") { newCycle.logs[dStr] = { mood: mood, note: note }; }
+              
+              if (dStr === todayStr) sessionStorage.removeItem('bonusShown_' + todayStr);
               
               getApp().cycles.push(newCycle); closeModal('modal-ausrutscher'); saveData(); return;
           }
@@ -933,17 +947,19 @@
               active.base.sLevel = Math.max(active.base.sLevel, s); 
               active.base.aLevel = Math.max(active.base.aLevel, a); 
               
+              if (dStr === todayStr) sessionStorage.removeItem('bonusShown_' + todayStr);
               closeModal('modal-ausrutscher'); saveData(); return;
           } else if (dStr > expectedNext) { 
               active.base.isOpen = false; 
           }
       }
 
+      if (dStr === todayStr) sessionStorage.removeItem('bonusShown_' + todayStr);
+
       active.logs[dStr] = { type: 'ausrutscher', t, s, a, mood, note }; 
       closeModal('modal-ausrutscher'); saveData();
   }
 
-  // V9.1 FIX: Sandbox Log Flag
   function submitFutureSim() {
       const dStr = document.getElementById('sim-a-date').value; 
       const t = parseInt(document.getElementById('sim-a-t').value) || 1; 
@@ -952,6 +968,12 @@
       
       if(!dStr) return customAlert("Bitte ein Datum wählen.");
       
+      // V9.2 FIX: Harter Schutz vor Browser-Crashes
+      if (t > 21) {
+          customAlert("Eine initiale Konsumphase von mehr als drei Wochen überlastet die Simulation. Bitte schließe deinen aktuellen Konsum zunächst ab, pausiere diesen dann für drei bis sechs Wochen und logge dann erst wieder frischen Konsum.");
+          return;
+      }
+      
       const todayStr = toIsoString(new Date()); 
       if(dStr <= todayStr) return customAlert("Für heutige/vergangene Einträge nutze bitte den Heute-Tab.");
       
@@ -959,13 +981,25 @@
       if(dStr > `${currentYear}-12-31`) return customAlert(`Planung nur bis zum 31.12.${currentYear} möglich, um Rendering-Crashes zu verhindern.`);
       
       let active = getActiveCycle(); 
-      // isSimulated-Flag markiert Einträge exklusiv für den Manager
+      
+      // V9.2 FIX: Das Sandbox-Paradoxon! Startet neuen Zyklus im Labor, falls das Nirwana erreicht war.
+      if (activeSimResult && activeSimResult.dashState && activeSimResult.dashState.debt <= 0) {
+          if (dStr > toIsoString(activeSimResult.finalEnd)) {
+              active.status = 'archived';
+              const newCycle = { id: Date.now(), status: 'active', base: { start: dStr, end: addDays(parseLocal(dStr), t-1).toISOString().split('T')[0], tDays: t, sLevel: s, aLevel: a, isOpen: true }, logs: {} };
+              newCycle.logs[dStr] = { type: 'ausrutscher', t, s, a, mood: 0, note: "🔮 Zukunftssimulation", isSimulated: true };
+              getApp().cycles.push(newCycle);
+              saveData();
+              customAlert("Zukunft berechnet! Ein neuer Zyklus wurde für die Simulation gestartet.");
+              return;
+          }
+      }
+
       active.logs[dStr] = { type: 'ausrutscher', t, s, a, mood: 0, note: "🔮 Zukunftssimulation", isSimulated: true }; 
       saveData(); 
       customAlert("Zukunft berechnet! Wirf einen Blick auf den Kalender.");
   }
 
-  // V9.1 FIX: Sandbox Manager Delete Function
   function deleteSimulation(dStr) {
       const active = getActiveCycle();
       if(active && active.logs[dStr]) {
@@ -974,7 +1008,6 @@
       }
   }
 
-  // V9.1 FIX: Sandbox Manager UI rendering
   function renderSandboxManager() {
       const container = document.getElementById('sandbox-sim-list');
       if(!isSandbox) { container.innerHTML = ''; return; }
@@ -1136,34 +1169,40 @@
       const isBase = document.getElementById('edit-is-base').value === "1"; 
       const mood = parseInt(document.getElementById('edit-day-mood').value) || 0; 
       const note = document.getElementById('edit-day-note').value.trim();
+      const type = document.getElementById('edit-day-type').value; 
+      const t = parseInt(document.getElementById('edit-day-t').value) || 1; 
+
+      // V9.2 FIX: Limit für editierten Ausrutscher
+      if (type === 'ausrutscher' && !isBase && t > 21) {
+          customAlert("Eine initiale Konsumphase von mehr als drei Wochen überlastet die Simulation. Bitte schließe deinen aktuellen Konsum zunächst ab, pausiere diesen dann für drei bis sechs Wochen und logge dann erst wieder frischen Konsum.");
+          return;
+      }
 
       if (isBase) { 
           const existing = active.logs[dStr] || { type: 'ausrutscher', t:1, s:0, a:0 }; 
           active.logs[dStr] = { ...existing, mood, note };
       } else {
-          const type = document.getElementById('edit-day-type').value; 
           const s = parseInt(document.getElementById('edit-day-s').value) || 0; 
           const a = parseInt(document.getElementById('edit-day-a').value) || 0;
           
           if (type === 'ausrutscher') { 
-              const t = parseInt(document.getElementById('edit-day-t').value) || 1; 
               active.logs[dStr] = { type: 'ausrutscher', t, s, a, mood, note }; 
           } else { 
               active.logs[dStr] = { type: 'pause', s, a, mood, note }; 
           }
       }
+      
+      if (dStr === toIsoString(new Date())) sessionStorage.removeItem('bonusShown_' + dStr);
 
       closeModal('modal-edit-day'); 
       saveData(); 
       if(document.getElementById('diary-container').style.display === 'block') renderDiaryList();
   }
 
-  // V9.1 FIX: Papierkorb Logik entkoppelt die Modals sauber!
   function deleteEditDay() {
       const active = getActiveCycle(); 
       const dStr = document.getElementById('edit-day-date').value;
       
-      // FIX: Das Editier-Fenster schließt sofort, um Doppel-Klicks zu vermeiden!
       closeModal('modal-edit-day'); 
 
       if (active.base.start === dStr && getApp().cycles.length > 1) {
@@ -1199,7 +1238,7 @@
       }
   }
 
-  // --- ENGINE V9.1 ---
+  // --- ENGINE V9.2: Math Fixes & Nirvana System ---
   function runAllSimulations() {
       globalSimResults = (getApp().cycles || []).map(cycle => simulateCycle(cycle));
       activeSimResult = globalSimResults.length > 0 ? globalSimResults[globalSimResults.length - 1] : null;
@@ -1320,6 +1359,9 @@
               if (debt > 0) {
                   if (state === 'BEWAEHRUNG') {
                       debt -= 0.5; 
+                      // V9.2 FIX: Harter Schulden-Boden (kein Ausrutscher-Rabatt)
+                      if (debt < 0) debt = 0; 
+                      
                       withheldBonus += 0.5; 
                       bewTimer--; 
                       
@@ -1330,8 +1372,8 @@
 
                           if (canPayout) {
                               debt -= withheldBonus; 
-                              if (debt < 0) debt = 0; 
-                              // Bonus Animation greift sicher nur an DIESEM Tag
+                              if (debt < 0) debt = 0; // V9.2 FIX: Harter Schulden-Boden
+                              
                               if (dStr === todayStr && isLogged) gotBonusForToday = true; 
                               if (withheldBonus > 0) history.bonusDict[dStr] = `🎉 Bonus gesichert: -${withheldBonus} Tage`;
                               
@@ -1348,6 +1390,7 @@
                       }
                   } else { 
                       debt -= 1.0; 
+                      if (debt < 0) debt = 0; // V9.2 FIX: Harter Schulden-Boden
                       history.r.push(new Date(simDate)); 
                   }
                   
@@ -1363,7 +1406,6 @@
                   totalDebtEver, 
                   state, 
                   bewTimer, 
-                  // Strikt! Löschen eines Eintrags wirft kein Konfetti mehr.
                   gotBonusToday: (dStr === todayStr) ? gotBonusForToday : false 
               }; 
           }
@@ -1400,7 +1442,7 @@
       renderDashboard(); 
       renderHistorie(); 
       renderArchiv(); 
-      renderSandboxManager(); // V9.1 FIX: UI Element
+      renderSandboxManager(); 
   }
 
   function triggerBonusConfetti() {
@@ -1479,10 +1521,49 @@
           daysLeftTxt.textContent = `Dauer: ${res.history.t.length}d`; targetTxt.textContent = "Pausiere zum Start";
           sub.textContent = "Die initiale T-Phase wächst, bis du pausierst."; streakBadge.style.display = 'none';
       } else if (displayDebt <= 0) {
-          badge.className = 'status-badge status-done'; badge.textContent = "Vollständig Regeneriert";
-          ring.classList.add('nirvana'); percentTxt.classList.add('nirvana'); percentTxt.textContent = "100%"; ringLbl.textContent = "NIRVANA";
-          daysLeftTxt.textContent = "Ziel erreicht"; targetTxt.textContent = "Bleib clean!";
-          sub.textContent = isSandbox ? "Du bist in der Simulation clean." : "Ein Ausrutscher startet einen neuen Zyklus.";
+          // V9.2: Das dynamische Nirwana mit Meilensteinen
+          let milestones = [7, 14, 21, 30, 60, 90, 180, 365, 730, 9999];
+          let nextM = milestones.find(m => res.nirvanaStreak < m) || 9999;
+          let prevM = [...milestones].reverse().find(m => res.nirvanaStreak >= m) || 0;
+          
+          let nirvanaProgress = 0;
+          if (nextM !== 9999) {
+              nirvanaProgress = ((res.nirvanaStreak - prevM) / (nextM - prevM)) * 100;
+          } else {
+              nirvanaProgress = 100;
+          }
+          
+          let mStr = "";
+          let s = res.nirvanaStreak;
+          if (s >= 30) {
+              let mo = Math.floor(s / 30);
+              let rest = s % 30;
+              let w = Math.floor(rest / 7);
+              let d = rest % 7;
+              let p = [];
+              p.push(`${mo} Monat${mo !== 1 ? 'e' : ''}`);
+              if (w > 0) p.push(`${w} Woche${w !== 1 ? 'n' : ''}`);
+              if (d > 0) p.push(`${d} Tag${d !== 1 ? 'e' : ''}`);
+              mStr = p.join(', ');
+          } else if (s >= 7) {
+              let w = Math.floor(s / 7);
+              let d = s % 7;
+              let p = [];
+              p.push(`${w} Woche${w !== 1 ? 'n' : ''}`);
+              if (d > 0) p.push(`${d} Tag${d !== 1 ? 'e' : ''}`);
+              mStr = p.join(', ');
+          } else {
+              mStr = `${s} Tag${s !== 1 ? 'e' : ''}`;
+          }
+
+          badge.className = 'status-badge status-done'; badge.textContent = "Nirwana Level-Up";
+          ring.classList.add('nirvana'); percentTxt.classList.add('nirvana'); 
+          ring.setAttribute('stroke-dasharray', `${nirvanaProgress}, 100`); 
+          percentTxt.textContent = Math.round(nirvanaProgress) + '%'; 
+          ringLbl.textContent = "ZUM ZIEL";
+          daysLeftTxt.textContent = `Nächstes Ziel: ${nextM} Tage`; 
+          targetTxt.textContent = `Bisher: ${mStr}`;
+          sub.textContent = isSandbox ? "Du bist in der Simulation clean." : "Deine Heilung ist abgeschlossen. Baue deinen Streak aus!";
           streakBadge.style.display = 'inline-block'; streakBadge.classList.add('nirvana'); streakBadge.textContent = `💎 ${res.nirvanaStreak} Tage Clean-Streak`;
       } else if (ds.state === 'BEWAEHRUNG') {
           badge.className = 'status-badge status-bewaehrung'; badge.textContent = `Bewährungsphase`;
@@ -1792,14 +1873,14 @@
                   customAlert("Simulation erfolgreich in die Sandbox geladen!");
               } else {
                   if (data.version >= 5) { 
-                      data.version = 9.1; appData = data; 
+                      data.version = 9.2; appData = data; 
                   } else if (data.base && !data.cycles) { 
-                      appData = { version: 9.1, cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }], breatheLogs: {} };
+                      appData = { version: 9.2, cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }], breatheLogs: {} };
                   } else if (data.tDays !== undefined && !data.base) {
                       let base = { start: data.startDate, end: data.endDate, tDays: parseInt(data.tDays)||0, sLevel: parseInt(data.stress)||0, aLevel: parseInt(data.alcohol)||0, isOpen: false };
                       let logs = {}; 
                       if(data.interruptions) { data.interruptions.forEach(int => { logs[int.start] = { type: 'ausrutscher', t: parseInt(int.t)||1, s: parseInt(int.s)||0, a: parseInt(int.a)||0 }; }); }
-                      appData = { version: 9.1, cycles: [{ id: Date.now(), status: 'active', base: base, logs: logs }], breatheLogs: {} };
+                      appData = { version: 9.2, cycles: [{ id: Date.now(), status: 'active', base: base, logs: logs }], breatheLogs: {} };
                   } else { 
                       appData = data; 
                   }
@@ -1832,7 +1913,7 @@
       const sLevels = ['Kein', 'Moderat', 'Hoch']; 
       const aLevels = ['Kein', 'Moderat', 'Hoch'];
       
-      let desc = isSandbox ? `ReTrack SIMULATION\n\n` : `ReTrack V9.1\n\n`;
+      let desc = isSandbox ? `ReTrack SIMULATION\n\n` : `ReTrack V9.2\n\n`;
       desc += `--- Basis-Phase ---\n`;
       desc += `Start: ${parseLocal(activeCycle.base.start).toLocaleDateString('de-DE')}\n`;
       desc += `Ende: ${parseLocal(activeCycle.base.end).toLocaleDateString('de-DE')}\n`;
