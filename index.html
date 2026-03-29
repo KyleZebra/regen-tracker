@@ -8,7 +8,7 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
 
-  <title>ReTrack 9.2</title>
+  <title>ReTrack 9.3</title>
   
   <link rel="manifest" href="./manifest.json" />
   <meta name="theme-color" content="#f1c40f" />
@@ -124,6 +124,16 @@
     .ring-progress { font-size: 0.85rem; font-weight: 700; color: var(--text-main); margin-bottom: 8px; background: #e8f6f3; border: 1px solid #16a085; display: inline-block; padding: 3px 10px; border-radius: 12px; }
     .ring-days { font-size: 1rem; font-weight: 700; color: #2c3e50; background: #fdfdfd; padding: 2px 8px; border-radius: 6px; border: 1px solid #eee; margin-bottom: 4px;}
     .ring-target { font-size: 0.8rem; font-weight: 600; color: #7f8c8d; }
+
+    /* V9.3: Outlook Box */
+    .outlook-box { background: #fff; border: 1px solid #e0e0e0; border-radius: 12px; padding: 15px; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
+    .outlook-title { font-weight: 800; font-size: 0.95rem; color: #2c3e50; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+    .outlook-row { display: flex; justify-content: space-between; font-size: 0.85rem; padding: 10px; border-radius: 8px; margin-bottom: 8px; align-items: center;}
+    .outlook-row:last-child { margin-bottom: 0; }
+    .outlook-row.good { background: #f0fdf4; color: #155724; border: 1px solid #c3e6cb; }
+    .outlook-row.bad { background: #fadbd8; color: #721c24; border: 1px solid #f5c6cb; }
+    .outlook-label { font-weight: 800; }
+    .outlook-value { font-weight: 600; text-align: right; font-size: 0.8rem;}
 
     /* Buttons */
     .quick-actions { display: flex; gap: 10px; }
@@ -299,7 +309,7 @@
 
   <header onclick="openBreatheOverlay()" title="Geheime Atem-Übung öffnen">
     <h1>🧪 ReTrack</h1>
-    <div class="version">Version 9.2 – Long-Term Nirvana & Limits</div>
+    <div class="version">Version 9.3 – Nudging & Trophies</div>
   </header>
 
   <div class="tabs">
@@ -314,7 +324,7 @@
   <div id="tab-dashboard" class="tab-content active">
     
     <div id="setup-warning" class="setup-overlay">
-        <h3>Willkommen bei ReTrack (v9.2)! 👋</h3>
+        <h3>Willkommen bei ReTrack (v9.3)! 👋</h3>
         <p>Lege deinen ersten Zyklus an oder lade ein bestehendes Backup.</p>
         <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 15px;">
             <button class="btn-tool" style="background:var(--header-bg); border:none; color:white;" onclick="switchTab('historie')">✏️ Neuen Zyklus starten</button>
@@ -349,6 +359,9 @@
             </div>
 
             <div id="dash-target-tracker" class="target-tracker" style="display:none;"></div>
+            
+            <!-- V9.3: Tagesausblick Modul -->
+            <div id="dash-outlook" class="outlook-box" style="display:none;"></div>
 
             <div id="daily-action-area">
                 <div class="quick-actions">
@@ -441,6 +454,13 @@
             <div class="stat-box"><div class="stat-val" id="stat-avg-ausrutscher">0</div><div class="stat-label">Ø T-Dauer</div></div>
         </div>
         
+        <!-- V9.3: Nirwana & Meilensteine Block -->
+        <h4 style="color:#7f8c8d; margin-top: 1.5rem; margin-bottom: 10px; font-size:0.85rem; text-transform:uppercase;">🌟 Nirwana & Meilensteine</h4>
+        <div class="stat-grid" style="margin-bottom: 1.5rem;">
+            <div class="stat-box" style="background: #fef9e7; border-color: #fdebd0;"><div class="stat-val" style="color: #f39c12;" id="stat-avg-nirvana">0</div><div class="stat-label">Ø Tage im Nirwana</div></div>
+            <div class="stat-box" style="background: #fef9e7; border-color: #fdebd0;"><div class="stat-val" style="color: #f39c12;" id="stat-total-milestones">0</div><div class="stat-label">Meilensteine gesammelt</div></div>
+        </div>
+
         <h4 style="color:#7f8c8d; margin-top: 1.5rem; margin-bottom: 10px; font-size:0.85rem; text-transform:uppercase;">🧘‍♂️ Therapie & Fokus</h4>
         <div class="stat-grid" style="margin-bottom: 1.5rem;">
             <div class="stat-box" style="background: #ebf5fb; border-color: #d6eaf8;"><div class="stat-val" style="color: #2980b9;" id="stat-breathe-total">0</div><div class="stat-label">Atemübungen</div></div>
@@ -604,7 +624,7 @@
   </div>
 
 <script>
-  let appData = { version: 9.2, cycles: [], breatheLogs: {} };
+  let appData = { version: 9.3, cycles: [], breatheLogs: {} };
   let isSandbox = false; 
   let sandboxData = null;
 
@@ -721,14 +741,14 @@
 
   function loadData() {
       const saved = localStorage.getItem('regenAppData_v6') || localStorage.getItem('regenAppData_v5');
-      let parsedData = { version: 9.2, cycles: [], breatheLogs: {} };
+      let parsedData = { version: 9.3, cycles: [], breatheLogs: {} };
       if (saved) {
           try { 
               let data = JSON.parse(saved); 
               if (data && typeof data === 'object') {
                   if (data.version >= 5) { 
                       parsedData = data; 
-                      parsedData.version = 9.2; 
+                      parsedData.version = 9.3; 
                   } else if (!data.cycles && data.base) { 
                       parsedData.cycles = [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }];
                   } else if (data.tDays !== undefined && !data.base) {
@@ -776,7 +796,7 @@
       if (isSandbox) return customAlert("Im Simulations-Modus kannst du keinen Hard-Reset durchführen.");
       customConfirm("ACHTUNG: Möchtest du wirklich ALLE Daten löschen? (Werkseinstellungen)", () => {
           localStorage.removeItem('regenAppData_v5'); localStorage.removeItem('regenAppData_v6'); localStorage.removeItem('regenAppData_v7');
-          appData = { version: 9.2, cycles: [], breatheLogs: {} }; 
+          appData = { version: 9.3, cycles: [], breatheLogs: {} }; 
           customAlert("Gelöscht.", () => { window.location.href = window.location.href.split('?')[0]; });
       });
   }
@@ -841,7 +861,6 @@
       const t = parseInt(document.getElementById('base-t').value);
       if(!s || !e || isNaN(t)) { if(force) customAlert("Bitte Start und Ende eintragen."); return; }
       
-      // V9.2 FIX: Harter Schutz vor Browser-Crashes (Max. 21 Tage Basisphase)
       if (t > 21) {
           customAlert("Eine initiale Konsumphase von mehr als drei Wochen überlastet die Simulation. Bitte schließe deinen aktuellen Konsum zunächst ab, pausiere diesen dann für drei bis sechs Wochen und logge dann erst wieder frischen Konsum.");
           populateBaseForm();
@@ -912,7 +931,6 @@
 
       if(!dStr) return customAlert("Datum fehlt!"); 
       
-      // V9.2 FIX: Harter Schutz vor Browser-Crashes (Max. 21 Tage Ausrutscher)
       if (t > 21) {
           customAlert("Eine initiale Konsumphase von mehr als drei Wochen überlastet die Simulation. Bitte schließe deinen aktuellen Konsum zunächst ab, pausiere diesen dann für drei bis sechs Wochen und logge dann erst wieder frischen Konsum.");
           return;
@@ -968,7 +986,6 @@
       
       if(!dStr) return customAlert("Bitte ein Datum wählen.");
       
-      // V9.2 FIX: Harter Schutz vor Browser-Crashes
       if (t > 21) {
           customAlert("Eine initiale Konsumphase von mehr als drei Wochen überlastet die Simulation. Bitte schließe deinen aktuellen Konsum zunächst ab, pausiere diesen dann für drei bis sechs Wochen und logge dann erst wieder frischen Konsum.");
           return;
@@ -982,7 +999,6 @@
       
       let active = getActiveCycle(); 
       
-      // V9.2 FIX: Das Sandbox-Paradoxon! Startet neuen Zyklus im Labor, falls das Nirwana erreicht war.
       if (activeSimResult && activeSimResult.dashState && activeSimResult.dashState.debt <= 0) {
           if (dStr > toIsoString(activeSimResult.finalEnd)) {
               active.status = 'archived';
@@ -1172,7 +1188,6 @@
       const type = document.getElementById('edit-day-type').value; 
       const t = parseInt(document.getElementById('edit-day-t').value) || 1; 
 
-      // V9.2 FIX: Limit für editierten Ausrutscher
       if (type === 'ausrutscher' && !isBase && t > 21) {
           customAlert("Eine initiale Konsumphase von mehr als drei Wochen überlastet die Simulation. Bitte schließe deinen aktuellen Konsum zunächst ab, pausiere diesen dann für drei bis sechs Wochen und logge dann erst wieder frischen Konsum.");
           return;
@@ -1238,7 +1253,7 @@
       }
   }
 
-  // --- ENGINE V9.2: Math Fixes & Nirvana System ---
+  // --- ENGINE V9.3: Bugfixes & Nudging ---
   function runAllSimulations() {
       globalSimResults = (getApp().cycles || []).map(cycle => simulateCycle(cycle));
       activeSimResult = globalSimResults.length > 0 ? globalSimResults[globalSimResults.length - 1] : null;
@@ -1359,7 +1374,6 @@
               if (debt > 0) {
                   if (state === 'BEWAEHRUNG') {
                       debt -= 0.5; 
-                      // V9.2 FIX: Harter Schulden-Boden (kein Ausrutscher-Rabatt)
                       if (debt < 0) debt = 0; 
                       
                       withheldBonus += 0.5; 
@@ -1372,7 +1386,7 @@
 
                           if (canPayout) {
                               debt -= withheldBonus; 
-                              if (debt < 0) debt = 0; // V9.2 FIX: Harter Schulden-Boden
+                              if (debt < 0) debt = 0; 
                               
                               if (dStr === todayStr && isLogged) gotBonusForToday = true; 
                               if (withheldBonus > 0) history.bonusDict[dStr] = `🎉 Bonus gesichert: -${withheldBonus} Tage`;
@@ -1390,13 +1404,17 @@
                       }
                   } else { 
                       debt -= 1.0; 
-                      if (debt < 0) debt = 0; // V9.2 FIX: Harter Schulden-Boden
+                      if (debt < 0) debt = 0; 
                       history.r.push(new Date(simDate)); 
                   }
                   
                   if (debt <= 0 && !finalDebtZeroDate) finalDebtZeroDate = new Date(simDate);
               } else {
-                  history.n.push(new Date(simDate));
+                  // V9.3 FIX: Nirwana-Mitternachts-Regel. Zählt nicht für heute, wenn ungeloggt.
+                  let canCountNirvana = !isFuture || isSandbox;
+                  if (canCountNirvana) {
+                      history.n.push(new Date(simDate));
+                  }
               }
           }
 
@@ -1421,8 +1439,7 @@
           dashState = { debt: initialDebtTotal, totalDebtEver: initialDebtTotal, state: 'BEWAEHRUNG', bewTimer: 3, gotBonusToday: false }; 
       }
       
-      let nirvanaStreak = 0; 
-      if (debt <= 0 && history.n.length > 0) { nirvanaStreak = history.n.length; }
+      let nirvanaStreak = history.n.length; 
       
       let pessimisticEnd = finalDebtZeroDate || addDays(simDate, -1);
       let optimisticEndStr = null;
@@ -1483,6 +1500,7 @@
       const streakBadge = document.getElementById('dash-streak');
       const targetTracker = document.getElementById('dash-target-tracker'); 
       const progressTxt = document.getElementById('dash-progress');
+      const outlookBox = document.getElementById('dash-outlook');
       
       let displayDebt = ds.debt;
       let displayETA = res.finalEnd;
@@ -1521,7 +1539,6 @@
           daysLeftTxt.textContent = `Dauer: ${res.history.t.length}d`; targetTxt.textContent = "Pausiere zum Start";
           sub.textContent = "Die initiale T-Phase wächst, bis du pausierst."; streakBadge.style.display = 'none';
       } else if (displayDebt <= 0) {
-          // V9.2: Das dynamische Nirwana mit Meilensteinen
           let milestones = [7, 14, 21, 30, 60, 90, 180, 365, 730, 9999];
           let nextM = milestones.find(m => res.nirvanaStreak < m) || 9999;
           let prevM = [...milestones].reverse().find(m => res.nirvanaStreak >= m) || 0;
@@ -1577,6 +1594,47 @@
           sub.textContent = "Du heilst mit 1,0x Geschwindigkeit."; streakBadge.style.display = 'none';
       }
 
+      // V9.3: Der objektive Tagesausblick (Phantom-Klone)
+      const todayStr = toIsoString(new Date());
+      const activeCycle = getActiveCycle();
+      const isLoggedToday = activeCycle?.logs[todayStr] && activeCycle.logs[todayStr].type !== undefined;
+
+      if (!isSandbox && !isLoggedToday && !res.isOpen && displayDebt > 0) {
+          let cloneA = JSON.parse(JSON.stringify(activeCycle));
+          cloneA.logs[todayStr] = { type: 'pause', s:0, a:0, mood:0, note:'Phantom' };
+          let resA = simulateCycle(cloneA);
+
+          let cloneB = JSON.parse(JSON.stringify(activeCycle));
+          cloneB.logs[todayStr] = { type: 'ausrutscher', t:1, s:0, a:0, mood:0, note:'Phantom' };
+          let resB = simulateCycle(cloneB);
+
+          let debtA = resA.dashState.debt;
+          let debtB = resB.dashState.debt;
+          let etaA = resA.finalEnd.toLocaleDateString('de-DE');
+          let etaB = resB.finalEnd.toLocaleDateString('de-DE');
+
+          debtA = Math.round(debtA * 10) / 10;
+          debtB = Math.round(debtB * 10) / 10;
+
+          let debtAStr = Number.isInteger(debtA) ? debtA : debtA.toFixed(1).replace('.', ',');
+          let debtBStr = Number.isInteger(debtB) ? debtB : debtB.toFixed(1).replace('.', ',');
+
+          outlookBox.innerHTML = `
+              <div class="outlook-title">📊 Tagesausblick für heute</div>
+              <div class="outlook-row good">
+                  <span class="outlook-label">🟢 Bei Pause:</span>
+                  <span class="outlook-value">Schuld sinkt auf ${debtAStr} (Ziel: ${etaA})</span>
+              </div>
+              <div class="outlook-row bad">
+                  <span class="outlook-label">🔴 Bei Konsum:</span>
+                  <span class="outlook-value">Schuld steigt auf ${debtBStr} (Ziel: ${etaB})</span>
+              </div>
+          `;
+          outlookBox.style.display = 'block';
+      } else {
+          outlookBox.style.display = 'none';
+      }
+
       if (!isSandbox && getActiveCycle()?.targetETA) {
           const targetDateObj = parseLocal(getActiveCycle().targetETA); 
           const diff = diffDays(displayETA, targetDateObj);
@@ -1590,7 +1648,6 @@
           targetTracker.style.display = 'none'; 
       }
 
-      const todayStr = toIsoString(new Date());
       if (getActiveCycle()?.logs[todayStr] && !isSandbox) { 
           document.getElementById('daily-action-area').style.display = 'none'; 
           document.getElementById('daily-done-area').style.display = 'block';
@@ -1687,6 +1744,12 @@
       let totalAusrutscher = 0; let highStressAusrutscher = 0; let sumAusrutscherDays = 0;
       let sumMoodPause = 0; let countMoodPause = 0; let sumMoodAus = 0; let countMoodAus = 0;
       let allPastAusrutscherDates = [];
+      
+      // V9.3: Nirwana Tracker Variables
+      let cyclesWithNirvana = 0;
+      let totalNirvanaDays = 0;
+      let totalMilestones = 0;
+      const milestonesArr = [7, 14, 21, 30, 60, 90, 180, 365, 730];
 
       (getApp().cycles || []).forEach((cycle, index) => {
           const res = globalSimResults[index]; 
@@ -1704,6 +1767,14 @@
               else { maxNirvana = Math.max(maxNirvana, currentStreak); currentStreak = 1; }
           }
           maxNirvana = Math.max(maxNirvana, currentStreak);
+          
+          // V9.3: Track Nirvana averages and milestones safely
+          let cycleNirvanaStreak = res.nirvanaStreak;
+          if (cycleNirvanaStreak > 0) {
+              cyclesWithNirvana++;
+              totalNirvanaDays += cycleNirvanaStreak;
+              totalMilestones += milestonesArr.filter(m => cycleNirvanaStreak >= m).length;
+          }
           
           if (cycle.base.start < todayStr) {
               totalAusrutscher++; 
@@ -1745,11 +1816,16 @@
 
       const cleanQuote = pastDaysTracked > 0 ? Math.round((pastPauseDays / pastDaysTracked) * 100) : 0;
       const avgAus = totalAusrutscher > 0 ? (sumAusrutscherDays / totalAusrutscher).toFixed(1) : 0;
+      let avgNirvana = cyclesWithNirvana > 0 ? Math.round(totalNirvanaDays / cyclesWithNirvana) : 0;
 
       document.getElementById('stat-clean-quote').textContent = cleanQuote + '%'; 
       document.getElementById('stat-max-nirvana').textContent = maxNirvana;
       document.getElementById('stat-total-days').textContent = pastDaysTracked; 
       document.getElementById('stat-avg-ausrutscher').textContent = avgAus;
+      
+      // V9.3: Inject into new Nirvana DOM elements
+      document.getElementById('stat-avg-nirvana').textContent = avgNirvana;
+      document.getElementById('stat-total-milestones').textContent = totalMilestones;
 
       let totalBreatheSessions = 0; 
       if (getApp().breatheLogs) { Object.values(getApp().breatheLogs).forEach(count => totalBreatheSessions += count); }
@@ -1873,14 +1949,14 @@
                   customAlert("Simulation erfolgreich in die Sandbox geladen!");
               } else {
                   if (data.version >= 5) { 
-                      data.version = 9.2; appData = data; 
+                      data.version = 9.3; appData = data; 
                   } else if (data.base && !data.cycles) { 
-                      appData = { version: 9.2, cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }], breatheLogs: {} };
+                      appData = { version: 9.3, cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }], breatheLogs: {} };
                   } else if (data.tDays !== undefined && !data.base) {
                       let base = { start: data.startDate, end: data.endDate, tDays: parseInt(data.tDays)||0, sLevel: parseInt(data.stress)||0, aLevel: parseInt(data.alcohol)||0, isOpen: false };
                       let logs = {}; 
                       if(data.interruptions) { data.interruptions.forEach(int => { logs[int.start] = { type: 'ausrutscher', t: parseInt(int.t)||1, s: parseInt(int.s)||0, a: parseInt(int.a)||0 }; }); }
-                      appData = { version: 9.2, cycles: [{ id: Date.now(), status: 'active', base: base, logs: logs }], breatheLogs: {} };
+                      appData = { version: 9.3, cycles: [{ id: Date.now(), status: 'active', base: base, logs: logs }], breatheLogs: {} };
                   } else { 
                       appData = data; 
                   }
@@ -1913,7 +1989,7 @@
       const sLevels = ['Kein', 'Moderat', 'Hoch']; 
       const aLevels = ['Kein', 'Moderat', 'Hoch'];
       
-      let desc = isSandbox ? `ReTrack SIMULATION\n\n` : `ReTrack V9.2\n\n`;
+      let desc = isSandbox ? `ReTrack SIMULATION\n\n` : `ReTrack V9.3\n\n`;
       desc += `--- Basis-Phase ---\n`;
       desc += `Start: ${parseLocal(activeCycle.base.start).toLocaleDateString('de-DE')}\n`;
       desc += `Ende: ${parseLocal(activeCycle.base.end).toLocaleDateString('de-DE')}\n`;
