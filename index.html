@@ -8,7 +8,7 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
 
-  <title>ReTrack 9.5</title>
+  <title>ReTrack 10.0</title>
   
   <link rel="manifest" href="./manifest.json" />
   <meta name="theme-color" content="#f1c40f" />
@@ -266,7 +266,6 @@
     .br-setup-card h2 { margin-top: 0; font-size: 1.8rem; color: #3498db; } 
     .br-setup-card p { opacity: 0.8; font-size: 0.9rem; margin-bottom: 20px; }
     
-    /* V9.5 Range Slider */
     .br-setup-slider {
         -webkit-appearance: none; width: 100%; height: 8px; border-radius: 5px; 
         background: rgba(255,255,255,0.2); outline: none; margin-bottom: 30px;
@@ -316,7 +315,7 @@
 
   <header onclick="openBreatheOverlay()" title="Geheime Atem-Übung öffnen">
     <h1>🧪 ReTrack</h1>
-    <div class="version">Version 9.5 – Coach & Breathe Update</div>
+    <div class="version">Version 10.0 – Anniversary Edition</div>
   </header>
 
   <div class="tabs">
@@ -331,7 +330,7 @@
   <div id="tab-dashboard" class="tab-content active">
     
     <div id="setup-warning" class="setup-overlay">
-        <h3>Willkommen bei ReTrack (v9.5)! 👋</h3>
+        <h3>Willkommen bei ReTrack (v10.0)! 👋</h3>
         <p>Lege deinen ersten Zyklus an oder lade ein bestehendes Backup.</p>
         <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 15px;">
             <button class="btn-tool" style="background:var(--header-bg); border:none; color:white;" onclick="switchTab('historie')">✏️ Neuen Zyklus starten</button>
@@ -398,6 +397,7 @@
         <div class="form-group-tday"><label>T-Tage</label><input type="number" id="base-t" readonly></div>
         <div><label>Stress (Max)</label><select id="base-s" onchange="saveBase()"><option value="0">Kein</option><option value="1">Moderat</option><option value="2">Hoch</option></select></div>
         <div><label>Alkohol (Max)</label><select id="base-a" onchange="saveBase()"><option value="0">Kein</option><option value="1">Moderat</option><option value="2">Hoch</option></select></div>
+        <div><label>M? (Max)</label><select id="base-m" onchange="saveBase()"><option value="0">Kein</option><option value="1">Moderat</option><option value="2">Hoch</option></select></div>
       </div>
       <button class="btn-tool" style="width:100%; margin-top: 15px; background: var(--header-bg); border: none; color: white;" onclick="saveBase(true)">💾 Speichern & Neu berechnen</button>
     </div>
@@ -411,6 +411,7 @@
             <div class="form-group-full"><label>Dauer (T-Tage)</label><input type="number" id="sim-a-t" value="1" min="1"></div>
             <div><label>Stress</label><select id="sim-a-s"><option value="0">Kein</option><option value="1">Moderat</option><option value="2">Hoch</option></select></div>
             <div><label>Alkohol</label><select id="sim-a-a"><option value="0">Kein</option><option value="1">Moderat</option><option value="2">Hoch</option></select></div>
+            <div><label>M?</label><select id="sim-a-m"><option value="0">Kein</option><option value="1">Moderat</option><option value="2">Hoch</option></select></div>
         </div>
         <button class="btn-tool" style="width:100%; margin-top: 15px; background: #9b59b6; border: none; color: white; font-weight: 800;" onclick="submitFutureSim()">Zukunft berechnen</button>
         
@@ -482,6 +483,10 @@
 
     <h3 style="margin-left:5px; color:#7f8c8d;">Abgeschlossene Zyklen</h3>
     <div id="archive-container"></div>
+    
+    <!-- V10.0: Kalendarische Monats-Statistiken -->
+    <div id="archive-months-container"></div>
+    
     <div class="tool-grid" style="margin-top:2rem;">
       <button class="btn-tool" style="color:var(--danger); border-color:#fadbd8; width:100%; grid-column: 1 / -1;" onclick="hardReset()">⚠️ Werkseinstellungen (Alles löschen)</button>
     </div>
@@ -515,6 +520,8 @@
           <div class="form-group-full"><label>Dauer (T-Tage)</label><input type="number" id="modal-a-t" value="1" min="1"></div>
           <div><label>Stress</label><select id="modal-a-s"><option value="0">Kein</option><option value="1">Moderat</option><option value="2">Hoch</option></select></div>
           <div><label>Alkohol</label><select id="modal-a-a"><option value="0">Kein</option><option value="1">Moderat</option><option value="2">Hoch</option></select></div>
+          <div><label>M?</label><select id="modal-a-m"><option value="0">Kein</option><option value="1">Moderat</option><option value="2">Hoch</option></select></div>
+          <div class="form-group-full" style="grid-column: span 1;"></div>
           <div class="form-group-full">
               <label>Stimmung</label>
               <select id="modal-a-mood">
@@ -540,11 +547,13 @@
   <!-- Pause Modal -->
   <div id="modal-pause" class="modal-overlay">
     <div class="modal-card"><h3 style="color:var(--btn-calc)">🟢 Tagesabschluss</h3>
-      <p style="font-size:0.8rem; color:#666; margin-bottom: 15px;">Pausentage mit Stress/Alkohol drosseln <strong>nicht</strong> deine Heilungsdauer, füttern aber die Statistik.</p>
+      <p style="font-size:0.8rem; color:#666; margin-bottom: 15px;">Pausentage mit Stress/Alkohol/M drosseln <strong>nicht</strong> deine Heilungsdauer, füttern aber die Statistik.</p>
       <div class="form-grid">
           <div class="form-group-full"><label>Datum</label><input type="date" id="modal-p-date" readonly></div>
           <div><label>Stress heute?</label><select id="modal-p-s"><option value="0">Kein</option><option value="1">Moderat</option><option value="2">Hoch</option></select></div>
           <div><label>Alkohol heute?</label><select id="modal-p-a"><option value="0">Kein</option><option value="1">Moderat</option><option value="2">Hoch</option></select></div>
+          <div><label>M?</label><select id="modal-p-m"><option value="0">Kein</option><option value="1">Moderat</option><option value="2">Hoch</option></select></div>
+          <div class="form-group-full" style="grid-column: span 1;"></div>
           <div class="form-group-full">
               <label>Stimmung</label>
               <select id="modal-p-mood">
@@ -584,6 +593,8 @@
           <div class="form-group-full" id="edit-t-wrapper" style="display:none;"><label>Dauer (T-Tage)</label><input type="number" id="edit-day-t" value="1" min="1"></div>
           <div><label>Stress</label><select id="edit-day-s"><option value="0">Kein</option><option value="1">Moderat</option><option value="2">Hoch</option></select></div>
           <div><label>Alkohol</label><select id="edit-day-a"><option value="0">Kein</option><option value="1">Moderat</option><option value="2">Hoch</option></select></div>
+          <div><label>M?</label><select id="edit-day-m"><option value="0">Kein</option><option value="1">Moderat</option><option value="2">Hoch</option></select></div>
+          <div class="form-group-full" style="grid-column: span 1;"></div>
           <div class="form-group-full">
               <label>Stimmung</label>
               <select id="edit-day-mood">
@@ -612,7 +623,6 @@
           <h2>Atem-Meditation</h2>
           <p>Beruhige dein Nervensystem mit der 4-4-4-4 Box-Breathing Methode.</p>
           
-          <!-- V9.5: Dynamischer Range-Slider -->
           <label style="display:block; margin-bottom:10px; color:#bdc3c7; font-size:1.1rem;">Dauer: <strong style="color:white; font-size:1.3rem;" id="br-duration-display">3</strong> Minuten</label>
           <input type="range" id="br-duration" class="br-setup-slider" value="3" min="1" max="30" oninput="document.getElementById('br-duration-display').textContent = this.value">
           
@@ -634,7 +644,7 @@
   </div>
 
 <script>
-  let appData = { version: 9.5, cycles: [], breatheLogs: {} };
+  let appData = { version: 10.0, cycles: [], breatheLogs: {} };
   let isSandbox = false; 
   let sandboxData = null;
 
@@ -702,7 +712,7 @@
       document.getElementById('sandbox-banner').style.display = 'block';
       
       runAllSimulations(); 
-      switchTab('historie'); // Direkt zum Planer wechseln
+      switchTab('historie'); 
   }
 
   function resetSandbox() {
@@ -719,6 +729,7 @@
       document.getElementById('sim-a-t').value = '1';
       document.getElementById('sim-a-s').value = '0';
       document.getElementById('sim-a-a').value = '0';
+      document.getElementById('sim-a-m').value = '0';
   }
 
   function closeSandbox() {
@@ -732,7 +743,7 @@
       populateBaseForm();
       runAllSimulations(); 
       updateUI(); 
-      switchTab('dashboard'); // Zurück ins Heute
+      switchTab('dashboard'); 
   }
 
   function clearTargetETA() { 
@@ -756,20 +767,20 @@
 
   function loadData() {
       const saved = localStorage.getItem('regenAppData_v6') || localStorage.getItem('regenAppData_v5');
-      let parsedData = { version: 9.5, cycles: [], breatheLogs: {} };
+      let parsedData = { version: 10.0, cycles: [], breatheLogs: {} };
       if (saved) {
           try { 
               let data = JSON.parse(saved); 
               if (data && typeof data === 'object') {
                   if (data.version >= 5) { 
                       parsedData = data; 
-                      parsedData.version = 9.5; 
+                      parsedData.version = 10.0; 
                   } else if (!data.cycles && data.base) { 
                       parsedData.cycles = [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }];
                   } else if (data.tDays !== undefined && !data.base) {
-                      let base = { start: data.startDate, end: data.endDate, tDays: parseInt(data.tDays)||0, sLevel: parseInt(data.stress)||0, aLevel: parseInt(data.alcohol)||0, isOpen: false };
+                      let base = { start: data.startDate, end: data.endDate, tDays: parseInt(data.tDays)||0, sLevel: parseInt(data.stress)||0, aLevel: parseInt(data.alcohol)||0, mLevel: 0, isOpen: false };
                       let logs = {}; 
-                      if(data.interruptions) { data.interruptions.forEach(int => { logs[int.start] = { type: 'ausrutscher', t: parseInt(int.t)||1, s: parseInt(int.s)||0, a: parseInt(int.a)||0 }; }); }
+                      if(data.interruptions) { data.interruptions.forEach(int => { logs[int.start] = { type: 'ausrutscher', t: parseInt(int.t)||1, s: parseInt(int.s)||0, a: parseInt(int.a)||0, m: 0 }; }); }
                       parsedData.cycles = [{ id: Date.now(), status: 'active', base: base, logs: logs }];
                   }
               }
@@ -811,7 +822,7 @@
       if (isSandbox) return customAlert("Im Simulations-Modus kannst du keinen Hard-Reset durchführen.");
       customConfirm("ACHTUNG: Möchtest du wirklich ALLE Daten löschen? (Werkseinstellungen)", () => {
           localStorage.removeItem('regenAppData_v5'); localStorage.removeItem('regenAppData_v6'); localStorage.removeItem('regenAppData_v7');
-          appData = { version: 9.5, cycles: [], breatheLogs: {} }; 
+          appData = { version: 10.0, cycles: [], breatheLogs: {} }; 
           customAlert("Gelöscht.", () => { window.location.href = window.location.href.split('?')[0]; });
       });
   }
@@ -841,6 +852,7 @@
       document.getElementById('base-t').value = active.base.tDays; 
       document.getElementById('base-s').value = active.base.sLevel; 
       document.getElementById('base-a').value = active.base.aLevel;
+      document.getElementById('base-m').value = active.base.mLevel || 0;
       
       let isBaseLocked = active.base.isOpen; 
       let showSandboxLockWarning = false;
@@ -857,6 +869,7 @@
       document.getElementById('base-end').readOnly = isBaseLocked; 
       document.getElementById('base-s').disabled = isBaseLocked; 
       document.getElementById('base-a').disabled = isBaseLocked;
+      document.getElementById('base-m').disabled = isBaseLocked;
       
       if (showSandboxLockWarning) { 
           document.getElementById('open-base-warning').innerHTML = "⚠️ Sandbox: Basis ist schreibgeschützt, da die Realität noch läuft. Plane die Zukunft bitte über Ausrutscher!"; 
@@ -895,6 +908,7 @@
       if (!active.base.isOpen) { 
           active.base.sLevel = parseInt(document.getElementById('base-s').value) || 0; 
           active.base.aLevel = parseInt(document.getElementById('base-a').value) || 0; 
+          active.base.mLevel = parseInt(document.getElementById('base-m').value) || 0;
       }
       
       if(active.base.isOpen === undefined) active.base.isOpen = false;
@@ -905,6 +919,7 @@
       document.getElementById('modal-p-date').value = toIsoString(new Date()); 
       document.getElementById('modal-p-s').value = 0; 
       document.getElementById('modal-p-a').value = 0; 
+      document.getElementById('modal-p-m').value = 0;
       document.getElementById('modal-p-mood').value = 0; 
       document.getElementById('modal-p-note').value = ""; 
       document.getElementById('modal-pause').classList.add('active'); 
@@ -914,6 +929,7 @@
       const dStr = document.getElementById('modal-p-date').value; 
       const s = isQuick ? 0 : (parseInt(document.getElementById('modal-p-s').value) || 0); 
       const a = isQuick ? 0 : (parseInt(document.getElementById('modal-p-a').value) || 0);
+      const m = isQuick ? 0 : (parseInt(document.getElementById('modal-p-m').value) || 0);
       const mood = isQuick ? 0 : parseInt(document.getElementById('modal-p-mood').value); 
       const note = isQuick ? "" : document.getElementById('modal-p-note').value.trim();
       const todayStr = toIsoString(new Date()); 
@@ -927,7 +943,7 @@
       
       if (dStr === todayStr) sessionStorage.removeItem('bonusShown_' + todayStr);
 
-      active.logs[dStr] = { type: 'pause', s, a, mood, note }; 
+      active.logs[dStr] = { type: 'pause', s, a, m, mood, note }; 
       closeModal('modal-pause'); 
       saveData();
   }
@@ -938,6 +954,7 @@
       document.getElementById('modal-a-t').value = 1; 
       document.getElementById('modal-a-s').value = 0; 
       document.getElementById('modal-a-a').value = 0;
+      document.getElementById('modal-a-m').value = 0;
       document.getElementById('modal-a-mood').value = 0; 
       document.getElementById('modal-a-note').value = ""; 
       document.getElementById('modal-a-date').value = isPast ? "" : toIsoString(new Date());
@@ -949,6 +966,7 @@
       const t = parseInt(document.getElementById('modal-a-t').value) || 1;
       const s = parseInt(document.getElementById('modal-a-s').value) || 0; 
       const a = parseInt(document.getElementById('modal-a-a').value) || 0;
+      const m = parseInt(document.getElementById('modal-a-m').value) || 0;
       const mood = parseInt(document.getElementById('modal-a-mood').value) || 0; 
       const note = document.getElementById('modal-a-note').value.trim();
 
@@ -969,7 +987,7 @@
           if (dStr > toIsoString(activeSimResult.finalEnd)) {
               active.status = 'archived';
               const newEndStr = toIsoString(addDays(parseLocal(dStr), t-1));
-              const newCycle = { id: Date.now(), status: 'active', base: { start: dStr, end: newEndStr, tDays: t, sLevel: s, aLevel: a, isOpen: true }, logs: {} };
+              const newCycle = { id: Date.now(), status: 'active', base: { start: dStr, end: newEndStr, tDays: t, sLevel: s, aLevel: a, mLevel: m, isOpen: true }, logs: {} };
               if (mood > 0 || note !== "") { newCycle.logs[dStr] = { mood: mood, note: note }; }
               
               if (dStr === todayStr) sessionStorage.removeItem('bonusShown_' + todayStr);
@@ -989,6 +1007,7 @@
               active.base.tDays += t; 
               active.base.sLevel = Math.max(active.base.sLevel, s); 
               active.base.aLevel = Math.max(active.base.aLevel, a); 
+              active.base.mLevel = Math.max(active.base.mLevel || 0, m);
               
               if (dStr === todayStr) sessionStorage.removeItem('bonusShown_' + todayStr);
               closeModal('modal-ausrutscher'); saveData(); return;
@@ -999,7 +1018,7 @@
 
       if (dStr === todayStr) sessionStorage.removeItem('bonusShown_' + todayStr);
 
-      active.logs[dStr] = { type: 'ausrutscher', t, s, a, mood, note }; 
+      active.logs[dStr] = { type: 'ausrutscher', t, s, a, m, mood, note }; 
       closeModal('modal-ausrutscher'); saveData();
   }
 
@@ -1008,6 +1027,7 @@
       const t = parseInt(document.getElementById('sim-a-t').value) || 1; 
       const s = parseInt(document.getElementById('sim-a-s').value) || 0; 
       const a = parseInt(document.getElementById('sim-a-a').value) || 0;
+      const m = parseInt(document.getElementById('sim-a-m').value) || 0;
       
       if(!dStr) return customAlert("Bitte ein Datum wählen.");
       
@@ -1029,8 +1049,8 @@
           if (dStr > toIsoString(activeSimResult.finalEnd)) {
               active.status = 'archived';
               const newEndStr = toIsoString(addDays(parseLocal(dStr), t-1));
-              const newCycle = { id: Date.now(), status: 'active', base: { start: dStr, end: newEndStr, tDays: t, sLevel: s, aLevel: a, isOpen: true }, logs: {} };
-              newCycle.logs[dStr] = { type: 'ausrutscher', t, s, a, mood: 0, note: "🔮 Zukunftssimulation", isSimulated: true };
+              const newCycle = { id: Date.now(), status: 'active', base: { start: dStr, end: newEndStr, tDays: t, sLevel: s, aLevel: a, mLevel: m, isOpen: true }, logs: {} };
+              newCycle.logs[dStr] = { type: 'ausrutscher', t, s, a, m, mood: 0, note: "🔮 Zukunftssimulation", isSimulated: true };
               getApp().cycles.push(newCycle);
               saveData();
               customAlert("Zukunft berechnet! Ein neuer Zyklus wurde für die Simulation gestartet.");
@@ -1038,7 +1058,7 @@
           }
       }
 
-      active.logs[dStr] = { type: 'ausrutscher', t, s, a, mood: 0, note: "🔮 Zukunftssimulation", isSimulated: true }; 
+      active.logs[dStr] = { type: 'ausrutscher', t, s, a, m, mood: 0, note: "🔮 Zukunftssimulation", isSimulated: true }; 
       saveData(); 
       customAlert("Zukunft berechnet! Wirf einen Blick auf den Kalender.");
   }
@@ -1083,6 +1103,22 @@
       if (d.style.display === 'none') { d.style.display = 'block'; renderDiaryList(); } 
       else { d.style.display = 'none'; } 
   }
+  
+  function saveMonthlyNotes(mKey, btn) {
+      const active = getActiveCycle();
+      if(!active) return;
+      if(!active.monthlyNotes) active.monthlyNotes = {};
+      
+      const erkVal = document.getElementById(`note-erk-${mKey}`).value.trim();
+      const dtxVal = document.getElementById(`note-dtx-${mKey}`).value.trim();
+      
+      active.monthlyNotes[mKey] = { erk: erkVal, dtx: dtxVal };
+      saveData(true); 
+      
+      const msg = btn.nextElementSibling;
+      msg.style.display = 'inline-block';
+      setTimeout(() => msg.style.display = 'none', 2000);
+  }
 
   function renderDiaryList() {
       const active = getActiveCycle(); 
@@ -1095,6 +1131,7 @@
       const moodEmojis = ["", "😞", "🙁", "😐", "🙂", "🤩"]; 
       const sLevels = ['S:0', 'S:1', 'S:2']; 
       const aLevels = ['A:0', 'A:1', 'A:2']; 
+      const mLevels = ['M:0', 'M:1', 'M:2'];
       let items = [];
 
       while (toIsoString(curr) <= endStr) {
@@ -1103,6 +1140,7 @@
           let isBaseDay = (dStr >= active.base.start && dStr <= active.base.end);
           let formattedDate = curr.toLocaleDateString('de-DE', {weekday: 'short', day: '2-digit', month: '2-digit'}); 
           let monthYear = curr.toLocaleDateString('de-DE', {month: 'long', year: 'numeric'});
+          let mKey = `${curr.getFullYear()}-${String(curr.getMonth()+1).padStart(2,'0')}`;
           
           let brLog = getApp().breatheLogs?.[dStr];
           let breatheCount = 0;
@@ -1110,13 +1148,13 @@
           else if (brLog && typeof brLog === 'object') breatheCount = brLog.count || 0;
           
           if (isBaseDay) { 
-              items.push({dStr, formattedDate, monthYear, log: log || {}, isImplicit: false, isBase: true, breatheCount}); 
+              items.push({dStr, formattedDate, monthYear, mKey, log: log || {}, isImplicit: false, isBase: true, breatheCount}); 
               if (log && log.type === 'ausrutscher' && log.t > 1) { curr.setDate(curr.getDate() + log.t - 1); }
           } else if (log) { 
-              items.push({dStr, formattedDate, monthYear, log, isImplicit: false, isBase: false, breatheCount}); 
+              items.push({dStr, formattedDate, monthYear, mKey, log, isImplicit: false, isBase: false, breatheCount}); 
               if (log.type === 'ausrutscher' && log.t > 1) { curr.setDate(curr.getDate() + log.t - 1); } 
           } else if (dStr <= todayStr) { 
-              items.push({dStr, formattedDate, monthYear, log: null, isImplicit: true, isBase: false, breatheCount}); 
+              items.push({dStr, formattedDate, monthYear, mKey, log: null, isImplicit: true, isBase: false, breatheCount}); 
           }
           curr.setDate(curr.getDate() + 1);
       }
@@ -1124,8 +1162,8 @@
       items.reverse(); 
       let grouped = {}; 
       items.forEach(item => { 
-          if(!grouped[item.monthYear]) grouped[item.monthYear] = []; 
-          grouped[item.monthYear].push(item); 
+          if(!grouped[item.mKey]) grouped[item.mKey] = { title: item.monthYear, items: [] }; 
+          grouped[item.mKey].items.push(item); 
       });
 
       let recentMoods = items.filter(i => (!i.isImplicit || i.isBase) && i.log && i.log.mood > 0).slice(0, 7); 
@@ -1140,9 +1178,11 @@
       let isFirst = true; 
       const h = activeSimResult?.history;
 
-      for (let month in grouped) {
-          html += `<details class="diary-month-group" ${isFirst ? 'open' : ''}><summary class="diary-month-title">${month} <span class="diary-count">${grouped[month].length} Einträge</span></summary><div class="diary-month-content">`;
-          grouped[month].forEach(item => {
+      for (let mKey in grouped) {
+          let g = grouped[mKey];
+          html += `<details class="diary-month-group" ${isFirst ? 'open' : ''}><summary class="diary-month-title">${g.title} <span class="diary-count">${g.items.length} Einträge</span></summary><div class="diary-month-content">`;
+          
+          g.items.forEach(item => {
               let badge = "", meta = "", noteStr = (item.log && item.log.note) ? `<div class="diary-note">${escapeHTML(item.log.note)}</div>` : "";
               let moodStr = (item.log && item.log.mood > 0) ? moodEmojis[item.log.mood] : "➖";
               let breatheStr = item.breatheCount > 0 ? `<span style="color:#2980b9; font-weight:900; margin-left:8px;">🧘‍♂️ ${item.breatheCount}x</span>` : "";
@@ -1161,10 +1201,10 @@
               
               if (item.isBase) { 
                   badge = `<span class="diary-badge badge-base">⭐ Basis-Phase</span>`; 
-                  meta = `Mood: ${moodStr}${breatheStr}`; 
+                  meta = `M:${active.base.mLevel||0} | Mood: ${moodStr}${breatheStr}`; 
               } else if (!item.isImplicit) { 
                   badge = item.log.type === 'ausrutscher' ? `<span class="diary-badge badge-aus">🔴 Konsum (${item.log.t}d)</span>` : `<span class="diary-badge badge-pause">🟢 Pause</span>`; 
-                  meta = `${sLevels[item.log.s||0]} | ${aLevels[item.log.a||0]} | Mood: ${moodStr}${breatheStr}`; 
+                  meta = `${sLevels[item.log.s||0]} | ${aLevels[item.log.a||0]} | ${mLevels[item.log.m||0]} | Mood: ${moodStr}${breatheStr}`; 
               } else { 
                   badge = `<span class="diary-badge badge-pause" style="background:#e9ecef; color:#666;">⚪ Pause (Auto)</span>`; 
                   meta = `Kein Eintrag${breatheStr}`; 
@@ -1173,6 +1213,19 @@
               html += `<div class="diary-item" style="${item.isImplicit && item.breatheCount === 0 ? 'opacity: 0.7;' : ''}">
                   <div style="flex:1;"><div class="diary-date">${item.formattedDate}</div>${badge}<div class="diary-meta">${meta}</div>${basePenalty}${penaltyStr}${bonusStr}${noteStr}</div><button class="diary-edit-btn" onclick="openDiaryEdit('${item.dStr}')">Edit</button></div>`;
           });
+          
+          let activeNotes = active.monthlyNotes?.[mKey] || {erk: '', dtx: ''};
+          html += `<div style="margin-top:15px; padding-top:15px; border-top:2px dashed #eee;">
+                <label>💡 Erkenntnisse in diesem Monat:</label>
+                <textarea id="note-erk-${mKey}" rows="3" placeholder="Deine Erkenntnisse...">${escapeHTML(activeNotes.erk)}</textarea>
+                <label style="margin-top:10px;">🌿 Gedanken zur Entgiftung (DTX):</label>
+                <textarea id="note-dtx-${mKey}" rows="3" placeholder="Deine DTX-Gedanken...">${escapeHTML(activeNotes.dtx)}</textarea>
+                <div style="display:flex; align-items:center; gap:10px; margin-top:10px;">
+                    <button class="btn-tool" style="padding:8px 15px; min-width:auto;" onclick="saveMonthlyNotes('${mKey}', this)">💾 Speichern</button>
+                    <span style="display:none; color:#27ae60; font-weight:bold; font-size:0.85rem;">✅ Gespeichert</span>
+                </div>
+          </div>`;
+          
           html += `</div></details>`; 
           isFirst = false;
       }
@@ -1194,6 +1247,7 @@
       document.getElementById('edit-day-t').value = log.t || 1; 
       document.getElementById('edit-day-s').value = log.s || 0; 
       document.getElementById('edit-day-a').value = log.a || 0; 
+      document.getElementById('edit-day-m').value = log.m || 0;
       document.getElementById('edit-day-mood').value = log.mood || 0; 
       document.getElementById('edit-day-note').value = log.note || "";
       
@@ -1201,6 +1255,7 @@
       document.getElementById('edit-day-t').disabled = isBase; 
       document.getElementById('edit-day-s').disabled = isBase; 
       document.getElementById('edit-day-a').disabled = isBase;
+      document.getElementById('edit-day-m').disabled = isBase;
       
       toggleEditFields(); 
       document.getElementById('modal-edit-day').classList.add('active');
@@ -1229,16 +1284,17 @@
       }
 
       if (isBase) { 
-          const existing = active.logs[dStr] || { type: 'ausrutscher', t:1, s:0, a:0 }; 
+          const existing = active.logs[dStr] || { type: 'ausrutscher', t:1, s:0, a:0, m:0 }; 
           active.logs[dStr] = { ...existing, mood, note };
       } else {
           const s = parseInt(document.getElementById('edit-day-s').value) || 0; 
           const a = parseInt(document.getElementById('edit-day-a').value) || 0;
+          const m = parseInt(document.getElementById('edit-day-m').value) || 0;
           
           if (type === 'ausrutscher') { 
-              active.logs[dStr] = { type: 'ausrutscher', t, s, a, mood, note }; 
+              active.logs[dStr] = { type: 'ausrutscher', t, s, a, m, mood, note }; 
           } else { 
-              active.logs[dStr] = { type: 'pause', s, a, mood, note }; 
+              active.logs[dStr] = { type: 'pause', s, a, m, mood, note }; 
           }
       }
       
@@ -1289,7 +1345,7 @@
       }
   }
 
-  // --- ENGINE V9.5 ---
+  // --- ENGINE V10.0 ---
   function runAllSimulations() {
       globalSimResults = (getApp().cycles || []).map(cycle => simulateCycle(cycle));
       activeSimResult = globalSimResults.length > 0 ? globalSimResults[globalSimResults.length - 1] : null;
@@ -1482,11 +1538,22 @@
           let optEnd = addDays(pessimisticEnd, -Math.ceil(totalDiscardedBonus));
           optimisticEndStr = toIsoString(optEnd);
       }
+      
+      // V10.0: M-Freie Tage (nur Erholungstage zählen)
+      let mFreeGoal = Math.min(totalTDaysEver * 2, 14);
+      let mFreeCurrent = 0;
+      [...history.b, ...history.r, ...history.n].forEach(d => {
+          let dStr = toIsoString(d);
+          if (dStr < todayStr || (dStr === todayStr && cycle.logs[todayStr] && cycle.logs[todayStr].type !== undefined)) {
+              let log = cycle.logs[dStr] || {};
+              if ((log.m || 0) === 0) mFreeCurrent++;
+          }
+      });
 
       return {
           cycleId: cycle.id, status: cycle.status, isOpen: cycle.base.isOpen, history, 
           finalEnd: pessimisticEnd, optimisticEndStr, totalTDaysEver, totalDebtEver, 
-          dashState, nirvanaStreak, initialDebtTotal, basePenaltyStr
+          dashState, nirvanaStreak, initialDebtTotal, basePenaltyStr, mFreeGoal, mFreeCurrent
       };
   }
 
@@ -1635,11 +1702,11 @@
 
       if (!isSandbox && !isLoggedToday && !res.isOpen && displayDebt > 0) {
           let cloneA = JSON.parse(JSON.stringify(activeCycle));
-          cloneA.logs[todayStr] = { type: 'pause', s:0, a:0, mood:0, note:'Phantom' };
+          cloneA.logs[todayStr] = { type: 'pause', s:0, a:0, m:0, mood:0, note:'Phantom' };
           let resA = simulateCycle(cloneA);
 
           let cloneB = JSON.parse(JSON.stringify(activeCycle));
-          cloneB.logs[todayStr] = { type: 'ausrutscher', t:1, s:0, a:0, mood:0, note:'Phantom' };
+          cloneB.logs[todayStr] = { type: 'ausrutscher', t:1, s:0, a:0, m:0, mood:0, note:'Phantom' };
           let resB = simulateCycle(cloneB);
 
           let debtA = resA.dashState.debt;
@@ -1712,7 +1779,22 @@
           <div class="stat-box" style="padding: 10px;"><div class="stat-val blue" style="font-size: 1.4rem; color: var(--nirvana-blue);">${totalRegenDebt}</div><div class="stat-label" style="font-size: 0.65rem;">Gesamtschuld</div></div>
       </div>`;
       
-      html += `<div style="margin-top:10px; padding:10px; background:#e8f6f3; border-radius:8px; color:#16a085; font-weight:bold; text-align:center;">Empfohlene M-freie Tage: ${Math.min(totalT * 2, 14)}</div>`;
+      // V10.0: M-freie Tage Progress Bar
+      if (res.mFreeGoal > 0 && !res.isOpen) {
+          let mProgress = Math.min(100, (res.mFreeCurrent / res.mFreeGoal) * 100);
+          html += `
+          <div style="margin-top: 15px; padding: 15px; background: #fdfafb; border: 1px solid #e8daef; border-radius: 12px; text-align: center;">
+              <div style="font-weight: 800; color: #8e44ad; margin-bottom: 5px;">M-freie Regeneration</div>
+              <div style="background: #eee; height: 12px; border-radius: 6px; overflow: hidden; margin-bottom: 5px;">
+                  <div style="background: #9b59b6; width: ${mProgress}%; height: 100%; transition: width 0.5s ease;"></div>
+              </div>
+              <div style="font-size: 0.85rem; font-weight: bold; color: #555;">${res.mFreeCurrent} von ${res.mFreeGoal} Tagen erreicht ${res.mFreeCurrent >= res.mFreeGoal ? '✅' : ''}</div>
+          </div>
+          `;
+      } else {
+          html += `<div style="margin-top:10px; padding:10px; background:#e8f6f3; border-radius:8px; color:#16a085; font-weight:bold; text-align:center;">Empfohlene M-freie Tage: ${res.mFreeGoal}</div>`;
+      }
+      
       document.getElementById('bilanz-container').innerHTML = html;
 
       const allDates = [...res.history.t, ...res.history.a, ...res.history.b, ...res.history.r, ...res.history.n]; 
@@ -1785,11 +1867,44 @@
       const milestonesArr = [7, 14, 21, 30, 60, 90, 180, 365, 730];
       
       let highStressResilienceCount = 0;
+      
+      // V10.0: Kalender Monate sammeln
+      let archiveMonths = {};
 
       (getApp().cycles || []).forEach((cycle, index) => {
           const res = globalSimResults[index]; 
           if(!res) return;
           
+          // Kalender Daten klauben
+          let allDays = [...res.history.t, ...res.history.a, ...res.history.b, ...res.history.r, ...res.history.n];
+          let uniqueDays = [...new Set(allDays.map(d => toIsoString(d)))].filter(d => d <= todayStr).sort();
+
+          uniqueDays.forEach(dStr => {
+              let mKey = dStr.substring(0, 7); 
+              if(!archiveMonths[mKey]) archiveMonths[mKey] = { tDays:0, aDays:0, mDays:0, erk:[], dtx:[] };
+              
+              let isT = res.history.t.some(d => toIsoString(d)===dStr) || res.history.a.some(d => toIsoString(d)===dStr);
+              if(isT) archiveMonths[mKey].tDays++;
+              
+              let isBase = (cycle.base.start && dStr >= cycle.base.start && dStr <= cycle.base.end);
+              let log = cycle.logs[dStr] || {};
+              
+              let aVal = isBase ? (cycle.base.aLevel||0) : (log.a || 0);
+              let mVal = isBase ? (cycle.base.mLevel||0) : (log.m || 0); 
+              
+              if(aVal > 0) archiveMonths[mKey].aDays++;
+              if(mVal > 0) archiveMonths[mKey].mDays++;
+          });
+
+          if(cycle.monthlyNotes) {
+              Object.keys(cycle.monthlyNotes).forEach(mKey => {
+                  if(!archiveMonths[mKey]) archiveMonths[mKey] = { tDays:0, aDays:0, mDays:0, erk:[], dtx:[] };
+                  if(cycle.monthlyNotes[mKey].erk) archiveMonths[mKey].erk.push(cycle.monthlyNotes[mKey].erk);
+                  if(cycle.monthlyNotes[mKey].dtx) archiveMonths[mKey].dtx.push(cycle.monthlyNotes[mKey].dtx);
+              });
+          }
+          
+          // Normale Statistiken
           const pastT = res.history.t.filter(isPast); const pastA = res.history.a.filter(isPast);
           const pastB = res.history.b.filter(isPast); const pastR = res.history.r.filter(isPast); const pastN = res.history.n.filter(isPast);
           
@@ -1827,7 +1942,6 @@
           Object.entries(cycle.logs).forEach(([dStr, log]) => {
               if (dStr >= todayStr) return; 
               
-              // V9.5: Stress Resilience Check
               if (log.type === 'pause' && log.s === 2) {
                   highStressResilienceCount++;
               }
@@ -1866,7 +1980,6 @@
       document.getElementById('stat-avg-nirvana').textContent = avgNirvana;
       document.getElementById('stat-total-milestones').textContent = totalMilestones;
 
-      // V9.5 FIX: Saubere Migration & Berechnung der Atem-Statistiken
       let totalBreatheSessions = 0; 
       let totalBreatheMinutes = 0;
       
@@ -1874,7 +1987,7 @@
           Object.values(getApp().breatheLogs).forEach(log => {
               if (typeof log === 'number') {
                   totalBreatheSessions += log;
-                  totalBreatheMinutes += (log * 3); // Fallback für alte Daten
+                  totalBreatheMinutes += (log * 3); 
               } else if (log && typeof log === 'object') {
                   totalBreatheSessions += (log.count || 0);
                   totalBreatheMinutes += (log.minutes || 0);
@@ -1891,7 +2004,7 @@
       document.getElementById('stat-breathe-avg-time').textContent = avgBreatheTime;
       document.getElementById('stat-breathe-avg').textContent = avgBreathePerWeek;
 
-      // V9.5: Der neue Motivations-Coach (Verhaltensanalyse 2.0)
+      // Coach Insights
       let insights = []; 
       allPastAusrutscherDates.sort();
       
@@ -1937,6 +2050,19 @@
           }
       }
       
+      const monthNames = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
+      
+      // V10.0: Best Month
+      const currentMKey = todayStr.substring(0, 7);
+      let completedMonths = Object.keys(archiveMonths).filter(k => k < currentMKey);
+      if(completedMonths.length > 0) {
+          let bestMKey = completedMonths.reduce((a, b) => archiveMonths[a].tDays < archiveMonths[b].tDays ? a : b);
+          let bestMData = archiveMonths[bestMKey];
+          let parts = bestMKey.split('-');
+          let mName = `${monthNames[parseInt(parts[1])-1]} ${parts[0]}`;
+          insights.push(`<li>🏆 <strong>Rekord-Monat:</strong> Dein bester abgeschlossener Monat war der <strong>${mName}</strong> mit nur ${bestMData.tDays} Konsumtagen. Ein tolles Vorbild!</li>`);
+      }
+
       if (allPastAusrutscherDates.length > 0) {
           let dayCounts = [0,0,0,0,0,0,0]; 
           allPastAusrutscherDates.forEach(dStr => dayCounts[parseLocal(dStr).getDay()]++);
@@ -1951,12 +2077,10 @@
       
       let triggersHtml = "";
       if (insights.length > 0) {
-          // Begrenze auf die Top 4 Insights, damit es übersichtlich bleibt
           triggersHtml = insights.slice(0, 4).join("");
       } else {
           triggersHtml = "<li>Sammle noch ein paar Tage Daten, damit dein Coach erste Trends und Erfolge für dich berechnen kann! Bleib dran!</li>";
       }
-
       document.getElementById('trigger-list').innerHTML = triggersHtml;
 
       const archContainer = document.getElementById('archive-container'); 
@@ -1986,6 +2110,37 @@
               archContainer.appendChild(card);
           });
       }
+      
+      // V10.0: Render Monthly Archive
+      let archMonthsHtml = '<h3 style="margin-top:3rem; margin-bottom:1rem; border-bottom:2px solid #fcf3cf; padding-bottom:10px; color:#7f8c8d;">📅 Kalendarischer Jahres-Rückblick</h3>';
+      let mKeys = Object.keys(archiveMonths).sort().reverse();
+      if(mKeys.length === 0) {
+          archMonthsHtml += '<p style="color:#7f8c8d; text-align:center;">Noch keine Kalenderdaten vorhanden.</p>';
+      } else {
+          mKeys.forEach(mKey => {
+              let parts = mKey.split('-');
+              let mName = `${monthNames[parseInt(parts[1])-1]} ${parts[0]}`;
+              let data = archiveMonths[mKey];
+              
+              let textsHtml = '';
+              if(data.erk.length > 0) textsHtml += `<div style="margin-top:10px; font-size:0.85rem;"><strong>💡 Erkenntnisse:</strong><br><div style="color:#555; font-style:italic; padding-left:10px; border-left:2px solid #f1c40f; margin-top:5px;">${data.erk.join('<hr style="margin:8px 0; border:0; border-top:1px dashed #eee;">')}</div></div>`;
+              if(data.dtx.length > 0) textsHtml += `<div style="margin-top:10px; font-size:0.85rem;"><strong>🌿 DTX-Gedanken:</strong><br><div style="color:#555; font-style:italic; padding-left:10px; border-left:2px solid #27ae60; margin-top:5px;">${data.dtx.join('<hr style="margin:8px 0; border:0; border-top:1px dashed #eee;">')}</div></div>`;
+              
+              archMonthsHtml += `
+              <div class="archive-card" style="border-left-color: #8e44ad; background: #fff;">
+                  <div class="archive-header" style="border-bottom:none; margin-bottom:0;">
+                      <div class="archive-title" style="color:#8e44ad;">${mName}</div>
+                  </div>
+                  <div class="archive-stats" style="grid-template-columns: 1fr 1fr 1fr; background:#fdfafb; padding:10px; border-radius:8px; margin-top:10px;">
+                      <div><strong style="color:var(--danger);">🔴 ${data.tDays}</strong> T-Tage</div>
+                      <div><strong>🍷 ${data.aDays}</strong> Alk.-Tage</div>
+                      <div><strong>✊ ${data.mDays}</strong> M-Tage</div>
+                  </div>
+                  ${textsHtml}
+              </div>`;
+          });
+      }
+      document.getElementById('archive-months-container').innerHTML = archMonthsHtml;
   }
 
   // --- EXPORT & IMPORT ---
@@ -2027,14 +2182,14 @@
                   customAlert("Simulation erfolgreich in die Sandbox geladen!");
               } else {
                   if (data.version >= 5) { 
-                      data.version = 9.5; appData = data; 
+                      data.version = 10.0; appData = data; 
                   } else if (data.base && !data.cycles) { 
-                      appData = { version: 9.5, cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }], breatheLogs: {} };
+                      appData = { version: 10.0, cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }], breatheLogs: {} };
                   } else if (data.tDays !== undefined && !data.base) {
-                      let base = { start: data.startDate, end: data.endDate, tDays: parseInt(data.tDays)||0, sLevel: parseInt(data.stress)||0, aLevel: parseInt(data.alcohol)||0, isOpen: false };
+                      let base = { start: data.startDate, end: data.endDate, tDays: parseInt(data.tDays)||0, sLevel: parseInt(data.stress)||0, aLevel: parseInt(data.alcohol)||0, mLevel: 0, isOpen: false };
                       let logs = {}; 
-                      if(data.interruptions) { data.interruptions.forEach(int => { logs[int.start] = { type: 'ausrutscher', t: parseInt(int.t)||1, s: parseInt(int.s)||0, a: parseInt(int.a)||0 }; }); }
-                      appData = { version: 9.5, cycles: [{ id: Date.now(), status: 'active', base: base, logs: logs }], breatheLogs: {} };
+                      if(data.interruptions) { data.interruptions.forEach(int => { logs[int.start] = { type: 'ausrutscher', t: parseInt(int.t)||1, s: parseInt(int.s)||0, a: parseInt(int.a)||0, m: 0 }; }); }
+                      appData = { version: 10.0, cycles: [{ id: Date.now(), status: 'active', base: base, logs: logs }], breatheLogs: {} };
                   } else { 
                       appData = data; 
                   }
@@ -2067,7 +2222,7 @@
       const sLevels = ['Kein', 'Moderat', 'Hoch']; 
       const aLevels = ['Kein', 'Moderat', 'Hoch'];
       
-      let desc = isSandbox ? `ReTrack SIMULATION\n\n` : `ReTrack V9.5\n\n`;
+      let desc = isSandbox ? `ReTrack SIMULATION\n\n` : `ReTrack V10.0\n\n`;
       desc += `--- Basis-Phase ---\n`;
       desc += `Start: ${parseLocal(activeCycle.base.start).toLocaleDateString('de-DE')}\n`;
       desc += `Ende: ${parseLocal(activeCycle.base.end).toLocaleDateString('de-DE')}\n`;
@@ -2305,7 +2460,6 @@
       const todayStr = toIsoString(new Date()); 
       if (!appData.breatheLogs) appData.breatheLogs = {}; 
       
-      // V9.5 FIX: Sichere Migration beim Schreiben alter Daten
       let currentLog = appData.breatheLogs[todayStr];
       if (typeof currentLog === 'number') {
           currentLog = { count: currentLog, minutes: currentLog * 3 };
