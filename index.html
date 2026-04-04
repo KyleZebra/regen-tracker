@@ -8,7 +8,7 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
 
-  <title>ReTrack 10.1</title>
+  <title>ReTrack 10.2</title>
   
   <link rel="manifest" href="./manifest.json" />
   <meta name="theme-color" content="#f1c40f" />
@@ -315,7 +315,7 @@
 
   <header onclick="openBreatheOverlay()" title="Geheime Atem-Übung öffnen">
     <h1>🧪 ReTrack</h1>
-    <div class="version">Version 10.1 – History & Wording</div>
+    <div class="version">Version 10.2 – Data & Export Polish</div>
   </header>
 
   <div class="tabs">
@@ -330,7 +330,7 @@
   <div id="tab-dashboard" class="tab-content active">
     
     <div id="setup-warning" class="setup-overlay">
-        <h3>Willkommen bei ReTrack (v10.1)! 👋</h3>
+        <h3>Willkommen bei ReTrack (v10.2)! 👋</h3>
         <p>Lege deinen ersten Zyklus an oder lade ein bestehendes Backup.</p>
         <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 15px;">
             <button class="btn-tool" style="background:var(--header-bg); border:none; color:white;" onclick="switchTab('historie')">✏️ Neuen Zyklus starten</button>
@@ -678,7 +678,7 @@
   </div>
 
 <script>
-  let appData = { version: 10.1, cycles: [], breatheLogs: {} };
+  let appData = { version: 10.2, cycles: [], breatheLogs: {} };
   let isSandbox = false; 
   let sandboxData = null;
   let currentHistLogs = {};
@@ -802,14 +802,14 @@
 
   function loadData() {
       const saved = localStorage.getItem('regenAppData_v6') || localStorage.getItem('regenAppData_v5');
-      let parsedData = { version: 10.1, cycles: [], breatheLogs: {} };
+      let parsedData = { version: 10.2, cycles: [], breatheLogs: {} };
       if (saved) {
           try { 
               let data = JSON.parse(saved); 
               if (data && typeof data === 'object') {
                   if (data.version >= 5) { 
                       parsedData = data; 
-                      parsedData.version = 10.1; 
+                      parsedData.version = 10.2; 
                   } else if (!data.cycles && data.base) { 
                       parsedData.cycles = [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }];
                   } else if (data.tDays !== undefined && !data.base) {
@@ -817,6 +817,19 @@
                       let logs = {}; 
                       if(data.interruptions) { data.interruptions.forEach(int => { logs[int.start] = { type: 'ausrutscher', t: parseInt(int.t)||1, s: parseInt(int.s)||0, a: parseInt(int.a)||0, m: 0 }; }); }
                       parsedData.cycles = [{ id: Date.now(), status: 'active', base: base, logs: logs }];
+                  }
+                  
+                  // V10.2 FIX: Hydration-Schleife für alte Backups (sichert mLevel, m und monthlyNotes)
+                  if (parsedData.cycles && Array.isArray(parsedData.cycles)) {
+                      parsedData.cycles.forEach(c => {
+                          if (c.base && c.base.mLevel === undefined) c.base.mLevel = 0;
+                          if (c.logs) {
+                              Object.values(c.logs).forEach(l => {
+                                  if (l.m === undefined) l.m = 0;
+                              });
+                          }
+                          if (!c.monthlyNotes) c.monthlyNotes = {};
+                      });
                   }
               }
           } catch(e) { console.error("Speicherdaten korrupt."); }
@@ -857,7 +870,7 @@
       if (isSandbox) return customAlert("Im Simulations-Modus kannst du keinen Hard-Reset durchführen.");
       customConfirm("ACHTUNG: Möchtest du wirklich ALLE Daten löschen? (Werkseinstellungen)", () => {
           localStorage.removeItem('regenAppData_v5'); localStorage.removeItem('regenAppData_v6'); localStorage.removeItem('regenAppData_v7');
-          appData = { version: 10.1, cycles: [], breatheLogs: {} }; 
+          appData = { version: 10.2, cycles: [], breatheLogs: {} }; 
           customAlert("Gelöscht.", () => { window.location.href = window.location.href.split('?')[0]; });
       });
   }
@@ -1476,7 +1489,7 @@
       }
   }
 
-  // --- ENGINE V10.1 ---
+  // --- ENGINE V10.2 ---
   function runAllSimulations() {
       globalSimResults = (getApp().cycles || []).map(cycle => simulateCycle(cycle));
       activeSimResult = globalSimResults.length > 0 ? globalSimResults[globalSimResults.length - 1] : null;
@@ -1484,6 +1497,8 @@
   }
 
   function simulateCycle(cycle) {
+      if (!cycle || !cycle.base || !cycle.base.start) return null; // V10.2 FIX: Abort if no base
+
       const baseVal = cycle.base.tDays * 3;
       let sAdd = 0, aAdd = 0;
       
@@ -1549,7 +1564,8 @@
 
       let lastRealDayStr = (cycle.logs[todayStr] && cycle.logs[todayStr].type !== undefined) ? todayStr : yesterdayStr;
 
-      while ((debt > 0 || toIsoString(simDate) <= endSimLimit) && safety < 5000) {
+      // V10.2 FIX: Safety limit increased to 15000 to allow very old historical cycles (approx 41 years)
+      while ((debt > 0 || toIsoString(simDate) <= endSimLimit) && safety < 15000) {
           safety++; 
           let dStr = toIsoString(simDate); 
           let log = cycle.logs[dStr];
@@ -1670,7 +1686,6 @@
           optimisticEndStr = toIsoString(optEnd);
       }
       
-      let mFreeGoal = Math.min(totalTDaysEver * 2, 14);
       let mFreeCurrent = 0;
       [...history.b, ...history.r, ...history.n].forEach(d => {
           let dStr = toIsoString(d);
@@ -1679,6 +1694,8 @@
               if ((log.m || 0) === 0) mFreeCurrent++;
           }
       });
+      // V10.2 FIX: M-free cap removed, now totalT * 2
+      let mFreeGoal = totalTDaysEver * 2;
 
       return {
           cycleId: cycle.id, status: cycle.status, isOpen: cycle.base.isOpen, history, 
@@ -1775,9 +1792,9 @@
           let nextM = milestones.find(m => res.nirwanaStreak < m) || 9999;
           let prevM = [...milestones].reverse().find(m => res.nirwanaStreak >= m) || 0;
           
-          let nirwanaProgress = 0;
+          let nirvanaProgress = 0;
           if (nextM !== 9999) {
-              nirwanaProgress = ((res.nirwanaStreak - prevM) / (nextM - prevM)) * 100;
+              nirvanaProgress = ((res.nirwanaStreak - prevM) / (nextM - prevM)) * 100;
           } else {
               nirvanaProgress = 100;
           }
@@ -1807,8 +1824,8 @@
 
           badge.className = 'status-badge status-done'; badge.textContent = "Nirwana Level-Up";
           ring.classList.add('nirvana'); percentTxt.classList.add('nirvana'); 
-          ring.setAttribute('stroke-dasharray', `${nirwanaProgress}, 100`); 
-          percentTxt.textContent = Math.round(nirwanaProgress) + '%'; 
+          ring.setAttribute('stroke-dasharray', `${nirvanaProgress}, 100`); 
+          percentTxt.textContent = Math.round(nirvanaProgress) + '%'; 
           ringLbl.textContent = "ZUM ZIEL";
           daysLeftTxt.textContent = `Nächstes Ziel: ${nextM} Tage`; 
           targetTxt.textContent = `Bisher: ${mStr}`;
@@ -2039,7 +2056,7 @@
           let currentStreak = 0;
           for (let i=0; i<pastN.length; i++) {
               if (i===0 || diffDays(pastN[i-1], pastN[i]) === 1) currentStreak++; 
-              else { maxNirwana = Math.max(maxNirwana, currentStreak); currentStreak = 1; }
+              else { maxNirwana = Math.max(maxNirvana, currentStreak); currentStreak = 1; }
           }
           maxNirvana = Math.max(maxNirvana, currentStreak);
           
@@ -2231,7 +2248,7 @@
               card.className = 'archive-card';
               card.innerHTML = `<div class="archive-header"><div class="archive-title">Zyklus: ${startStr} – ${endStr}</div><div class="archive-badge">${allArchDates.length} Tage Total</div></div>
                 <div class="archive-stats"><div><strong>Start-Konsum:</strong> ${cycle.base.tDays} Tage</div><div><strong>Rauchen in Phase:</strong> ${ausCount}</div>
-                <div><strong>Regenerationsdauer:</strong> ${res.history.b.length + res.history.r.length} Tage</div><div><strong>Nirwana-Streak danach:</strong> ${res.nirwanaStreak} Tage</div></div>`;
+                <div><strong>Regenerationsdauer:</strong> ${res.history.b.length + res.history.r.length} Tage</div><div><strong>Nirwana-Streak danach:</strong> ${res.nirvanaStreak} Tage</div></div>`;
               archContainer.appendChild(card);
           });
       }
@@ -2320,16 +2337,29 @@
                   customAlert("Simulation erfolgreich in die Sandbox geladen!");
               } else {
                   if (data.version >= 5) { 
-                      data.version = 10.1; appData = data; 
+                      data.version = 10.2; appData = data; 
                   } else if (data.base && !data.cycles) { 
-                      appData = { version: 10.1, cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }], breatheLogs: {} };
+                      appData = { version: 10.2, cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }], breatheLogs: {} };
                   } else if (data.tDays !== undefined && !data.base) {
                       let base = { start: data.startDate, end: data.endDate, tDays: parseInt(data.tDays)||0, sLevel: parseInt(data.stress)||0, aLevel: parseInt(data.alcohol)||0, mLevel: 0, isOpen: false };
                       let logs = {}; 
                       if(data.interruptions) { data.interruptions.forEach(int => { logs[int.start] = { type: 'ausrutscher', t: parseInt(int.t)||1, s: parseInt(int.s)||0, a: parseInt(int.a)||0, m: 0 }; }); }
-                      appData = { version: 10.1, cycles: [{ id: Date.now(), status: 'active', base: base, logs: logs }], breatheLogs: {} };
+                      appData = { version: 10.2, cycles: [{ id: Date.now(), status: 'active', base: base, logs: logs }], breatheLogs: {} };
                   } else { 
                       appData = data; 
+                  }
+                  
+                  // V10.2 FIX: Hydration-Schleife für alte Backups
+                  if (appData.cycles && Array.isArray(appData.cycles)) {
+                      appData.cycles.forEach(c => {
+                          if (c.base && c.base.mLevel === undefined) c.base.mLevel = 0;
+                          if (c.logs) {
+                              Object.values(c.logs).forEach(l => {
+                                  if (l.m === undefined) l.m = 0;
+                              });
+                          }
+                          if (!c.monthlyNotes) c.monthlyNotes = {};
+                      });
                   }
                   
                   appData.cycles = Array.isArray(appData.cycles) ? appData.cycles : []; 
@@ -2359,14 +2389,16 @@
       
       const sLevels = ['Kein', 'Moderat', 'Hoch']; 
       const aLevels = ['Kein', 'Moderat', 'Hoch'];
+      const mLevels = ['Kein', 'Moderat', 'Hoch'];
       
-      let desc = isSandbox ? `ReTrack SIMULATION\n\n` : `ReTrack V10.1\n\n`;
+      let desc = isSandbox ? `ReTrack SIMULATION\n\n` : `ReTrack V10.2\n\n`;
       desc += `--- Basis-Phase ---\n`;
       desc += `Start: ${parseLocal(activeCycle.base.start).toLocaleDateString('de-DE')}\n`;
       desc += `Ende: ${parseLocal(activeCycle.base.end).toLocaleDateString('de-DE')}\n`;
       desc += `T-Tage: ${activeCycle.base.tDays}d\n`;
       desc += `Stress (Max): ${sLevels[activeCycle.base.sLevel]}\n`;
       desc += `Alkohol (Max): ${aLevels[activeCycle.base.aLevel]}\n`;
+      desc += `Masturbation (M): ${mLevels[activeCycle.base.mLevel || 0]}\n`;
       desc += `${res.basePenaltyStr}\n`;
       
       if(res.history.logDetails.length > 0) {
@@ -2374,7 +2406,8 @@
           const sortedLogs = [...res.history.logDetails].sort((a,b) => parseLocal(a.date) - parseLocal(b.date));
           sortedLogs.forEach(l => {
               let detailStr = res.history.penaltyDict[l.date] || `Strafe: +${l.p} Tage`;
-              desc += `[${parseLocal(l.date).toLocaleDateString('de-DE')}] Dauer: ${l.t}d | S: ${sLevels[l.s]} | A: ${aLevels[l.a]} -> ${detailStr}\n`;
+              let origLog = activeCycle.logs[l.date] || {};
+              desc += `[${parseLocal(l.date).toLocaleDateString('de-DE')}] Dauer: ${l.t}d | S: ${sLevels[l.s]} | A: ${aLevels[l.a]} | M: ${mLevels[origLog.m || 0]} -> ${detailStr}\n`;
           });
       }
 
@@ -2387,9 +2420,24 @@
       desc += `x3 Schuld: ${totalT * 3} Tage\n`; 
       desc += `Zusätzlicher Aufschlag: +${aufschlag} Tage\n`; 
       desc += `Regenerationsschuld gesamt: ${totalRegenDebt} Tage\n`;
-      desc += `\nEmpfohlene M-freie Tage: ${Math.min(res.totalTDaysEver * 2, 14)}\n`;
+      desc += `\nEmpfohlene M-freie Tage: ${res.mFreeGoal}\n`;
       desc += `Pessimistisches Ziel: ${res.finalEnd.toLocaleDateString('de-DE')}\n`;
       if(res.optimisticEndStr) desc += `Best-Case Ziel: ${parseLocal(res.optimisticEndStr).toLocaleDateString('de-DE')}\n`;
+
+      if (activeCycle.monthlyNotes && Object.keys(activeCycle.monthlyNotes).length > 0) {
+          desc += `\n--- Monats-Notizen ---\n`;
+          const monthNames = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
+          Object.keys(activeCycle.monthlyNotes).sort().forEach(mKey => {
+              let parts = mKey.split('-');
+              let mName = `${monthNames[parseInt(parts[1])-1]} ${parts[0]}`;
+              let notes = activeCycle.monthlyNotes[mKey];
+              if (notes.erk || notes.dtx) {
+                  desc += `${mName}:\n`;
+                  if (notes.erk) desc += ` Erkenntnisse: ${notes.erk.replace(/\n/g, ' ')}\n`;
+                  if (notes.dtx) desc += ` DTX: ${notes.dtx.replace(/\n/g, ' ')}\n`;
+              }
+          });
+      }
 
       const exportDates = [...res.history.b, ...res.history.r].sort((a,b) => a-b);
       if(exportDates.length === 0) return customAlert("Keine Erholungstage zum Exportieren gefunden.");
