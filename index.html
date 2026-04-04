@@ -8,7 +8,7 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
 
-  <title>ReTrack 10.4</title>
+  <title>ReTrack 10.0</title>
   
   <link rel="manifest" href="./manifest.json" />
   <meta name="theme-color" content="#f1c40f" />
@@ -137,7 +137,7 @@
 
     /* Buttons */
     .quick-actions { display: flex; gap: 10px; }
-    .btn-quick { flex: 1; padding: 16px; border: none; border-radius: 12px; font-weight: 800; font-size: 1.1rem; cursor: pointer; color: white; transition: transform 0.1s; text-align: center; } 
+    .btn-quick { flex: 1; padding: 16px; border: none; border-radius: 12px; font-weight: 800; font-size: 1rem; cursor: pointer; color: white; transition: transform 0.1s; } 
     .btn-quick:active { transform: scale(0.96); }
     .btn-pausiert { background: #27ae60; box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3); } 
     .btn-ausrutscher { background: #e74c3c; box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3); }
@@ -315,7 +315,7 @@
 
   <header onclick="openBreatheOverlay()" title="Geheime Atem-Übung öffnen">
     <h1>🧪 ReTrack</h1>
-    <div class="version">Version 10.4 – Archive Fix & Safe UI</div>
+    <div class="version">Version 10.0 – Anniversary Edition</div>
   </header>
 
   <div class="tabs">
@@ -330,7 +330,7 @@
   <div id="tab-dashboard" class="tab-content active">
     
     <div id="setup-warning" class="setup-overlay">
-        <h3>Willkommen bei ReTrack (v10.4)! 👋</h3>
+        <h3>Willkommen bei ReTrack (v10.0)! 👋</h3>
         <p>Lege deinen ersten Zyklus an oder lade ein bestehendes Backup.</p>
         <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 15px;">
             <button class="btn-tool" style="background:var(--header-bg); border:none; color:white;" onclick="switchTab('historie')">✏️ Neuen Zyklus starten</button>
@@ -358,7 +358,7 @@
                 <div class="ring-content">
                     <div id="dash-percent" class="ring-percent">0%</div>
                     <div id="dash-progress" class="ring-progress" style="display:none;">Tag X von Y</div>
-                    <div id="dash-ring-label" class="ring-label">REGENERATION</div>
+                    <div id="dash-ring-label" class="ring-label">Heilung</div>
                     <div id="dash-days-left" class="ring-days">Noch -- Tage</div>
                     <div id="dash-target-date" class="ring-target">Ziel: --.--.----</div>
                 </div>
@@ -370,8 +370,8 @@
 
             <div id="daily-action-area">
                 <div class="quick-actions">
-                    <button class="btn-quick btn-pausiert" onclick="openPauseModal()">Pause</button>
-                    <button class="btn-quick btn-ausrutscher" onclick="openAusrutscherModal(false)">Rauchen</button>
+                    <button class="btn-quick btn-pausiert" onclick="openPauseModal()">Stark geblieben</button>
+                    <button class="btn-quick btn-ausrutscher" onclick="openAusrutscherModal(false)">Ausrutscher</button>
                 </div>
             </div>
             
@@ -389,7 +389,7 @@
     <div class="card" id="base-form-card">
       <h3>📊 Start des aktuellen Zyklus</h3>
       <div id="open-base-warning" style="display:none; background:#fadbd8; color:#c0392b; padding:10px; border-radius:8px; margin-bottom:15px; font-weight:bold; font-size:0.9rem; text-align:center;">
-        ⚠️ Initiale Konsumphase ist noch offen! Drücke auf "Pause", um sie abzuschließen.
+        ⚠️ Initiale Konsumphase ist noch offen! Drücke auf "Stark geblieben", um sie abzuschließen.
       </div>
       <div class="form-grid">
         <div><label>Startdatum</label><input type="date" id="base-start" onchange="calcBaseT()"></div>
@@ -397,7 +397,7 @@
         <div class="form-group-tday"><label>T-Tage</label><input type="number" id="base-t" readonly></div>
         <div><label>Stress (Max)</label><select id="base-s" onchange="saveBase()"><option value="0">Kein</option><option value="1">Moderat</option><option value="2">Hoch</option></select></div>
         <div><label>Alkohol (Max)</label><select id="base-a" onchange="saveBase()"><option value="0">Kein</option><option value="1">Moderat</option><option value="2">Hoch</option></select></div>
-        <div><label>Masturbation (M)</label><select id="base-m" onchange="saveBase()"><option value="0">Kein</option><option value="1">Moderat</option><option value="2">Hoch</option></select></div>
+        <div><label>M? (Max)</label><select id="base-m" onchange="saveBase()"><option value="0">Kein</option><option value="1">Moderat</option><option value="2">Hoch</option></select></div>
       </div>
       <button class="btn-tool" style="width:100%; margin-top: 15px; background: var(--header-bg); border: none; color: white;" onclick="saveBase(true)">💾 Speichern & Neu berechnen</button>
     </div>
@@ -405,13 +405,13 @@
     <!-- ZUKUNFTS-SIMULATOR -->
     <div class="card" id="sandbox-planner-card">
         <h3 style="color:#9b59b6; border-bottom-color:#e8daef;">🔮 Zukunfts-Simulator</h3>
-        <p style="font-size:0.8rem; color:#666; margin-top:-10px;">Plane fiktives Rauchen für das laufende Jahr, um die Auswirkungen zu testen.</p>
+        <p style="font-size:0.8rem; color:#666; margin-top:-10px;">Plane fiktive Ausrutscher für das laufende Jahr, um die Auswirkungen zu testen.</p>
         <div class="form-grid">
             <div class="form-group-full"><label>Zukunfts-Datum</label><input type="date" id="sim-a-date"></div>
             <div class="form-group-full"><label>Dauer (T-Tage)</label><input type="number" id="sim-a-t" value="1" min="1"></div>
             <div><label>Stress</label><select id="sim-a-s"><option value="0">Kein</option><option value="1">Moderat</option><option value="2">Hoch</option></select></div>
             <div><label>Alkohol</label><select id="sim-a-a"><option value="0">Kein</option><option value="1">Moderat</option><option value="2">Hoch</option></select></div>
-            <div><label>Masturbation (M)</label><select id="sim-a-m"><option value="0">Kein</option><option value="1">Moderat</option><option value="2">Hoch</option></select></div>
+            <div><label>M?</label><select id="sim-a-m"><option value="0">Kein</option><option value="1">Moderat</option><option value="2">Hoch</option></select></div>
         </div>
         <button class="btn-tool" style="width:100%; margin-top: 15px; background: #9b59b6; border: none; color: white; font-weight: 800;" onclick="submitFutureSim()">Zukunft berechnen</button>
         
@@ -425,10 +425,10 @@
             <h3>📅 Kalender (Laufender Zyklus)</h3>
             <div class="legend">
                 <div><span class="l-tday"></span>1. Konsum</div>
-                <div><span class="l-aus"></span>weiteres Rauchen</div>
+                <div><span class="l-aus"></span>weiterer Konsum</div>
                 <div><span class="l-bew"></span>Bewährung (offen)</div>
                 <div><span class="l-reg"></span>Regen. / bestanden</div>
-                <div><span class="l-nir"></span>Nirwana</div>
+                <div><span class="l-nir"></span>Nirvana</div>
                 <div><span class="l-opt"></span>Best-Case Ziel</div>
             </div>
             <div class="calendar-wrapper"><div id="calendar"></div></div>
@@ -451,16 +451,12 @@
 
   <!-- ================= TAB 3: ARCHIV & STATS ================= -->
   <div id="tab-archiv" class="tab-content">
-  
-    <!-- V10.4: Historisches Logging (Dynamic UI) -->
-    <button class="btn-tool" style="width:100%; margin-bottom: 1.5rem; background: #8e44ad; color: white; border: none;" onclick="openHistoricalModal()">🕰️ Historischen Zyklus nachtragen</button>
-
     <div class="card">
         <h3>📈 Deine Life-Tracker Statistiken</h3>
         <p style="font-size: 0.8rem; color: #7f8c8d; text-align: center; margin-top: -10px; margin-bottom: 15px;">Auswertungen basieren nur auf Tagen in der Vergangenheit.</p>
         <div class="stat-grid">
             <div class="stat-box"><div class="stat-val blue" id="stat-clean-quote">0%</div><div class="stat-label">Clean-Quote (All-Time)</div></div>
-            <div class="stat-box"><div class="stat-val gold" id="stat-max-nirvana">0</div><div class="stat-label">Max Nirwana-Streak</div></div>
+            <div class="stat-box"><div class="stat-val gold" id="stat-max-nirvana">0</div><div class="stat-label">Max Nirvana-Streak</div></div>
             <div class="stat-box"><div class="stat-val" id="stat-total-days">0</div><div class="stat-label">Tage Getrackt</div></div>
             <div class="stat-box"><div class="stat-val" id="stat-avg-ausrutscher">0</div><div class="stat-label">Ø T-Dauer</div></div>
         </div>
@@ -488,6 +484,7 @@
     <h3 style="margin-left:5px; color:#7f8c8d;">Abgeschlossene Zyklen</h3>
     <div id="archive-container"></div>
     
+    <!-- V10.0: Kalendarische Monats-Statistiken -->
     <div id="archive-months-container"></div>
     
     <div class="tool-grid" style="margin-top:2rem;">
@@ -517,13 +514,13 @@
 
   <!-- Ausrutscher Modal -->
   <div id="modal-ausrutscher" class="modal-overlay">
-    <div class="modal-card"><h3 style="color:var(--danger)">🔴 Rauchen loggen</h3>
+    <div class="modal-card"><h3 style="color:var(--danger)">🔴 Ausrutscher loggen</h3>
       <div class="form-grid">
           <div class="form-group-full"><label>Datum</label><input type="date" id="modal-a-date"></div>
           <div class="form-group-full"><label>Dauer (T-Tage)</label><input type="number" id="modal-a-t" value="1" min="1"></div>
           <div><label>Stress</label><select id="modal-a-s"><option value="0">Kein</option><option value="1">Moderat</option><option value="2">Hoch</option></select></div>
           <div><label>Alkohol</label><select id="modal-a-a"><option value="0">Kein</option><option value="1">Moderat</option><option value="2">Hoch</option></select></div>
-          <div><label>Masturbation (M)</label><select id="modal-a-m"><option value="0">Kein</option><option value="1">Moderat</option><option value="2">Hoch</option></select></div>
+          <div><label>M?</label><select id="modal-a-m"><option value="0">Kein</option><option value="1">Moderat</option><option value="2">Hoch</option></select></div>
           <div class="form-group-full" style="grid-column: span 1;"></div>
           <div class="form-group-full">
               <label>Stimmung</label>
@@ -536,7 +533,7 @@
                   <option value="1">😞 Sehr schlecht</option>
               </select>
           </div>
-          <div class="form-group-full"><label>Tagebuch Notiz (Optional)</label><textarea id="modal-a-note" rows="2" maxlength="150" placeholder="Was führte zum Rauchen?"></textarea></div>
+          <div class="form-group-full"><label>Tagebuch Notiz (Optional)</label><textarea id="modal-a-note" rows="2" maxlength="150" placeholder="Was führte zum Ausrutscher?"></textarea></div>
       </div>
       <div class="modal-actions">
         <div class="modal-actions-row">
@@ -549,13 +546,13 @@
 
   <!-- Pause Modal -->
   <div id="modal-pause" class="modal-overlay">
-    <div class="modal-card"><h3 style="color:var(--btn-calc)">🟢 Pause eintragen</h3>
-      <p style="font-size:0.8rem; color:#666; margin-bottom: 15px;">Pausentage mit Stress/Alkohol/M drosseln <strong>nicht</strong> deine Regenerationsdauer, füttern aber die Statistik.</p>
+    <div class="modal-card"><h3 style="color:var(--btn-calc)">🟢 Tagesabschluss</h3>
+      <p style="font-size:0.8rem; color:#666; margin-bottom: 15px;">Pausentage mit Stress/Alkohol/M drosseln <strong>nicht</strong> deine Heilungsdauer, füttern aber die Statistik.</p>
       <div class="form-grid">
           <div class="form-group-full"><label>Datum</label><input type="date" id="modal-p-date" readonly></div>
           <div><label>Stress heute?</label><select id="modal-p-s"><option value="0">Kein</option><option value="1">Moderat</option><option value="2">Hoch</option></select></div>
           <div><label>Alkohol heute?</label><select id="modal-p-a"><option value="0">Kein</option><option value="1">Moderat</option><option value="2">Hoch</option></select></div>
-          <div><label>Masturbation (M)</label><select id="modal-p-m"><option value="0">Kein</option><option value="1">Moderat</option><option value="2">Hoch</option></select></div>
+          <div><label>M?</label><select id="modal-p-m"><option value="0">Kein</option><option value="1">Moderat</option><option value="2">Hoch</option></select></div>
           <div class="form-group-full" style="grid-column: span 1;"></div>
           <div class="form-group-full">
               <label>Stimmung</label>
@@ -589,14 +586,14 @@
           <div class="form-group-full">
               <label>Eintragstyp</label>
               <select id="edit-day-type" onchange="toggleEditFields()" style="font-weight:bold;">
-                  <option value="pause">🟢 Pause</option>
-                  <option value="ausrutscher">🔴 Rauchen</option>
+                  <option value="pause">🟢 Pause / Stark geblieben</option>
+                  <option value="ausrutscher">🔴 Ausrutscher</option>
               </select>
           </div>
           <div class="form-group-full" id="edit-t-wrapper" style="display:none;"><label>Dauer (T-Tage)</label><input type="number" id="edit-day-t" value="1" min="1"></div>
           <div><label>Stress</label><select id="edit-day-s"><option value="0">Kein</option><option value="1">Moderat</option><option value="2">Hoch</option></select></div>
           <div><label>Alkohol</label><select id="edit-day-a"><option value="0">Kein</option><option value="1">Moderat</option><option value="2">Hoch</option></select></div>
-          <div><label>Masturbation (M)</label><select id="edit-day-m"><option value="0">Kein</option><option value="1">Moderat</option><option value="2">Hoch</option></select></div>
+          <div><label>M?</label><select id="edit-day-m"><option value="0">Kein</option><option value="1">Moderat</option><option value="2">Hoch</option></select></div>
           <div class="form-group-full" style="grid-column: span 1;"></div>
           <div class="form-group-full">
               <label>Stimmung</label>
@@ -615,34 +612,6 @@
           <button class="btn-tool" style="border-color:#fadbd8; color:var(--danger); flex: 0.4; padding: 10px 5px;" onclick="deleteEditDay()" title="Eintrag löschen">🗑️</button>
           <button class="btn-tool" onclick="closeModal('modal-edit-day')">Abbrechen</button>
           <button class="btn-quick btn-pausiert" style="background:var(--text-main)" onclick="submitEditDay()">Speichern</button>
-      </div>
-    </div>
-  </div>
-  
-  <!-- V10.4: Historical Cycle Modal (Dynamic UI fixed) -->
-  <div id="modal-historical" class="modal-overlay">
-    <div class="modal-card">
-      <h3 style="color:#8e44ad;">🕰️ Historischen Zyklus nachtragen</h3>
-      <div class="form-grid">
-        <div><label>Startdatum</label><input type="date" id="hist-base-start" onchange="calcHistBaseT()"></div>
-        <div><label>Enddatum</label><input type="date" id="hist-base-end" onchange="calcHistBaseT()"></div>
-        <div class="form-group-tday"><label>T-Tage</label><input type="number" id="hist-base-t" readonly></div>
-        <div><label>Stress</label><select id="hist-base-s"><option value="0">Kein</option><option value="1">Moderat</option><option value="2">Hoch</option></select></div>
-        <div><label>Alkohol</label><select id="hist-base-a"><option value="0">Kein</option><option value="1">Moderat</option><option value="2">Hoch</option></select></div>
-        <div><label>Masturbation (M)</label><select id="hist-base-m"><option value="0">Kein</option><option value="1">Moderat</option><option value="2">Hoch</option></select></div>
-      </div>
-
-      <h4 style="margin-top:15px; border-bottom:1px solid #eee; padding-bottom:5px;">+ Weiteres Rauchen im Zyklus (Optional)</h4>
-      
-      <div id="hist-logs-container" style="display:flex; flex-direction:column; gap:10px; max-height:200px; overflow-y:auto; padding-right:5px;">
-          <!-- Dynamische Formular-Zeilen landen hier -->
-      </div>
-      
-      <button class="btn-tool" style="width:100%; margin-top: 10px; border: 2px dashed #8e44ad; color: #8e44ad; background: #fdfafb;" onclick="addHistLogRow()">+ Rauchen (Tag) hinzufügen</button>
-
-      <div class="modal-actions-row" style="margin-top: 20px;">
-        <button class="btn-tool" onclick="closeModal('modal-historical')">Abbrechen</button>
-        <button class="btn-quick" style="background:#8e44ad;" onclick="saveHistorical()">Zyklus Speichern</button>
       </div>
     </div>
   </div>
@@ -675,10 +644,9 @@
   </div>
 
 <script>
-  let appData = { version: 10.4, cycles: [], breatheLogs: {} };
+  let appData = { version: 10.0, cycles: [], breatheLogs: {} };
   let isSandbox = false; 
   let sandboxData = null;
-  let currentHistLogs = {};
 
   const getApp = () => isSandbox ? sandboxData : appData;
   const getActiveCycle = () => { 
@@ -799,14 +767,14 @@
 
   function loadData() {
       const saved = localStorage.getItem('regenAppData_v6') || localStorage.getItem('regenAppData_v5');
-      let parsedData = { version: 10.4, cycles: [], breatheLogs: {} };
+      let parsedData = { version: 10.0, cycles: [], breatheLogs: {} };
       if (saved) {
           try { 
               let data = JSON.parse(saved); 
               if (data && typeof data === 'object') {
                   if (data.version >= 5) { 
                       parsedData = data; 
-                      parsedData.version = 10.4; 
+                      parsedData.version = 10.0; 
                   } else if (!data.cycles && data.base) { 
                       parsedData.cycles = [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }];
                   } else if (data.tDays !== undefined && !data.base) {
@@ -814,19 +782,6 @@
                       let logs = {}; 
                       if(data.interruptions) { data.interruptions.forEach(int => { logs[int.start] = { type: 'ausrutscher', t: parseInt(int.t)||1, s: parseInt(int.s)||0, a: parseInt(int.a)||0, m: 0 }; }); }
                       parsedData.cycles = [{ id: Date.now(), status: 'active', base: base, logs: logs }];
-                  }
-                  
-                  // V10.4 FIX: Hydration-Schleife schützt vor fehlerhaften alten Objekten
-                  if (parsedData.cycles && Array.isArray(parsedData.cycles)) {
-                      parsedData.cycles.forEach(c => {
-                          if (!c.base) c.base = {};
-                          if (c.base.mLevel === undefined) c.base.mLevel = 0;
-                          if (!c.logs) c.logs = {};
-                          Object.values(c.logs).forEach(l => {
-                              if (l.m === undefined) l.m = 0;
-                          });
-                          if (!c.monthlyNotes) c.monthlyNotes = {};
-                      });
                   }
               }
           } catch(e) { console.error("Speicherdaten korrupt."); }
@@ -867,7 +822,7 @@
       if (isSandbox) return customAlert("Im Simulations-Modus kannst du keinen Hard-Reset durchführen.");
       customConfirm("ACHTUNG: Möchtest du wirklich ALLE Daten löschen? (Werkseinstellungen)", () => {
           localStorage.removeItem('regenAppData_v5'); localStorage.removeItem('regenAppData_v6'); localStorage.removeItem('regenAppData_v7');
-          appData = { version: 10.4, cycles: [], breatheLogs: {} }; 
+          appData = { version: 10.0, cycles: [], breatheLogs: {} }; 
           customAlert("Gelöscht.", () => { window.location.href = window.location.href.split('?')[0]; });
       });
   }
@@ -917,11 +872,11 @@
       document.getElementById('base-m').disabled = isBaseLocked;
       
       if (showSandboxLockWarning) { 
-          document.getElementById('open-base-warning').innerHTML = "⚠️ Sandbox: Basis ist schreibgeschützt, da die Realität noch läuft. Plane die Zukunft bitte über Rauchen!"; 
+          document.getElementById('open-base-warning').innerHTML = "⚠️ Sandbox: Basis ist schreibgeschützt, da die Realität noch läuft. Plane die Zukunft bitte über Ausrutscher!"; 
           document.getElementById('open-base-warning').style.display = 'block'; 
       } 
       else if (active.base.isOpen) { 
-          document.getElementById('open-base-warning').innerHTML = "⚠️ Initiale Konsumphase ist noch offen! Drücke auf 'Pause', um sie abzuschließen."; 
+          document.getElementById('open-base-warning').innerHTML = "⚠️ Initiale Konsumphase ist noch offen! Drücke auf 'Stark geblieben', um sie abzuschließen."; 
           document.getElementById('open-base-warning').style.display = 'block'; 
       } 
       else { 
@@ -959,114 +914,6 @@
       if(active.base.isOpen === undefined) active.base.isOpen = false;
       if(force) saveData();
   }
-
-  // --- V10.4: Historical Logging (Dynamic UI fixed to "Tag für Tag") ---
-  let histRowCount = 0;
-  
-  function openHistoricalModal() {
-      document.getElementById('hist-base-start').value = '';
-      document.getElementById('hist-base-end').value = '';
-      document.getElementById('hist-base-t').value = '';
-      document.getElementById('hist-base-s').value = '0';
-      document.getElementById('hist-base-a').value = '0';
-      document.getElementById('hist-base-m').value = '0';
-      
-      document.getElementById('hist-logs-container').innerHTML = '';
-      histRowCount = 0;
-      
-      // Auto-add the first row for convenience
-      addHistLogRow();
-      
-      document.getElementById('modal-historical').classList.add('active');
-  }
-
-  function calcHistBaseT() {
-      const s = parseLocal(document.getElementById('hist-base-start').value);
-      const e = parseLocal(document.getElementById('hist-base-end').value);
-      const tInput = document.getElementById('hist-base-t');
-      if (s && e) { tInput.value = Math.max(0, diffDays(s, e) + 1); } else { tInput.value = ""; }
-  }
-
-  function addHistLogRow() {
-      histRowCount++;
-      const rowId = `hist-row-${histRowCount}`;
-      const html = `
-          <div id="${rowId}" style="background:#f9f9f9; padding:15px 10px 10px; border-radius:8px; position:relative; border:1px solid #e8daef; margin-bottom: 8px;">
-              <span style="position:absolute; top:5px; right:10px; color:var(--danger); font-weight:bold; cursor:pointer; font-size:1.2rem; line-height:1;" onclick="document.getElementById('${rowId}').remove()">&times;</span>
-              <div class="form-grid" style="margin-top:10px; gap:8px;">
-                  <div class="form-group-full" style="margin-bottom:0;"><label>Datum</label><input type="date" class="hist-row-date"></div>
-                  <div><label>S (0-2)</label><select class="hist-row-s"><option value="0">0</option><option value="1">1</option><option value="2">2</option></select></div>
-                  <div><label>A (0-2)</label><select class="hist-row-a"><option value="0">0</option><option value="1">1</option><option value="2">2</option></select></div>
-                  <div><label>M (0-2)</label><select class="hist-row-m"><option value="0">0</option><option value="1">1</option><option value="2">2</option></select></div>
-              </div>
-          </div>
-      `;
-      document.getElementById('hist-logs-container').insertAdjacentHTML('beforeend', html);
-  }
-
-  function saveHistorical() {
-      const s = document.getElementById('hist-base-start').value;
-      const e = document.getElementById('hist-base-end').value;
-      const t = parseInt(document.getElementById('hist-base-t').value);
-      const sL = parseInt(document.getElementById('hist-base-s').value) || 0;
-      const aL = parseInt(document.getElementById('hist-base-a').value) || 0;
-      const mL = parseInt(document.getElementById('hist-base-m').value) || 0;
-
-      if(!s || !e || isNaN(t)) return customAlert("Basisphase ist unvollständig.");
-      if(t < 1 || s > e) return customAlert("Ungültige Basisphase.");
-      if(t > 21) return customAlert("Basisphase darf nicht länger als 21 Tage sein.");
-      if(s >= toIsoString(new Date())) return customAlert("Historische Zyklen müssen in der Vergangenheit liegen.");
-
-      // Overlap check fixes the bug: two intervals overlap if max(start1, start2) <= min(end1, end2)
-      let hasOverlap = getApp().cycles.some(c => {
-          if(!c.base || !c.base.start || !c.base.end) return false;
-          return (s <= c.base.end && e >= c.base.start);
-      });
-
-      if(hasOverlap) return customAlert("Dieser Zeitraum überschneidet sich mit der Basisphase eines bereits existierenden Zyklus.");
-
-      let logsToSave = {};
-      let rowsValid = true;
-      let overlapError = false;
-      
-      document.querySelectorAll('#hist-logs-container > div').forEach(row => {
-          let dStr = row.querySelector('.hist-row-date').value;
-          // In UX design we removed T-Tage, so each row is exactly 1 day
-          let rt = 1; 
-          let rs = parseInt(row.querySelector('.hist-row-s').value) || 0;
-          let ra = parseInt(row.querySelector('.hist-row-a').value) || 0;
-          let rm = parseInt(row.querySelector('.hist-row-m').value) || 0;
-
-          if(dStr) { 
-              if(dStr >= toIsoString(new Date())) { rowsValid = false; return; }
-              if(dStr >= s && dStr <= e) { overlapError = true; return; }
-              logsToSave[dStr] = { type: 'ausrutscher', t: rt, s: rs, a: ra, m: rm, mood: 0, note: "Historischer Nachtrag" };
-          }
-      });
-
-      if(!rowsValid) return customAlert("Rauchen-Datum liegt in der Zukunft.");
-      if(overlapError) return customAlert("Zusätzliches Rauchen darf sich zeitlich nicht mit der Basisphase überschneiden.");
-
-      const newCycle = {
-          id: Date.now(),
-          status: 'archived',
-          base: { start: s, end: e, tDays: t, sLevel: sL, aLevel: aL, mLevel: mL, isOpen: false },
-          logs: logsToSave
-      };
-
-      appData.cycles.push(newCycle);
-      appData.cycles.sort((a, b) => a.base.start.localeCompare(b.base.start));
-
-      appData.cycles.forEach((c, idx) => {
-          if (idx < appData.cycles.length - 1) c.status = 'archived';
-      });
-
-      closeModal('modal-historical');
-      saveData();
-      customAlert("Historischer Zyklus wurde in die Zeitlinie integriert!");
-      switchTab('archiv');
-  }
-  // --- End Historical Functions ---
 
   function openPauseModal() { 
       document.getElementById('modal-p-date').value = toIsoString(new Date()); 
@@ -1233,7 +1080,7 @@
       
       let html = '';
       let hasSims = false;
-      Object.keys(active.logs || {}).sort().forEach(dStr => {
+      Object.keys(active.logs).sort().forEach(dStr => {
           if(active.logs[dStr].isSimulated) {
               hasSims = true;
               const l = active.logs[dStr];
@@ -1289,7 +1136,7 @@
 
       while (toIsoString(curr) <= endStr) {
           let dStr = toIsoString(curr); 
-          let log = (active.logs || {})[dStr]; 
+          let log = active.logs[dStr]; 
           let isBaseDay = (dStr >= active.base.start && dStr <= active.base.end);
           let formattedDate = curr.toLocaleDateString('de-DE', {weekday: 'short', day: '2-digit', month: '2-digit'}); 
           let monthYear = curr.toLocaleDateString('de-DE', {month: 'long', year: 'numeric'});
@@ -1356,7 +1203,7 @@
                   badge = `<span class="diary-badge badge-base">⭐ Basis-Phase</span>`; 
                   meta = `M:${active.base.mLevel||0} | Mood: ${moodStr}${breatheStr}`; 
               } else if (!item.isImplicit) { 
-                  badge = item.log.type === 'ausrutscher' ? `<span class="diary-badge badge-aus">🔴 Rauchen (${item.log.t}d)</span>` : `<span class="diary-badge badge-pause">🟢 Pause</span>`; 
+                  badge = item.log.type === 'ausrutscher' ? `<span class="diary-badge badge-aus">🔴 Konsum (${item.log.t}d)</span>` : `<span class="diary-badge badge-pause">🟢 Pause</span>`; 
                   meta = `${sLevels[item.log.s||0]} | ${aLevels[item.log.a||0]} | ${mLevels[item.log.m||0]} | Mood: ${moodStr}${breatheStr}`; 
               } else { 
                   badge = `<span class="diary-badge badge-pause" style="background:#e9ecef; color:#666;">⚪ Pause (Auto)</span>`; 
@@ -1395,7 +1242,7 @@
       document.getElementById('edit-day-date').value = dateStr; 
       document.getElementById('edit-is-base').value = isBase ? "1" : "0";
       
-      const log = (active.logs || {})[dateStr] || {}; 
+      const log = active.logs[dateStr] || {}; 
       document.getElementById('edit-day-type').value = isBase ? 'ausrutscher' : (log.type || 'pause');
       document.getElementById('edit-day-t').value = log.t || 1; 
       document.getElementById('edit-day-s').value = log.s || 0; 
@@ -1435,8 +1282,6 @@
           customAlert("Eine initiale Konsumphase von mehr als drei Wochen überlastet die Simulation. Bitte schließe deinen aktuellen Konsum zunächst ab, pausiere diesen dann für drei bis sechs Wochen und logge dann erst wieder frischen Konsum.");
           return;
       }
-      
-      if (!active.logs) active.logs = {};
 
       if (isBase) { 
           const existing = active.logs[dStr] || { type: 'ausrutscher', t:1, s:0, a:0, m:0 }; 
@@ -1468,7 +1313,7 @@
       closeModal('modal-edit-day'); 
 
       if (active.base.start === dStr && getApp().cycles.length > 1) {
-          let hasRealLogs = Object.keys(active.logs || {}).some(k => active.logs[k].type === 'pause' || active.logs[k].type === 'ausrutscher');
+          let hasRealLogs = Object.keys(active.logs).some(k => active.logs[k].type === 'pause' || active.logs[k].type === 'ausrutscher');
           if (!hasRealLogs) {
               customConfirm("Möchtest du diesen neu gestarteten Zyklus komplett löschen und deinen alten Zyklus aus dem Archiv zurückholen?", () => { 
                   getApp().cycles.pop(); 
@@ -1486,7 +1331,7 @@
           }
       }
       
-      if (active.logs && active.logs[dStr]) { 
+      if (active.logs[dStr]) { 
           customConfirm("Eintrag unwiderruflich löschen?", () => { 
               delete active.logs[dStr]; 
               
@@ -1500,7 +1345,7 @@
       }
   }
 
-  // --- ENGINE V10.4 (Crash-proof) ---
+  // --- ENGINE V10.0 ---
   function runAllSimulations() {
       globalSimResults = (getApp().cycles || []).map(cycle => simulateCycle(cycle));
       activeSimResult = globalSimResults.length > 0 ? globalSimResults[globalSimResults.length - 1] : null;
@@ -1508,8 +1353,6 @@
   }
 
   function simulateCycle(cycle) {
-      if (!cycle || !cycle.base || !cycle.base.start) return null; 
-
       const baseVal = cycle.base.tDays * 3;
       let sAdd = 0, aAdd = 0;
       
@@ -1523,7 +1366,7 @@
       const comboAdd = (cycle.base.sLevel===2 && cycle.base.aLevel===2) ? 1 : 0;
       
       const initialDebtTotal = baseVal + sAdd + aAdd + comboAdd;
-      let basePenaltyStr = `Initiale Schuld: ${initialDebtTotal} Tage (Basis: ${baseVal}, Stress: ${sAdd}, Alk: ${aAdd}, Kombi: ${comboAdd})`;
+      let basePenaltyStr = `Start-Schuld: ${initialDebtTotal} Tage (Basis: ${baseVal}, Stress: ${sAdd}, Alk: ${aAdd}, Kombi: ${comboAdd})`;
 
       let debt = initialDebtTotal; 
       let totalDebtEver = debt; 
@@ -1548,7 +1391,7 @@
       let endSimLimit = nextCycle ? toIsoString(addDays(parseLocal(nextCycle.base.start), -1)) : todayStr;
       
       if (isSandbox && !nextCycle) {
-          const logsStr = Object.keys(cycle.logs || {}).sort();
+          const logsStr = Object.keys(cycle.logs).sort();
           if (logsStr.length > 0 && logsStr[logsStr.length - 1] > endSimLimit) {
               const currentYear = new Date().getFullYear();
               let maxSim = logsStr[logsStr.length - 1];
@@ -1573,14 +1416,12 @@
       let finalDebtZeroDate = null;
       let gotBonusForToday = false;
 
-      let cLogs = cycle.logs || {};
-      let lastRealDayStr = (cLogs[todayStr] && cLogs[todayStr].type !== undefined) ? todayStr : yesterdayStr;
+      let lastRealDayStr = (cycle.logs[todayStr] && cycle.logs[todayStr].type !== undefined) ? todayStr : yesterdayStr;
 
-      // V10.4: Safety limit 15000 ensures historical cycles can span decades without crashing
-      while ((debt > 0 || toIsoString(simDate) <= endSimLimit) && safety < 15000) {
+      while ((debt > 0 || toIsoString(simDate) <= endSimLimit) && safety < 5000) {
           safety++; 
           let dStr = toIsoString(simDate); 
-          let log = cLogs[dStr];
+          let log = cycle.logs[dStr];
           
           let isLogged = log && log.type !== undefined;
           let isFuture = dStr > todayStr || (dStr === todayStr && !isLogged);
@@ -1661,7 +1502,7 @@
                   
                   if (debt <= 0 && !finalDebtZeroDate) finalDebtZeroDate = new Date(simDate);
               } else {
-                  let canCountNirwana = !isFuture || isSandbox;
+                  let canCountNirvana = !isFuture || isSandbox;
                   if (canCountNirvana) {
                       history.n.push(new Date(simDate));
                   }
@@ -1689,7 +1530,6 @@
           dashState = { debt: initialDebtTotal, totalDebtEver: initialDebtTotal, state: 'BEWAEHRUNG', bewTimer: 3, gotBonusToday: false }; 
       }
       
-      // V10.4 FIX: Strict internal naming 'nirvanaStreak' to not break existing dependencies
       let nirvanaStreak = history.n.length; 
       
       let pessimisticEnd = finalDebtZeroDate || addDays(simDate, -1);
@@ -1699,16 +1539,16 @@
           optimisticEndStr = toIsoString(optEnd);
       }
       
+      // V10.0: M-Freie Tage (nur Erholungstage zählen)
+      let mFreeGoal = Math.min(totalTDaysEver * 2, 14);
       let mFreeCurrent = 0;
       [...history.b, ...history.r, ...history.n].forEach(d => {
           let dStr = toIsoString(d);
-          if (dStr < todayStr || (dStr === todayStr && cLogs[todayStr] && cLogs[todayStr].type !== undefined)) {
-              let log = cLogs[dStr] || {};
+          if (dStr < todayStr || (dStr === todayStr && cycle.logs[todayStr] && cycle.logs[todayStr].type !== undefined)) {
+              let log = cycle.logs[dStr] || {};
               if ((log.m || 0) === 0) mFreeCurrent++;
           }
       });
-      // V10.4 FIX: Uncapped M-free goal
-      let mFreeGoal = totalTDaysEver * 2;
 
       return {
           cycleId: cycle.id, status: cycle.status, isOpen: cycle.base.isOpen, history, 
@@ -1746,21 +1586,7 @@
 
   function renderDashboard() {
       const res = activeSimResult; 
-      
-      // V10.4 FIX: Handle empty active cycle gracefully without hanging
-      if(!res || !res.dashState) {
-          document.getElementById('dash-status-badge').textContent = "Warte auf Startdatum...";
-          document.getElementById('dash-status-badge').className = 'status-badge status-open';
-          document.getElementById('dash-sub').textContent = "Bitte trage im 'Aktuell'-Tab deine initiale Phase ein.";
-          document.getElementById('dash-percent').textContent = "-";
-          document.getElementById('dash-days-left').textContent = "Start ausstehend";
-          document.getElementById('dash-target-date').textContent = "Ziel: Unbekannt";
-          document.getElementById('dash-progress').style.display = 'none';
-          document.getElementById('dash-target-tracker').style.display = 'none';
-          document.getElementById('dash-outlook').style.display = 'none';
-          return;
-      }
-      
+      if(!res || !res.dashState) return;
       const ds = res.dashState;
       
       const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
@@ -1856,60 +1682,56 @@
           ringLbl.textContent = "ZUM ZIEL";
           daysLeftTxt.textContent = `Nächstes Ziel: ${nextM} Tage`; 
           targetTxt.textContent = `Bisher: ${mStr}`;
-          sub.textContent = isSandbox ? "Du bist in der Simulation clean." : "Deine Regeneration ist abgeschlossen. Baue deinen Streak aus!";
+          sub.textContent = isSandbox ? "Du bist in der Simulation clean." : "Deine Heilung ist abgeschlossen. Baue deinen Streak aus!";
           streakBadge.style.display = 'inline-block'; streakBadge.classList.add('nirvana'); streakBadge.textContent = `💎 ${res.nirvanaStreak} Tage Clean-Streak`;
       } else if (ds.state === 'BEWAEHRUNG') {
           badge.className = 'status-badge status-bewaehrung'; badge.textContent = `Bewährungsphase`;
-          ring.classList.add('bewaehrung'); ringLbl.textContent = "REGENERATION";
+          ring.classList.add('bewaehrung'); ringLbl.textContent = "HEILUNG";
           daysLeftTxt.textContent = `Schulden: ${formattedDebt} Tage`; targetTxt.textContent = `Ziel: ${displayETA.toLocaleDateString('de-DE')}`;
-          sub.textContent = `Regeneration: 0,5x. Halte noch ${ds.bewTimer} Tag(e) durch für den Bonus!`; streakBadge.style.display = 'none';
+          sub.textContent = `Heilung: 0,5x. Halte noch ${ds.bewTimer} Tag(e) durch für den Bonus!`; streakBadge.style.display = 'none';
       } else {
           badge.className = 'status-badge status-regen'; badge.textContent = "Tiefe Regeneration";
-          ring.classList.add('regen'); ringLbl.textContent = "REGENERATION";
+          ring.classList.add('regen'); ringLbl.textContent = "HEILUNG";
           daysLeftTxt.textContent = `Schulden: ${formattedDebt} Tage`; targetTxt.textContent = `Ziel: ${displayETA.toLocaleDateString('de-DE')}`;
-          sub.textContent = "Du regenerierst mit 1,0x Geschwindigkeit."; streakBadge.style.display = 'none';
+          sub.textContent = "Du heilst mit 1,0x Geschwindigkeit."; streakBadge.style.display = 'none';
       }
 
       const todayStr = toIsoString(new Date());
       const activeCycle = getActiveCycle();
-      const isLoggedToday = activeCycle?.logs && activeCycle.logs[todayStr] && activeCycle.logs[todayStr].type !== undefined;
+      const isLoggedToday = activeCycle?.logs[todayStr] && activeCycle.logs[todayStr].type !== undefined;
 
       if (!isSandbox && !isLoggedToday && !res.isOpen && displayDebt > 0) {
           let cloneA = JSON.parse(JSON.stringify(activeCycle));
-          if(!cloneA.logs) cloneA.logs = {};
           cloneA.logs[todayStr] = { type: 'pause', s:0, a:0, m:0, mood:0, note:'Phantom' };
           let resA = simulateCycle(cloneA);
 
           let cloneB = JSON.parse(JSON.stringify(activeCycle));
-          if(!cloneB.logs) cloneB.logs = {};
           cloneB.logs[todayStr] = { type: 'ausrutscher', t:1, s:0, a:0, m:0, mood:0, note:'Phantom' };
           let resB = simulateCycle(cloneB);
 
-          if (resA && resB) {
-              let debtA = resA.dashState.debt;
-              let debtB = resB.dashState.debt;
-              let etaA = resA.finalEnd.toLocaleDateString('de-DE');
-              let etaB = resB.finalEnd.toLocaleDateString('de-DE');
+          let debtA = resA.dashState.debt;
+          let debtB = resB.dashState.debt;
+          let etaA = resA.finalEnd.toLocaleDateString('de-DE');
+          let etaB = resB.finalEnd.toLocaleDateString('de-DE');
 
-              debtA = Math.round(debtA * 10) / 10;
-              debtB = Math.round(debtB * 10) / 10;
+          debtA = Math.round(debtA * 10) / 10;
+          debtB = Math.round(debtB * 10) / 10;
 
-              let debtAStr = Number.isInteger(debtA) ? debtA : debtA.toFixed(1).replace('.', ',');
-              let debtBStr = Number.isInteger(debtB) ? debtB : debtB.toFixed(1).replace('.', ',');
+          let debtAStr = Number.isInteger(debtA) ? debtA : debtA.toFixed(1).replace('.', ',');
+          let debtBStr = Number.isInteger(debtB) ? debtB : debtB.toFixed(1).replace('.', ',');
 
-              outlookBox.innerHTML = `
-                  <div class="outlook-title">📊 Tagesausblick für heute</div>
-                  <div class="outlook-row good">
-                      <span class="outlook-label">🟢 Bei Pause:</span>
-                      <span class="outlook-value">Schuld sinkt auf ${debtAStr} (Ziel: ${etaA})</span>
-                  </div>
-                  <div class="outlook-row bad">
-                      <span class="outlook-label">🔴 Bei Rauchen:</span>
-                      <span class="outlook-value">Schuld steigt auf ${debtBStr} (Ziel: ${etaB})</span>
-                  </div>
-              `;
-              outlookBox.style.display = 'block';
-          }
+          outlookBox.innerHTML = `
+              <div class="outlook-title">📊 Tagesausblick für heute</div>
+              <div class="outlook-row good">
+                  <span class="outlook-label">🟢 Bei Pause:</span>
+                  <span class="outlook-value">Schuld sinkt auf ${debtAStr} (Ziel: ${etaA})</span>
+              </div>
+              <div class="outlook-row bad">
+                  <span class="outlook-label">🔴 Bei Konsum:</span>
+                  <span class="outlook-value">Schuld steigt auf ${debtBStr} (Ziel: ${etaB})</span>
+              </div>
+          `;
+          outlookBox.style.display = 'block';
       } else {
           outlookBox.style.display = 'none';
       }
@@ -1927,7 +1749,7 @@
           targetTracker.style.display = 'none'; 
       }
 
-      if (getActiveCycle()?.logs && getActiveCycle().logs[todayStr] && !isSandbox) { 
+      if (getActiveCycle()?.logs[todayStr] && !isSandbox) { 
           document.getElementById('daily-action-area').style.display = 'none'; 
           document.getElementById('daily-done-area').style.display = 'block';
       } else { 
@@ -1940,10 +1762,7 @@
 
   function renderHistorie() {
       const res = activeSimResult; 
-      if(!res) {
-          document.getElementById('historie-output').style.display = 'none';
-          return;
-      }
+      if(!res) return;
       
       const active = getActiveCycle(); 
       document.getElementById('historie-output').style.display = 'block';
@@ -1960,6 +1779,7 @@
           <div class="stat-box" style="padding: 10px;"><div class="stat-val blue" style="font-size: 1.4rem; color: var(--nirvana-blue);">${totalRegenDebt}</div><div class="stat-label" style="font-size: 0.65rem;">Gesamtschuld</div></div>
       </div>`;
       
+      // V10.0: M-freie Tage Progress Bar
       if (res.mFreeGoal > 0 && !res.isOpen) {
           let mProgress = Math.min(100, (res.mFreeCurrent / res.mFreeGoal) * 100);
           html += `
@@ -1971,7 +1791,7 @@
               <div style="font-size: 0.85rem; font-weight: bold; color: #555;">${res.mFreeCurrent} von ${res.mFreeGoal} Tagen erreicht ${res.mFreeCurrent >= res.mFreeGoal ? '✅' : ''}</div>
           </div>
           `;
-      } else if (!res.isOpen) {
+      } else {
           html += `<div style="margin-top:10px; padding:10px; background:#e8f6f3; border-radius:8px; color:#16a085; font-weight:bold; text-align:center;">Empfohlene M-freie Tage: ${res.mFreeGoal}</div>`;
       }
       
@@ -2001,15 +1821,15 @@
       while (current <= realEnd) {
         const dStr = current.toDateString(); 
         const isoDStr = toIsoString(current); 
-        let log = (active.logs || {})[isoDStr];
+        let log = active.logs[isoDStr];
         let tagClass = "", tagText = ""; 
         let isTodayClass = (dStr === todayStr) ? "today-highlight" : "";
 
         if (res.history.t.some(d => d.toDateString() === dStr)) { tagClass = "tday"; tagText="1. Konsum"; }
-        else if (res.history.a.some(d => d.toDateString() === dStr)) { tagClass = "ausrutscher"; tagText="weiteres Rauchen"; }
+        else if (res.history.a.some(d => d.toDateString() === dStr)) { tagClass = "ausrutscher"; tagText="weiterer Konsum"; }
         else if (res.history.b.some(d => d.toDateString() === dStr)) { tagClass = "bewaehrung"; tagText="Bewährung"; }
         else if (res.history.r.some(d => d.toDateString() === dStr)) { tagClass = "regen"; tagText="Regen."; }
-        else if (res.history.n.some(d => d.toDateString() === dStr)) { tagClass = "nirvana"; tagText="Nirwana"; }
+        else if (res.history.n.some(d => d.toDateString() === dStr)) { tagClass = "nirvana"; tagText="Nirvana"; }
         
         if (log && log.note) tagText += " 📝";
         
@@ -2047,12 +1867,15 @@
       const milestonesArr = [7, 14, 21, 30, 60, 90, 180, 365, 730];
       
       let highStressResilienceCount = 0;
+      
+      // V10.0: Kalender Monate sammeln
       let archiveMonths = {};
 
       (getApp().cycles || []).forEach((cycle, index) => {
-          const res = globalSimResults.find(r => r && r.cycleId === cycle.id); 
+          const res = globalSimResults[index]; 
           if(!res) return;
           
+          // Kalender Daten klauben
           let allDays = [...res.history.t, ...res.history.a, ...res.history.b, ...res.history.r, ...res.history.n];
           let uniqueDays = [...new Set(allDays.map(d => toIsoString(d)))].filter(d => d <= todayStr).sort();
 
@@ -2064,7 +1887,7 @@
               if(isT) archiveMonths[mKey].tDays++;
               
               let isBase = (cycle.base.start && dStr >= cycle.base.start && dStr <= cycle.base.end);
-              let log = (cycle.logs || {})[dStr] || {};
+              let log = cycle.logs[dStr] || {};
               
               let aVal = isBase ? (cycle.base.aLevel||0) : (log.a || 0);
               let mVal = isBase ? (cycle.base.mLevel||0) : (log.m || 0); 
@@ -2081,6 +1904,7 @@
               });
           }
           
+          // Normale Statistiken
           const pastT = res.history.t.filter(isPast); const pastA = res.history.a.filter(isPast);
           const pastB = res.history.b.filter(isPast); const pastR = res.history.r.filter(isPast); const pastN = res.history.n.filter(isPast);
           
@@ -2101,30 +1925,28 @@
               totalMilestones += milestonesArr.filter(m => cycleNirvanaStreak >= m).length;
           }
           
-          if (cycle.base.start && cycle.base.start < todayStr) {
+          if (cycle.base.start < todayStr) {
               totalAusrutscher++; 
               if(cycle.base.sLevel === 2) highStressAusrutscher++;
               
               let baseD = parseLocal(cycle.base.start); 
               let baseEnd = parseLocal(cycle.base.end); 
               
-              if (baseD && baseEnd) {
-                  while (baseD <= baseEnd && toIsoString(baseD) < todayStr) {
-                      sumAusrutscherDays++; 
-                      allPastAusrutscherDates.push(toIsoString(baseD)); 
-                      baseD.setDate(baseD.getDate() + 1);
-                  }
+              while (baseD <= baseEnd && toIsoString(baseD) < todayStr) {
+                  sumAusrutscherDays++; 
+                  allPastAusrutscherDates.push(toIsoString(baseD)); 
+                  baseD.setDate(baseD.getDate() + 1);
               }
           }
           
-          Object.entries(cycle.logs || {}).forEach(([dStr, log]) => {
+          Object.entries(cycle.logs).forEach(([dStr, log]) => {
               if (dStr >= todayStr) return; 
               
               if (log.type === 'pause' && log.s === 2) {
                   highStressResilienceCount++;
               }
               
-              let isBaseDay = (cycle.base.start && dStr >= cycle.base.start && dStr <= cycle.base.end);
+              let isBaseDay = (dStr >= cycle.base.start && dStr <= cycle.base.end);
               
               if (log.mood && log.mood > 0) { 
                   if (log.type === 'pause') { sumMoodPause += parseInt(log.mood); countMoodPause++; } 
@@ -2182,6 +2004,7 @@
       document.getElementById('stat-breathe-avg-time').textContent = avgBreatheTime;
       document.getElementById('stat-breathe-avg').textContent = avgBreathePerWeek;
 
+      // Coach Insights
       let insights = []; 
       allPastAusrutscherDates.sort();
       
@@ -2222,13 +2045,14 @@
               let avgFirst = firstHalf.reduce((a,b)=>a+b,0) / firstHalf.length;
               let avgSecond = secondHalf.reduce((a,b)=>a+b,0) / secondHalf.length;
               if (avgSecond > avgFirst + 2) {
-                  insights.push(`<li>📈 <strong>Positiver Trend:</strong> Die Abstände zwischen deinen Konsumphasen wachsen! (Von Ø ${Math.round(avgFirst)} auf Ø ${Math.round(avgSecond)} Tage clean).</li>`);
+                  insights.push(`<li>📈 <strong>Positiver Trend:</strong> Die Abstände zwischen deinen Konsumphasen wachsen! (Von Ø ${Math.round(avgFirst)} auf Ø ${Math.round(avgSecond)} Tage sauber).</li>`);
               }
           }
       }
       
       const monthNames = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
       
+      // V10.0: Best Month
       const currentMKey = todayStr.substring(0, 7);
       let completedMonths = Object.keys(archiveMonths).filter(k => k < currentMKey);
       if(completedMonths.length > 0) {
@@ -2267,9 +2091,8 @@
           archContainer.innerHTML = "<p style='color:#7f8c8d; text-align:center;'>Noch keine Zyklen abgeschlossen.</p>"; 
       } else {
           [...archived].reverse().forEach(cycle => {
-              const res = globalSimResults.find(r => r && r.cycleId === cycle.id); 
+              const res = globalSimResults.find(r => r.cycleId === cycle.id); 
               if(!res) return;
-              if(!cycle.base.start) return; 
               
               const startStr = parseLocal(cycle.base.start).toLocaleDateString('de-DE', {day:'2-digit', month:'short', year:'numeric'}); 
               let endStr = "Unbekannt";
@@ -2277,17 +2100,18 @@
               const allArchDates = [...res.history.t, ...res.history.a, ...res.history.b, ...res.history.r, ...res.history.n];
               if(allArchDates.length>0) endStr = allArchDates[allArchDates.length-1].toLocaleDateString('de-DE', {day:'2-digit', month:'short'});
               
-              let ausCount = Object.values(cycle.logs || {}).filter(l=>l.type==='ausrutscher').length;
+              let ausCount = Object.values(cycle.logs).filter(l=>l.type==='ausrutscher').length;
               
               const card = document.createElement('div'); 
               card.className = 'archive-card';
               card.innerHTML = `<div class="archive-header"><div class="archive-title">Zyklus: ${startStr} – ${endStr}</div><div class="archive-badge">${allArchDates.length} Tage Total</div></div>
-                <div class="archive-stats"><div><strong>Start-Konsum:</strong> ${cycle.base.tDays} Tage</div><div><strong>Rauchen in Phase:</strong> ${ausCount}</div>
-                <div><strong>Regenerationsdauer:</strong> ${res.history.b.length + res.history.r.length} Tage</div><div><strong>Nirwana-Streak danach:</strong> ${res.nirvanaStreak} Tage</div></div>`;
+                <div class="archive-stats"><div><strong>Start-Konsum:</strong> ${cycle.base.tDays} Tage</div><div><strong>Ausrutscher in Phase:</strong> ${ausCount}</div>
+                <div><strong>Heilungsdauer:</strong> ${res.history.b.length + res.history.r.length} Tage</div><div><strong>Nirvana-Streak danach:</strong> ${res.nirvanaStreak} Tage</div></div>`;
               archContainer.appendChild(card);
           });
       }
       
+      // V10.0: Render Monthly Archive
       let archMonthsHtml = '<h3 style="margin-top:3rem; margin-bottom:1rem; border-bottom:2px solid #fcf3cf; padding-bottom:10px; color:#7f8c8d;">📅 Kalendarischer Jahres-Rückblick</h3>';
       let mKeys = Object.keys(archiveMonths).sort().reverse();
       if(mKeys.length === 0) {
@@ -2297,11 +2121,6 @@
               let parts = mKey.split('-');
               let mName = `${monthNames[parseInt(parts[1])-1]} ${parts[0]}`;
               let data = archiveMonths[mKey];
-              
-              let daysInMonth = new Date(parts[0], parts[1], 0).getDate();
-              let tPerc = Math.min(100, (data.tDays / daysInMonth) * 100);
-              let aPerc = Math.min(100, (data.aDays / daysInMonth) * 100);
-              let mPerc = Math.min(100, (data.mDays / daysInMonth) * 100);
               
               let textsHtml = '';
               if(data.erk.length > 0) textsHtml += `<div style="margin-top:10px; font-size:0.85rem;"><strong>💡 Erkenntnisse:</strong><br><div style="color:#555; font-style:italic; padding-left:10px; border-left:2px solid #f1c40f; margin-top:5px;">${data.erk.join('<hr style="margin:8px 0; border:0; border-top:1px dashed #eee;">')}</div></div>`;
@@ -2313,18 +2132,9 @@
                       <div class="archive-title" style="color:#8e44ad;">${mName}</div>
                   </div>
                   <div class="archive-stats" style="grid-template-columns: 1fr 1fr 1fr; background:#fdfafb; padding:10px; border-radius:8px; margin-top:10px;">
-                      <div>
-                          <strong style="color:var(--danger);">🔴 ${data.tDays}</strong> T-Tage
-                          <div style="height:4px; background:#eee; border-radius:2px; margin-top:4px;"><div style="width:${tPerc}%; height:100%; background:var(--danger); border-radius:2px;"></div></div>
-                      </div>
-                      <div>
-                          <strong>🍷 ${data.aDays}</strong> Alk.-Tage
-                          <div style="height:4px; background:#eee; border-radius:2px; margin-top:4px;"><div style="width:${aPerc}%; height:100%; background:#8e44ad; border-radius:2px;"></div></div>
-                      </div>
-                      <div>
-                          <strong>✊ ${data.mDays}</strong> M-Tage
-                          <div style="height:4px; background:#eee; border-radius:2px; margin-top:4px;"><div style="width:${mPerc}%; height:100%; background:#f39c12; border-radius:2px;"></div></div>
-                      </div>
+                      <div><strong style="color:var(--danger);">🔴 ${data.tDays}</strong> T-Tage</div>
+                      <div><strong>🍷 ${data.aDays}</strong> Alk.-Tage</div>
+                      <div><strong>✊ ${data.mDays}</strong> M-Tage</div>
                   </div>
                   ${textsHtml}
               </div>`;
@@ -2372,28 +2182,16 @@
                   customAlert("Simulation erfolgreich in die Sandbox geladen!");
               } else {
                   if (data.version >= 5) { 
-                      data.version = 10.4; appData = data; 
+                      data.version = 10.0; appData = data; 
                   } else if (data.base && !data.cycles) { 
-                      appData = { version: 10.4, cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }], breatheLogs: {} };
+                      appData = { version: 10.0, cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }], breatheLogs: {} };
                   } else if (data.tDays !== undefined && !data.base) {
                       let base = { start: data.startDate, end: data.endDate, tDays: parseInt(data.tDays)||0, sLevel: parseInt(data.stress)||0, aLevel: parseInt(data.alcohol)||0, mLevel: 0, isOpen: false };
                       let logs = {}; 
                       if(data.interruptions) { data.interruptions.forEach(int => { logs[int.start] = { type: 'ausrutscher', t: parseInt(int.t)||1, s: parseInt(int.s)||0, a: parseInt(int.a)||0, m: 0 }; }); }
-                      appData = { version: 10.4, cycles: [{ id: Date.now(), status: 'active', base: base, logs: logs }], breatheLogs: {} };
+                      appData = { version: 10.0, cycles: [{ id: Date.now(), status: 'active', base: base, logs: logs }], breatheLogs: {} };
                   } else { 
                       appData = data; 
-                  }
-                  
-                  if (appData.cycles && Array.isArray(appData.cycles)) {
-                      appData.cycles.forEach(c => {
-                          if (!c.base) c.base = {};
-                          if (c.base.mLevel === undefined) c.base.mLevel = 0;
-                          if (!c.logs) c.logs = {};
-                          Object.values(c.logs).forEach(l => {
-                              if (l.m === undefined) l.m = 0;
-                          });
-                          if (!c.monthlyNotes) c.monthlyNotes = {};
-                      });
                   }
                   
                   appData.cycles = Array.isArray(appData.cycles) ? appData.cycles : []; 
@@ -2421,31 +2219,24 @@
       const res = activeSimResult; 
       const activeCycle = getActiveCycle();
       
-      if (!activeCycle || !activeCycle.base || !activeCycle.base.start) {
-          return customAlert("Kein aktiver Zyklus zum Exportieren gefunden.");
-      }
-      
       const sLevels = ['Kein', 'Moderat', 'Hoch']; 
       const aLevels = ['Kein', 'Moderat', 'Hoch'];
-      const mLevels = ['Kein', 'Moderat', 'Hoch'];
       
-      let desc = isSandbox ? `ReTrack SIMULATION\n\n` : `ReTrack V10.4\n\n`;
+      let desc = isSandbox ? `ReTrack SIMULATION\n\n` : `ReTrack V10.0\n\n`;
       desc += `--- Basis-Phase ---\n`;
       desc += `Start: ${parseLocal(activeCycle.base.start).toLocaleDateString('de-DE')}\n`;
       desc += `Ende: ${parseLocal(activeCycle.base.end).toLocaleDateString('de-DE')}\n`;
       desc += `T-Tage: ${activeCycle.base.tDays}d\n`;
       desc += `Stress (Max): ${sLevels[activeCycle.base.sLevel]}\n`;
       desc += `Alkohol (Max): ${aLevels[activeCycle.base.aLevel]}\n`;
-      desc += `Masturbation (M): ${mLevels[activeCycle.base.mLevel || 0]}\n`;
       desc += `${res.basePenaltyStr}\n`;
       
       if(res.history.logDetails.length > 0) {
-          desc += `\n--- Rauchen / Logs ---\n`;
+          desc += `\n--- Ausrutscher / Logs ---\n`;
           const sortedLogs = [...res.history.logDetails].sort((a,b) => parseLocal(a.date) - parseLocal(b.date));
           sortedLogs.forEach(l => {
               let detailStr = res.history.penaltyDict[l.date] || `Strafe: +${l.p} Tage`;
-              let origLog = (activeCycle.logs || {})[l.date] || {};
-              desc += `[${parseLocal(l.date).toLocaleDateString('de-DE')}] Dauer: ${l.t}d | S: ${sLevels[l.s]} | A: ${aLevels[l.a]} | M: ${mLevels[origLog.m || 0]} -> ${detailStr}\n`;
+              desc += `[${parseLocal(l.date).toLocaleDateString('de-DE')}] Dauer: ${l.t}d | S: ${sLevels[l.s]} | A: ${aLevels[l.a]} -> ${detailStr}\n`;
           });
       }
 
@@ -2458,24 +2249,9 @@
       desc += `x3 Schuld: ${totalT * 3} Tage\n`; 
       desc += `Zusätzlicher Aufschlag: +${aufschlag} Tage\n`; 
       desc += `Regenerationsschuld gesamt: ${totalRegenDebt} Tage\n`;
-      desc += `\nEmpfohlene M-freie Tage: ${res.mFreeGoal}\n`;
+      desc += `\nEmpfohlene M-freie Tage: ${Math.min(res.totalTDaysEver * 2, 14)}\n`;
       desc += `Pessimistisches Ziel: ${res.finalEnd.toLocaleDateString('de-DE')}\n`;
       if(res.optimisticEndStr) desc += `Best-Case Ziel: ${parseLocal(res.optimisticEndStr).toLocaleDateString('de-DE')}\n`;
-
-      if (activeCycle.monthlyNotes && Object.keys(activeCycle.monthlyNotes).length > 0) {
-          desc += `\n--- Monats-Notizen ---\n`;
-          const monthNames = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
-          Object.keys(activeCycle.monthlyNotes).sort().forEach(mKey => {
-              let parts = mKey.split('-');
-              let mName = `${monthNames[parseInt(parts[1])-1]} ${parts[0]}`;
-              let notes = activeCycle.monthlyNotes[mKey];
-              if (notes.erk || notes.dtx) {
-                  desc += `${mName}:\n`;
-                  if (notes.erk) desc += ` Erkenntnisse: ${notes.erk.replace(/\n/g, ' ')}\n`;
-                  if (notes.dtx) desc += ` DTX: ${notes.dtx.replace(/\n/g, ' ')}\n`;
-              }
-          });
-      }
 
       const exportDates = [...res.history.b, ...res.history.r].sort((a,b) => a-b);
       if(exportDates.length === 0) return customAlert("Keine Erholungstage zum Exportieren gefunden.");
