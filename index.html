@@ -8,7 +8,7 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
 
-  <title>ReTrack 10.5</title>
+  <title>ReTrack 10.6</title>
   
   <link rel="manifest" href="./manifest.json" />
   <meta name="theme-color" content="#f1c40f" />
@@ -315,7 +315,7 @@
 
   <header onclick="openBreatheOverlay()" title="Geheime Atem-Übung öffnen">
     <h1>🧪 ReTrack</h1>
-    <div class="version">Version 10.5 – Solid Foundation</div>
+    <div class="version">Version 10.6 – The Crash-Proof Edition</div>
   </header>
 
   <div class="tabs">
@@ -330,7 +330,7 @@
   <div id="tab-dashboard" class="tab-content active">
     
     <div id="setup-warning" class="setup-overlay">
-        <h3>Willkommen bei ReTrack (v10.5)! 👋</h3>
+        <h3>Willkommen bei ReTrack (v10.6)! 👋</h3>
         <p>Lege deinen ersten Zyklus an oder lade ein bestehendes Backup.</p>
         <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 15px;">
             <button class="btn-tool" style="background:var(--header-bg); border:none; color:white;" onclick="switchTab('historie')">✏️ Neuen Zyklus starten</button>
@@ -452,7 +452,7 @@
   <!-- ================= TAB 3: ARCHIV & STATS ================= -->
   <div id="tab-archiv" class="tab-content">
   
-    <!-- V10.5: Historisches Logging -->
+    <!-- V10.6: Historisches Logging -->
     <button class="btn-tool" style="width:100%; margin-bottom: 1.5rem; background: #8e44ad; color: white; border: none;" onclick="openHistoricalModal()">🕰️ Historischen Zyklus nachtragen</button>
 
     <div class="card">
@@ -619,7 +619,7 @@
     </div>
   </div>
   
-  <!-- V10.5: Historical Cycle Modal (Dynamic "Tag für Tag" UI) -->
+  <!-- V10.6: Historical Cycle Modal -->
   <div id="modal-historical" class="modal-overlay">
     <div class="modal-card">
       <h3 style="color:#8e44ad;">🕰️ Historischen Zyklus nachtragen</h3>
@@ -675,13 +675,12 @@
   </div>
 
 <script>
-  let appData = { version: 10.5, cycles: [], breatheLogs: {} };
+  let appData = { version: 10.6, cycles: [], breatheLogs: {} };
   let isSandbox = false; 
   let sandboxData = null;
 
   const getApp = () => isSandbox ? sandboxData : appData;
   
-  // V10.5 FIX: Safe active cycle retrieval 
   const getActiveCycle = () => { 
       const app = getApp(); 
       if (!app || !Array.isArray(app.cycles)) return undefined; 
@@ -717,6 +716,16 @@
   }
   
   function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+  // V10.6: Globally accessible function to delete historical cycles
+  window.deleteArchivedCycle = function(id) {
+      customConfirm("Möchtest du diesen historischen Zyklus wirklich unwiderruflich löschen?", () => {
+          const app = getApp();
+          app.cycles = app.cycles.filter(c => c.id !== id);
+          saveData();
+          customAlert("Zyklus erfolgreich gelöscht!");
+      });
+  };
 
   document.addEventListener("DOMContentLoaded", () => { 
       lastRenderDateStr = toIsoString(new Date()); 
@@ -800,14 +809,14 @@
 
   function loadData() {
       const saved = localStorage.getItem('regenAppData_v6') || localStorage.getItem('regenAppData_v5');
-      let parsedData = { version: 10.5, cycles: [], breatheLogs: {} };
+      let parsedData = { version: 10.6, cycles: [], breatheLogs: {} };
       if (saved) {
           try { 
               let data = JSON.parse(saved); 
               if (data && typeof data === 'object') {
                   if (data.version >= 5) { 
                       parsedData = data; 
-                      parsedData.version = 10.5; 
+                      parsedData.version = 10.6; 
                   } else if (!data.cycles && data.base) { 
                       parsedData.cycles = [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }];
                   } else if (data.tDays !== undefined && !data.base) {
@@ -817,7 +826,6 @@
                       parsedData.cycles = [{ id: Date.now(), status: 'active', base: base, logs: logs }];
                   }
                   
-                  // V10.5 FIX: Hydration-Schleife schützt vor fehlenden Keys bei alten Backups
                   if (parsedData.cycles && Array.isArray(parsedData.cycles)) {
                       parsedData.cycles.forEach(c => {
                           if (!c.base) c.base = {};
@@ -859,8 +867,21 @@
       }
   }
 
+  // V10.6 FIX: Robust Centralized Sorting to prevent Null-Crash
   function saveData(silent = false) { 
-      if (!isSandbox) localStorage.setItem('regenAppData_v6', JSON.stringify(appData)); 
+      const app = getApp();
+      if (app && Array.isArray(app.cycles)) {
+          app.cycles.sort((a, b) => {
+              // Empty cycles (active without start date) get sent to the far future (end of array)
+              const sA = (a.base && a.base.start) ? a.base.start : "9999-12-31";
+              const sB = (b.base && b.base.start) ? b.base.start : "9999-12-31";
+              return sA.localeCompare(sB);
+          });
+      }
+
+      if (!isSandbox) {
+          localStorage.setItem('regenAppData_v6', JSON.stringify(appData)); 
+      }
       if(!silent) runAllSimulations(); 
   }
   
@@ -868,7 +889,7 @@
       if (isSandbox) return customAlert("Im Simulations-Modus kannst du keinen Hard-Reset durchführen.");
       customConfirm("ACHTUNG: Möchtest du wirklich ALLE Daten löschen? (Werkseinstellungen)", () => {
           localStorage.removeItem('regenAppData_v5'); localStorage.removeItem('regenAppData_v6'); localStorage.removeItem('regenAppData_v7');
-          appData = { version: 10.5, cycles: [], breatheLogs: {} }; 
+          appData = { version: 10.6, cycles: [], breatheLogs: {} }; 
           customAlert("Gelöscht.", () => { window.location.href = window.location.href.split('?')[0]; });
       });
   }
@@ -893,11 +914,11 @@
   function populateBaseForm() {
       const active = getActiveCycle(); 
       if(!active) return;
-      document.getElementById('base-start').value = active.base.start; 
-      document.getElementById('base-end').value = active.base.end;
-      document.getElementById('base-t').value = active.base.tDays; 
-      document.getElementById('base-s').value = active.base.sLevel; 
-      document.getElementById('base-a').value = active.base.aLevel;
+      document.getElementById('base-start').value = active.base.start || ""; 
+      document.getElementById('base-end').value = active.base.end || "";
+      document.getElementById('base-t').value = active.base.tDays || ""; 
+      document.getElementById('base-s').value = active.base.sLevel || 0; 
+      document.getElementById('base-a').value = active.base.aLevel || 0;
       document.getElementById('base-m').value = active.base.mLevel || 0;
       
       let isBaseLocked = active.base.isOpen; 
@@ -961,7 +982,7 @@
       if(force) saveData();
   }
 
-  // --- V10.5: Historical Logging (Dynamic UI fixed to "Tag für Tag") ---
+  // --- V10.6: Historical Logging (Dynamic Tag für Tag Form) ---
   let histRowCount = 0;
   
   function openHistoricalModal() {
@@ -975,7 +996,6 @@
       document.getElementById('hist-logs-container').innerHTML = '';
       histRowCount = 0;
       
-      // Auto-add the first row for convenience
       addHistLogRow();
       
       document.getElementById('modal-historical').classList.add('active');
@@ -995,7 +1015,7 @@
           <div id="${rowId}" style="background:#f9f9f9; padding:15px 10px 10px; border-radius:8px; position:relative; border:1px solid #e8daef; margin-bottom: 8px;">
               <span style="position:absolute; top:5px; right:10px; color:var(--danger); font-weight:bold; cursor:pointer; font-size:1.2rem; line-height:1;" onclick="document.getElementById('${rowId}').remove()">&times;</span>
               <div class="form-grid" style="margin-top:10px; gap:8px;">
-                  <div class="form-group-full" style="margin-bottom:0;"><label>Datum</label><input type="date" class="hist-row-date"></div>
+                  <div class="form-group-full" style="margin-bottom:0;"><label>Datum (1 Tag)</label><input type="date" class="hist-row-date"></div>
                   <div><label>S (0-2)</label><select class="hist-row-s"><option value="0">0</option><option value="1">1</option><option value="2">2</option></select></div>
                   <div><label>A (0-2)</label><select class="hist-row-a"><option value="0">0</option><option value="1">1</option><option value="2">2</option></select></div>
                   <div><label>M (0-2)</label><select class="hist-row-m"><option value="0">0</option><option value="1">1</option><option value="2">2</option></select></div>
@@ -1018,7 +1038,7 @@
       if(t > 21) return customAlert("Basisphase darf nicht länger als 21 Tage sein.");
       if(s >= toIsoString(new Date())) return customAlert("Historische Zyklen müssen in der Vergangenheit liegen.");
 
-      // Overlap check ensures the historical cycle doesn't collide with any existing base
+      // Check overlap to avoid destroying existing timeline
       let hasOverlap = getApp().cycles.some(c => {
           if(!c.base || !c.base.start || !c.base.end) return false;
           return (s <= c.base.end && e >= c.base.start);
@@ -1032,8 +1052,7 @@
       
       document.querySelectorAll('#hist-logs-container > div').forEach(row => {
           let dStr = row.querySelector('.hist-row-date').value;
-          // In UX design we removed T-Tage, so each row is exactly 1 day
-          let rt = 1; 
+          let rt = 1; // Always 1 day
           let rs = parseInt(row.querySelector('.hist-row-s').value) || 0;
           let ra = parseInt(row.querySelector('.hist-row-a').value) || 0;
           let rm = parseInt(row.querySelector('.hist-row-m').value) || 0;
@@ -1050,21 +1069,17 @@
 
       const newCycle = {
           id: Date.now(),
-          status: 'archived', // Historically added is always archived initially
+          status: 'archived',
           base: { start: s, end: e, tDays: t, sLevel: sL, aLevel: aL, mLevel: mL, isOpen: false },
           logs: logsToSave
       };
 
-      appData.cycles.push(newCycle);
-      appData.cycles.sort((a, b) => (a.base.start || "").localeCompare(b.base.start || ""));
-
-      // V10.5 FIX: We do NOT force all but the last to be archived. 
-      // The newly added historical cycle is 'archived'. 
-      // The currently active cycle (if any) retains its 'active' status.
+      const app = getApp();
+      app.cycles.push(newCycle);
 
       closeModal('modal-historical');
       saveData();
-      customAlert("Historischer Zyklus wurde in die Zeitlinie integriert!");
+      customAlert("Historischer Zyklus wurde erfolgreich in deine Zeitlinie integriert!");
       switchTab('archiv');
   }
   // --- End Historical Functions ---
@@ -1501,11 +1516,10 @@
       }
   }
 
-  // --- ENGINE V10.5 (Crash-proof & Time-Machine friendly) ---
+  // --- ENGINE V10.6 (Crash-proof & Time-Machine friendly) ---
   function runAllSimulations() {
       globalSimResults = (getApp().cycles || []).map(cycle => simulateCycle(cycle));
       
-      // V10.5 FIX: Safe active cycle index retrieval to prevent dashboard crashes
       let activeIdx = (getApp().cycles || []).findIndex(c => c.status === 'active');
       activeSimResult = activeIdx !== -1 ? globalSimResults[activeIdx] : (globalSimResults.length > 0 ? globalSimResults[globalSimResults.length - 1] : null);
       
@@ -1513,7 +1527,7 @@
   }
 
   function simulateCycle(cycle) {
-      if (!cycle || !cycle.base || !cycle.base.start || !cycle.base.end) return null; // V10.5 FIX: Strict checking
+      if (!cycle || !cycle.base || !cycle.base.start || !cycle.base.end) return null; 
 
       const baseVal = cycle.base.tDays * 3;
       let sAdd = 0, aAdd = 0;
@@ -1581,7 +1595,7 @@
       let cLogs = cycle.logs || {};
       let lastRealDayStr = (cLogs[todayStr] && cLogs[todayStr].type !== undefined) ? todayStr : yesterdayStr;
 
-      // V10.5 FIX: Increased to 15000 days (~41 years) to allow very old historical cycles
+      // Safety up to ~41 years
       while ((debt > 0 || toIsoString(simDate) <= endSimLimit) && safety < 15000) {
           safety++; 
           let dStr = toIsoString(simDate); 
@@ -1694,6 +1708,7 @@
           dashState = { debt: initialDebtTotal, totalDebtEver: initialDebtTotal, state: 'BEWAEHRUNG', bewTimer: 3, gotBonusToday: false }; 
       }
       
+      // V10.6 FIX: Correct internal nomenclature
       let nirvanaStreak = history.n.length; 
       
       let pessimisticEnd = finalDebtZeroDate || addDays(simDate, -1);
@@ -1711,7 +1726,7 @@
               if ((log.m || 0) === 0) mFreeCurrent++;
           }
       });
-      // V10.5 FIX: Uncapped M-free goal
+      // Uncapped M-free goal
       let mFreeGoal = totalTDaysEver * 2;
 
       return {
@@ -1752,7 +1767,7 @@
       const res = activeSimResult; 
       const activeCycle = getActiveCycle();
       
-      // V10.5 FIX: Handle empty active cycle gracefully without hanging
+      // Safety abort if no active cycle exists
       if(!res || !res.dashState || !activeCycle) {
           document.getElementById('dash-status-badge').textContent = "Warte auf Startdatum...";
           document.getElementById('dash-status-badge').className = 'status-badge status-open';
@@ -1878,7 +1893,6 @@
       const todayStr = toIsoString(new Date());
       const isLoggedToday = activeCycle.logs && activeCycle.logs[todayStr] && activeCycle.logs[todayStr].type !== undefined;
 
-      // V10.5 FIX: Added activeCycle check above
       if (!isSandbox && !isLoggedToday && !res.isOpen && displayDebt > 0) {
           let cloneA = JSON.parse(JSON.stringify(activeCycle));
           if(!cloneA.logs) cloneA.logs = {};
@@ -2056,8 +2070,7 @@
 
       (getApp().cycles || []).forEach((cycle, index) => {
           const res = globalSimResults[index]; 
-          // V10.5 FIX: Abort if simulation result is null (e.g. empty cycle base)
-          if(!res) return;
+          if(!res) return; // Ignores empty active cycle perfectly
           
           let allDays = [...res.history.t, ...res.history.a, ...res.history.b, ...res.history.r, ...res.history.n];
           let uniqueDays = [...new Set(allDays.map(d => toIsoString(d)))].filter(d => d <= todayStr).sort();
@@ -2287,7 +2300,12 @@
               
               const card = document.createElement('div'); 
               card.className = 'archive-card';
-              card.innerHTML = `<div class="archive-header"><div class="archive-title">Zyklus: ${startStr} – ${endStr}</div><div class="archive-badge">${allArchDates.length} Tage Total</div></div>
+              card.innerHTML = `<div class="archive-header"><div class="archive-title">Zyklus: ${startStr} – ${endStr}</div>
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <div class="archive-badge">${allArchDates.length} Tage Total</div>
+                    <button class="btn-tool" style="padding:4px 8px; border:1px solid var(--danger); color:var(--danger); min-width:auto;" onclick="deleteArchivedCycle(${cycle.id})" title="Zyklus löschen">🗑️</button>
+                </div>
+              </div>
                 <div class="archive-stats"><div><strong>Start-Konsum:</strong> ${cycle.base.tDays} Tage</div><div><strong>Rauchen in Phase:</strong> ${ausCount}</div>
                 <div><strong>Regenerationsdauer:</strong> ${res.history.b.length + res.history.r.length} Tage</div><div><strong>Nirwana-Streak danach:</strong> ${res.nirvanaStreak} Tage</div></div>`;
               archContainer.appendChild(card);
@@ -2378,14 +2396,14 @@
                   customAlert("Simulation erfolgreich in die Sandbox geladen!");
               } else {
                   if (data.version >= 5) { 
-                      data.version = 10.5; appData = data; 
+                      data.version = 10.6; appData = data; 
                   } else if (data.base && !data.cycles) { 
-                      appData = { version: 10.5, cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }], breatheLogs: {} };
+                      appData = { version: 10.6, cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }], breatheLogs: {} };
                   } else if (data.tDays !== undefined && !data.base) {
                       let base = { start: data.startDate, end: data.endDate, tDays: parseInt(data.tDays)||0, sLevel: parseInt(data.stress)||0, aLevel: parseInt(data.alcohol)||0, mLevel: 0, isOpen: false };
                       let logs = {}; 
                       if(data.interruptions) { data.interruptions.forEach(int => { logs[int.start] = { type: 'ausrutscher', t: parseInt(int.t)||1, s: parseInt(int.s)||0, a: parseInt(int.a)||0, m: 0 }; }); }
-                      appData = { version: 10.5, cycles: [{ id: Date.now(), status: 'active', base: base, logs: logs }], breatheLogs: {} };
+                      appData = { version: 10.6, cycles: [{ id: Date.now(), status: 'active', base: base, logs: logs }], breatheLogs: {} };
                   } else { 
                       appData = data; 
                   }
@@ -2435,7 +2453,7 @@
       const aLevels = ['Kein', 'Moderat', 'Hoch'];
       const mLevels = ['Kein', 'Moderat', 'Hoch'];
       
-      let desc = isSandbox ? `ReTrack SIMULATION\n\n` : `ReTrack V10.5\n\n`;
+      let desc = isSandbox ? `ReTrack SIMULATION\n\n` : `ReTrack V10.6\n\n`;
       desc += `--- Basis-Phase ---\n`;
       desc += `Start: ${parseLocal(activeCycle.base.start).toLocaleDateString('de-DE')}\n`;
       desc += `Ende: ${parseLocal(activeCycle.base.end).toLocaleDateString('de-DE')}\n`;
