@@ -8,7 +8,7 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
 
-  <title>ReTrack 10.10</title>
+  <title>ReTrack 10.11</title>
   
   <link rel="manifest" href="./manifest.json" />
   <meta name="theme-color" content="#f1c40f" />
@@ -143,8 +143,8 @@
     .btn-ausrutscher { background: #e74c3c; box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3); }
     .undo-link { color: #7f8c8d; font-size: 0.85rem; text-decoration: underline; cursor: pointer; display: inline-block; margin-top: 10px; }
 
-    /* Modals - FIXED Z-INDEX FOR ALERTS */
-    #modal-alert, #modal-confirm { z-index: 1000 !important; }
+    /* Modals - PANZERUNG (z-index) */
+    #modal-alert, #modal-confirm { z-index: 9999 !important; }
     .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 100; justify-content: center; align-items: center; padding: 20px; }
     .modal-overlay.active { display: flex; animation: fadeIn 0.2s; }
     .modal-card { background: white; padding: 20px; border-radius: 16px; width: 100%; max-width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto;}
@@ -316,7 +316,7 @@
 
   <header onclick="openBreatheOverlay()" title="Geheime Atem-Übung öffnen">
     <h1>🧪 ReTrack</h1>
-    <div class="version">Version 10.10 – Master Fix Edition</div>
+    <div class="version">Version 10.11 – Deep Analysis & Sweep</div>
   </header>
 
   <div class="tabs">
@@ -606,7 +606,7 @@
     </div>
   </div>
   
-  <!-- V10.10: Historical Cycle Modal -->
+  <!-- V10.11: Historical Cycle Modal -->
   <div id="modal-historical" class="modal-overlay">
     <div class="modal-card">
       <h3 style="color:#8e44ad;">🕰️ Historischen Zyklus nachtragen</h3>
@@ -660,7 +660,7 @@
   </div>
 
 <script>
-  // --- Defensive DOM Helpers (V10.10) ---
+  // --- Defensive DOM Helpers (V10.11) ---
   const safeVal = (id) => { const e = document.getElementById(id); return e ? e.value : null; };
   const safeSetVal = (id, val) => { const e = document.getElementById(id); if(e) e.value = val; };
   const safeText = (id, text) => { const e = document.getElementById(id); if(e) e.textContent = text; };
@@ -668,7 +668,7 @@
   const safeDisplay = (id, display) => { const e = document.getElementById(id); if(e) e.style.display = display; };
   const safeProp = (id, prop, val) => { const e = document.getElementById(id); if(e) e[prop] = val; };
 
-  let appData = { version: 10.10, cycles: [], breatheLogs: {} };
+  let appData = { version: 10.11, cycles: [], breatheLogs: {} };
   let isSandbox = false; 
   let sandboxData = null;
 
@@ -685,7 +685,13 @@
   let lastRenderDateStr = null;
 
   const escapeHTML = str => str ? str.replace(/[&<>'"]/g, tag => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'}[tag])) : "";
-  const parseLocal = (dateStr) => { if(!dateStr || dateStr.indexOf('-') === -1) return null; const parts = dateStr.split('-'); return new Date(parts[0], parts[1] - 1, parts[2]); };
+  
+  // V10.11 FIX: Bulletproof parsing to prevent simulation crashes
+  const parseLocal = (dateStr) => { 
+      if(!dateStr || typeof dateStr !== 'string' || dateStr.indexOf('-') === -1) return null; 
+      const parts = dateStr.split('-'); 
+      return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10)); 
+  };
   const toIsoString = (date) => { 
       if (!date || isNaN(date.getFullYear())) return "1970-01-01";
       const y = date.getFullYear(); const m = String(date.getMonth() + 1).padStart(2, '0'); const d = String(date.getDate()).padStart(2, '0'); return `${y}-${m}-${d}`; 
@@ -811,14 +817,14 @@
 
   function loadData() {
       const saved = localStorage.getItem('regenAppData_v6') || localStorage.getItem('regenAppData_v5');
-      let parsedData = { version: 10.10, cycles: [], breatheLogs: {} };
+      let parsedData = { version: 10.11, cycles: [], breatheLogs: {} };
       if (saved) {
           try { 
               let data = JSON.parse(saved); 
               if (data && typeof data === 'object') {
                   if (data.version >= 5) { 
                       parsedData = data; 
-                      parsedData.version = 10.10; 
+                      parsedData.version = 10.11; 
                   } else if (!data.cycles && data.base) { 
                       parsedData.cycles = [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }];
                   } else if (data.tDays !== undefined && !data.base) {
@@ -829,7 +835,8 @@
                   }
                   
                   if (parsedData.cycles && Array.isArray(parsedData.cycles)) {
-                      parsedData.cycles = parsedData.cycles.filter(c => c && c.base && c.base.start); // V10.10: Clean ghosts
+                      // V10.11 FIX: Wipe ghost cycles that caused the original null crash
+                      parsedData.cycles = parsedData.cycles.filter(c => c && c.base && c.base.start); 
                       
                       parsedData.cycles.forEach(c => {
                           if (c.base.mLevel === undefined) c.base.mLevel = 0;
@@ -852,6 +859,7 @@
       
       if (!active) {
           safeDisplay('setup-warning', 'block');
+          // V10.11 FIX: Restore proper welcome screen logic
           if (appData.cycles.length > 0) {
               safeHTML('setup-warning', `<h3>Bereit für einen neuen Zyklus? 🚀</h3><p>Dein letzter Zyklus ist abgeschlossen. Du findest deine Historie im Archiv.</p><div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 15px;"><button class="btn-tool" style="background:var(--header-bg); border:none; color:white;" onclick="switchTab('historie')">✏️ Neuen Zyklus starten</button><button class="btn-tool" onclick="document.getElementById('fileInput').click()">📂 Backup importieren</button></div>`);
           } else {
@@ -902,7 +910,7 @@
       if (isSandbox) return customAlert("Im Simulations-Modus kannst du keinen Hard-Reset durchführen.");
       customConfirm("ACHTUNG: Möchtest du wirklich ALLE Daten löschen? (Werkseinstellungen)", () => {
           localStorage.removeItem('regenAppData_v5'); localStorage.removeItem('regenAppData_v6'); localStorage.removeItem('regenAppData_v7');
-          appData = { version: 10.10, cycles: [], breatheLogs: {} }; 
+          appData = { version: 10.11, cycles: [], breatheLogs: {} }; 
           customAlert("Gelöscht.", () => { window.location.href = window.location.href.split('?')[0]; });
       });
   }
@@ -921,7 +929,7 @@
   function calcBaseT() { 
       const s = parseLocal(safeVal('base-start')); 
       const e = parseLocal(safeVal('base-end')); 
-      if (s && e && !isNaN(s) && !isNaN(e)) { safeSetVal('base-t', Math.max(0, diffDays(s, e) + 1)); } else { safeSetVal('base-t', ""); } 
+      if (s && e && !isNaN(s.getTime()) && !isNaN(e.getTime())) { safeSetVal('base-t', Math.max(0, diffDays(s, e) + 1)); } else { safeSetVal('base-t', ""); } 
   }
   
   function populateBaseForm() {
@@ -1003,7 +1011,7 @@
       if(force) saveData();
   }
 
-  // --- V10.10: Historical Logging Form ---
+  // --- V10.11: Historical Logging Form ---
   let histRowCount = 0;
   
   function openHistoricalModal() {
@@ -1026,7 +1034,7 @@
   function calcHistBaseT() {
       const s = parseLocal(safeVal('hist-base-start'));
       const e = parseLocal(safeVal('hist-base-end'));
-      if (s && e && !isNaN(s) && !isNaN(e)) { safeSetVal('hist-base-t', Math.max(0, diffDays(s, e) + 1)); } else { safeSetVal('hist-base-t', ""); }
+      if (s && e && !isNaN(s.getTime()) && !isNaN(e.getTime())) { safeSetVal('hist-base-t', Math.max(0, diffDays(s, e) + 1)); } else { safeSetVal('hist-base-t', ""); }
   }
 
   function addHistLogRow() {
@@ -1329,7 +1337,7 @@
           if(!active || !active.base || !active.base.start) return;
           
           let curr = parseLocal(active.base.start); 
-          if(!curr || isNaN(curr)) return;
+          if(!curr || isNaN(curr.getTime())) return;
 
           const todayStr = toIsoString(new Date());
           let endStr = isSandbox ? (activeSimResult ? toIsoString(activeSimResult.finalEnd) : todayStr) : todayStr;
@@ -1561,7 +1569,7 @@
       }
   }
 
-  // --- ENGINE V10.10 (Crash-proof & Time-Machine friendly) ---
+  // --- ENGINE V10.11 (Crash-proof, Time-Machine friendly & Diagnostic) ---
   function runAllSimulations() {
       try {
           globalSimResults = (getApp().cycles || []).map(cycle => simulateCycle(cycle));
@@ -1575,12 +1583,13 @@
       }
   }
 
+  // V10.11 FIX: Full diagnostic error returns instead of silent nulls.
   function simulateCycle(cycle) {
       try {
-          if (!cycle || !cycle.base || !cycle.base.start || !cycle.base.end) {
-              console.warn("simulateCycle abgebrochen: Zyklus-Daten unvollständig", cycle);
-              return null; 
-          }
+          if (!cycle) return { failed: true, cycleId: 'unknown', errorName: "DataError", errorMessage: "Zyklus Objekt ist undefined." };
+          if (!cycle.base) return { failed: true, cycleId: cycle.id, errorName: "DataError", errorMessage: "Basis-Datenobjekt (cycle.base) fehlt." };
+          if (!cycle.base.start) return { failed: true, cycleId: cycle.id, errorName: "DataError", errorMessage: "Startdatum fehlt." };
+          if (!cycle.base.end) return { failed: true, cycleId: cycle.id, errorName: "DataError", errorMessage: "Enddatum fehlt." };
 
           const baseT = cycle.base.tDays || 0;
           const baseVal = baseT * 3;
@@ -1611,11 +1620,10 @@
           let totalDiscardedBonus = 0;
           
           let pEnd = parseLocal(cycle.base.end);
-          // V10.10 FIX: Bulletproof date check using getTime()
           if(!pEnd || isNaN(pEnd.getTime())) {
-              console.warn("simulateCycle abgebrochen: Ungültiges Enddatum", cycle.base.end);
-              return null; 
+              return { failed: true, cycleId: cycle.id, errorName: "DataError", errorMessage: `Ungültiges Enddatum: ${cycle.base.end}` };
           }
+          
           let simDate = pEnd; 
           simDate.setDate(simDate.getDate() + 1);
           
@@ -1624,8 +1632,16 @@
           const yesterdayStr = toIsoString(addDays(todayObj, -1));
           
           const app = getApp();
-          const nextCycle = app.cycles[app.cycles.findIndex(c => c.id === cycle.id) + 1];
-          let endSimLimit = (nextCycle && nextCycle.base && nextCycle.base.start) ? toIsoString(addDays(parseLocal(nextCycle.base.start), -1)) : todayStr;
+          const cycleIndex = app.cycles.findIndex(c => c.id === cycle.id);
+          const nextCycle = cycleIndex !== -1 ? app.cycles[cycleIndex + 1] : null;
+          
+          let endSimLimit = todayStr;
+          if (nextCycle && nextCycle.base && nextCycle.base.start) {
+              const nxStart = parseLocal(nextCycle.base.start);
+              if (nxStart && !isNaN(nxStart.getTime())) {
+                  endSimLimit = toIsoString(addDays(nxStart, -1));
+              }
+          }
           
           if (isSandbox && !nextCycle) {
               const logsStr = Object.keys(cycle.logs || {}).sort();
@@ -1643,7 +1659,11 @@
           let cBase = parseLocal(cycle.base.start); 
           let endBase = parseLocal(cycle.base.end);
           
-          if(cBase && endBase && !isNaN(cBase.getTime()) && !isNaN(endBase.getTime())) {
+          if(!cBase || isNaN(cBase.getTime())) {
+              return { failed: true, cycleId: cycle.id, errorName: "DataError", errorMessage: `Ungültiges Startdatum: ${cycle.base.start}` };
+          }
+          
+          if(cBase && endBase) {
               while (cBase <= endBase) { 
                   history.t.push(new Date(cBase)); 
                   cBase.setDate(cBase.getDate() + 1); 
@@ -1658,7 +1678,7 @@
           let cLogs = cycle.logs || {};
           let lastRealDayStr = (cLogs[todayStr] && typeof cLogs[todayStr] === 'object' && cLogs[todayStr].type !== undefined) ? todayStr : yesterdayStr;
 
-          // V10.10 FIX: Panzerung auf 25000 Tage (~68 Jahre) für extreme Historien
+          // V10.11 FIX: Safety loop limit raised to 25000 (~68 years) to handle extremely old historical cycles.
           while ((debt > 0 || toIsoString(simDate) <= endSimLimit) && safety < 25000) {
               safety++; 
               let dStr = toIsoString(simDate); 
@@ -1796,8 +1816,14 @@
               dashState, nirvanaStreak, initialDebtTotal, basePenaltyStr, mFreeGoal, mFreeCurrent
           };
       } catch(err) {
-          console.error("Simulation error on cycle", cycle, err);
-          return null;
+          // V10.11 FIX: Capture full crash details to display in the UI fallback card
+          return {
+              failed: true,
+              cycleId: cycle ? cycle.id : 'unknown',
+              errorName: err.name,
+              errorMessage: err.message,
+              stack: err.stack
+          };
       }
   }
 
@@ -2120,14 +2146,17 @@
       
       const archived = (getApp().cycles || []).filter(c => c.status === 'archived');
 
-      // V10.10: Debug UI Block
+      // V10.11 FIX: Enhanced Diagnostic Panel for debugging silent simulation failures
       let debugHtml = `<div style="background:#fff3cd; border:1px solid #ffeeba; padding:10px; font-size:0.85rem; margin-bottom:15px; border-radius:8px; color:#856404;">
-          <strong>🛠️ DEBUG INFO (System-Status):</strong><br>
-          Zyklen im Speicher: ${(getApp().cycles || []).length}<br>
-          Archivierte Zyklen (UI): ${archived.length}<br>
-          Simulations-Ergebnisse: ${globalSimResults.length} (Davon fehlgeschlagen: ${globalSimResults.filter(r=>r===null).length})<br>
-          Gespeicherte Cycle-IDs: ${(getApp().cycles || []).map(c=>c.id).join(', ')}<br>
-          Erfolgreiche Res-IDs: ${globalSimResults.filter(r=>r).map(r=>r.cycleId).join(', ')}
+          <strong>🛠️ DEBUG MONITOR (System-Röntgenblick):</strong><br><br>
+          <strong>Zyklen im Speicher:</strong> ${(getApp().cycles || []).length}<br>
+          <strong>Archivierte Zyklen (UI):</strong> ${archived.length}<br>
+          <strong>Simulations-Ergebnisse:</strong> ${globalSimResults.length} Elemente<br>
+          <br>
+          <strong>Gespeicherte Cycle-IDs:</strong><br>
+          ${(getApp().cycles || []).map(c=>c.id).join(', ')}<br><br>
+          <strong>Erfolgreiche Res-IDs:</strong><br>
+          ${globalSimResults.map(r => r ? (r.failed ? `[FAILED: ${r.cycleId}]` : r.cycleId) : '[NULL]').join(', ')}
       </div>`;
       archContainer.innerHTML = debugHtml;
 
@@ -2149,7 +2178,7 @@
 
       (getApp().cycles || []).forEach((cycle, index) => {
           const res = globalSimResults[index]; 
-          if(!res) return; // For global stats, safely ignore unsimulated cycles
+          if(!res || res.failed) return; // Skip failed sims for GLOBAL stats only
           
           let allDays = [...res.history.t, ...res.history.a, ...res.history.b, ...res.history.r, ...res.history.n];
           let uniqueDays = [...new Set(allDays.map(d => toIsoString(d)))].filter(d => d <= todayStr).sort();
@@ -2366,23 +2395,27 @@
           [...archived].reverse().forEach(cycle => {
               const res = globalSimResults.find(r => r && r.cycleId === cycle.id); 
               
-              // V10.10 FIX: Never hide a cycle. Render Fallback if sim failed.
-              if(!res) {
+              // V10.11 FIX: Robust Archive Fallback Card rendering exactly the captured error details
+              if(!res || res.failed) {
                   const card = document.createElement('div'); 
                   card.className = 'archive-card';
                   card.style.borderLeftColor = 'var(--danger)';
                   card.style.backgroundColor = '#fff5f5';
+                  
+                  let errTitle = !res ? "Simulation fehlt (null)" : "Simulation abgestürzt";
+                  let errDetails = !res ? "Die Engine hat für diesen Zyklus kein Ergebnis zurückgegeben." : `<strong>${res.errorName}:</strong> ${res.errorMessage}<br><pre style="font-size:0.7rem; background:#f8d7da; padding:5px; margin-top:5px; overflow-x:auto;">${res.stack || 'Kein Stacktrace'}</pre>`;
                   let startD = cycle.base && cycle.base.start ? cycle.base.start : 'Unbekannt';
                   let endD = cycle.base && cycle.base.end ? cycle.base.end : 'Unbekannt';
-                  card.innerHTML = `<div class="archive-header"><div class="archive-title" style="color:var(--danger);">⚠️ Zyklus-Simulation fehlgeschlagen</div>
+                  
+                  card.innerHTML = `<div class="archive-header"><div class="archive-title" style="color:var(--danger);">⚠️ ${errTitle}</div>
                     <div style="display:flex; align-items:center; gap:10px;">
                         <button class="btn-tool" style="padding:4px 8px; border:1px solid var(--danger); color:var(--danger); min-width:auto;" onclick="deleteArchivedCycle(${cycle.id})" title="Zyklus löschen">🗑️</button>
                     </div>
                   </div>
                     <div class="archive-stats" style="grid-template-columns: 1fr;"><div><strong>ID:</strong> ${cycle.id} | <strong>Start:</strong> ${startD} | <strong>Ende:</strong> ${endD}</div>
-                    <div style="color:var(--danger); font-size:0.8rem; margin-top:5px;">Dieser Zyklus wurde gespeichert, aber die Zeitachsen-Berechnung konnte aufgrund von Datenfehlern nicht abgeschlossen werden. Er fehlt in der Gesamtstatistik.</div></div>`;
+                    <div style="color:var(--danger); font-size:0.85rem; margin-top:5px;">Dieser Zyklus wurde gespeichert, aber die Zeitachsen-Berechnung schlug fehl:<br><br>${errDetails}</div></div>`;
                   archContainer.appendChild(card);
-                  return;
+                  return; // Skip normal rendering, show fallback instead
               }
 
               if(!cycle.base || !cycle.base.start) return; 
@@ -2493,14 +2526,14 @@
                   customAlert("Simulation erfolgreich in die Sandbox geladen!");
               } else {
                   if (data.version >= 5) { 
-                      data.version = 10.10; appData = data; 
+                      data.version = 10.11; appData = data; 
                   } else if (data.base && !data.cycles) { 
-                      appData = { version: 10.10, cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }], breatheLogs: {} };
+                      appData = { version: 10.11, cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }], breatheLogs: {} };
                   } else if (data.tDays !== undefined && !data.base) {
                       let base = { start: data.startDate, end: data.endDate, tDays: parseInt(data.tDays)||0, sLevel: parseInt(data.stress)||0, aLevel: parseInt(data.alcohol)||0, mLevel: 0, isOpen: false };
                       let logs = {}; 
                       if(data.interruptions) { data.interruptions.forEach(int => { logs[int.start] = { type: 'ausrutscher', t: parseInt(int.t)||1, s: parseInt(int.s)||0, a: parseInt(int.a)||0, m: 0 }; }); }
-                      appData = { version: 10.10, cycles: [{ id: Date.now(), status: 'active', base: base, logs: logs }], breatheLogs: {} };
+                      appData = { version: 10.11, cycles: [{ id: Date.now(), status: 'active', base: base, logs: logs }], breatheLogs: {} };
                   } else { 
                       appData = data; 
                   }
@@ -2550,7 +2583,7 @@
       const aLevels = ['Kein', 'Moderat', 'Hoch'];
       const mLevels = ['Kein', 'Moderat', 'Hoch'];
       
-      let desc = isSandbox ? `ReTrack SIMULATION\n\n` : `ReTrack V10.10\n\n`;
+      let desc = isSandbox ? `ReTrack SIMULATION\n\n` : `ReTrack V10.11\n\n`;
       desc += `--- Basis-Phase ---\n`;
       desc += `Start: ${parseLocal(activeCycle.base.start).toLocaleDateString('de-DE')}\n`;
       desc += `Ende: ${parseLocal(activeCycle.base.end).toLocaleDateString('de-DE')}\n`;
