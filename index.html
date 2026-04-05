@@ -8,7 +8,7 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
 
-  <title>ReTrack 10.11</title>
+  <title>ReTrack 10.12</title>
   
   <link rel="manifest" href="./manifest.json" />
   <meta name="theme-color" content="#f1c40f" />
@@ -316,7 +316,7 @@
 
   <header onclick="openBreatheOverlay()" title="Geheime Atem-Übung öffnen">
     <h1>🧪 ReTrack</h1>
-    <div class="version">Version 10.11 – Deep Analysis & Sweep</div>
+    <div class="version">Version 10.12 – Diagnostic Sweep</div>
   </header>
 
   <div class="tabs">
@@ -606,7 +606,7 @@
     </div>
   </div>
   
-  <!-- V10.11: Historical Cycle Modal -->
+  <!-- V10.12: Historical Cycle Modal -->
   <div id="modal-historical" class="modal-overlay">
     <div class="modal-card">
       <h3 style="color:#8e44ad;">🕰️ Historischen Zyklus nachtragen</h3>
@@ -660,7 +660,7 @@
   </div>
 
 <script>
-  // --- Defensive DOM Helpers (V10.11) ---
+  // --- Defensive DOM Helpers (V10.12) ---
   const safeVal = (id) => { const e = document.getElementById(id); return e ? e.value : null; };
   const safeSetVal = (id, val) => { const e = document.getElementById(id); if(e) e.value = val; };
   const safeText = (id, text) => { const e = document.getElementById(id); if(e) e.textContent = text; };
@@ -668,7 +668,7 @@
   const safeDisplay = (id, display) => { const e = document.getElementById(id); if(e) e.style.display = display; };
   const safeProp = (id, prop, val) => { const e = document.getElementById(id); if(e) e[prop] = val; };
 
-  let appData = { version: 10.11, cycles: [], breatheLogs: {} };
+  let appData = { version: 10.12, cycles: [], breatheLogs: {} };
   let isSandbox = false; 
   let sandboxData = null;
 
@@ -686,7 +686,6 @@
 
   const escapeHTML = str => str ? str.replace(/[&<>'"]/g, tag => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'}[tag])) : "";
   
-  // V10.11 FIX: Bulletproof parsing to prevent simulation crashes
   const parseLocal = (dateStr) => { 
       if(!dateStr || typeof dateStr !== 'string' || dateStr.indexOf('-') === -1) return null; 
       const parts = dateStr.split('-'); 
@@ -817,14 +816,14 @@
 
   function loadData() {
       const saved = localStorage.getItem('regenAppData_v6') || localStorage.getItem('regenAppData_v5');
-      let parsedData = { version: 10.11, cycles: [], breatheLogs: {} };
+      let parsedData = { version: 10.12, cycles: [], breatheLogs: {} };
       if (saved) {
           try { 
               let data = JSON.parse(saved); 
               if (data && typeof data === 'object') {
                   if (data.version >= 5) { 
                       parsedData = data; 
-                      parsedData.version = 10.11; 
+                      parsedData.version = 10.12; 
                   } else if (!data.cycles && data.base) { 
                       parsedData.cycles = [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }];
                   } else if (data.tDays !== undefined && !data.base) {
@@ -835,7 +834,6 @@
                   }
                   
                   if (parsedData.cycles && Array.isArray(parsedData.cycles)) {
-                      // V10.11 FIX: Wipe ghost cycles that caused the original null crash
                       parsedData.cycles = parsedData.cycles.filter(c => c && c.base && c.base.start); 
                       
                       parsedData.cycles.forEach(c => {
@@ -859,7 +857,6 @@
       
       if (!active) {
           safeDisplay('setup-warning', 'block');
-          // V10.11 FIX: Restore proper welcome screen logic
           if (appData.cycles.length > 0) {
               safeHTML('setup-warning', `<h3>Bereit für einen neuen Zyklus? 🚀</h3><p>Dein letzter Zyklus ist abgeschlossen. Du findest deine Historie im Archiv.</p><div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 15px;"><button class="btn-tool" style="background:var(--header-bg); border:none; color:white;" onclick="switchTab('historie')">✏️ Neuen Zyklus starten</button><button class="btn-tool" onclick="document.getElementById('fileInput').click()">📂 Backup importieren</button></div>`);
           } else {
@@ -910,7 +907,7 @@
       if (isSandbox) return customAlert("Im Simulations-Modus kannst du keinen Hard-Reset durchführen.");
       customConfirm("ACHTUNG: Möchtest du wirklich ALLE Daten löschen? (Werkseinstellungen)", () => {
           localStorage.removeItem('regenAppData_v5'); localStorage.removeItem('regenAppData_v6'); localStorage.removeItem('regenAppData_v7');
-          appData = { version: 10.11, cycles: [], breatheLogs: {} }; 
+          appData = { version: 10.12, cycles: [], breatheLogs: {} }; 
           customAlert("Gelöscht.", () => { window.location.href = window.location.href.split('?')[0]; });
       });
   }
@@ -1011,7 +1008,7 @@
       if(force) saveData();
   }
 
-  // --- V10.11: Historical Logging Form ---
+  // --- V10.12: Historical Logging Form ---
   let histRowCount = 0;
   
   function openHistoricalModal() {
@@ -1340,7 +1337,7 @@
           if(!curr || isNaN(curr.getTime())) return;
 
           const todayStr = toIsoString(new Date());
-          let endStr = isSandbox ? (activeSimResult ? toIsoString(activeSimResult.finalEnd) : todayStr) : todayStr;
+          let endStr = isSandbox ? (activeSimResult && activeSimResult.finalEnd ? toIsoString(activeSimResult.finalEnd) : todayStr) : todayStr;
           
           const moodEmojis = ["", "😞", "🙁", "😐", "🙂", "🤩"]; 
           const sLevels = ['S:0', 'S:1', 'S:2']; 
@@ -1410,7 +1407,7 @@
                       let isLastBaseDay = item.dStr === active.base.end; 
                       let isTodayWhenOpen = active.base.isOpen && item.dStr === todayStr; 
                       if (isLastBaseDay || isTodayWhenOpen) { 
-                          basePenalty = `<div class="diary-meta" style="color: #8e44ad; font-weight: bold; font-size: 0.75rem;">${activeSimResult.basePenaltyStr}</div>`; 
+                          basePenalty = `<div class="diary-meta" style="color: #8e44ad; font-weight: bold; font-size: 0.75rem;">${activeSimResult ? activeSimResult.basePenaltyStr : ''}</div>`; 
                       } 
                   }
                   
@@ -1569,7 +1566,7 @@
       }
   }
 
-  // --- ENGINE V10.11 (Crash-proof, Time-Machine friendly & Diagnostic) ---
+  // --- ENGINE V10.12 (Crash-proof & Bulletproof Scope) ---
   function runAllSimulations() {
       try {
           globalSimResults = (getApp().cycles || []).map(cycle => simulateCycle(cycle));
@@ -1583,7 +1580,6 @@
       }
   }
 
-  // V10.11 FIX: Full diagnostic error returns instead of silent nulls.
   function simulateCycle(cycle) {
       try {
           if (!cycle) return { failed: true, cycleId: 'unknown', errorName: "DataError", errorMessage: "Zyklus Objekt ist undefined." };
@@ -1678,14 +1674,14 @@
           let cLogs = cycle.logs || {};
           let lastRealDayStr = (cLogs[todayStr] && typeof cLogs[todayStr] === 'object' && cLogs[todayStr].type !== undefined) ? todayStr : yesterdayStr;
 
-          // V10.11 FIX: Safety loop limit raised to 25000 (~68 years) to handle extremely old historical cycles.
+          // V10.12 FIX: Use 'var' to prevent strict mode / block-scope TDZ bugs in older engines.
           while ((debt > 0 || toIsoString(simDate) <= endSimLimit) && safety < 25000) {
               safety++; 
-              let dStr = toIsoString(simDate); 
-              let log = cLogs[dStr];
+              var dStr = toIsoString(simDate); 
+              var log = cLogs[dStr];
               
-              let isLogged = log && typeof log === 'object' && log.type !== undefined;
-              let isFuture = dStr > todayStr || (dStr === todayStr && !isLogged);
+              var isLogged = log && typeof log === 'object' && log.type !== undefined;
+              var isFuture = dStr > todayStr || (dStr === todayStr && !isLogged);
 
               if (activeAusrutscherDays > 0) {
                   history.a.push(new Date(simDate)); 
@@ -1694,14 +1690,14 @@
                   activeAusrutscherDays = log.t - 1; 
                   totalTDaysEver += log.t;
                   
-                  let iBase = log.t * 3;
-                  let iS = log.t < 4 ? (log.s===1 ? 1 : log.s===2 ? 2 : 0) : Math.ceil(iBase * (log.s===1 ? 0.1 : log.s===2 ? 0.25 : 0));
-                  let iA = log.t < 4 ? (log.a===1 ? 1 : log.a===2 ? 2 : 0) : Math.ceil(iBase * (log.a===1 ? 0.1 : log.a===2 ? 0.25 : 0));
-                  let iC = (log.s===2 && log.a===2) ? 1 : 0;
+                  var iBase = log.t * 3;
+                  var iS = log.t < 4 ? (log.s===1 ? 1 : log.s===2 ? 2 : 0) : Math.ceil(iBase * (log.s===1 ? 0.1 : log.s===2 ? 0.25 : 0));
+                  var iA = log.t < 4 ? (log.a===1 ? 1 : log.a===2 ? 2 : 0) : Math.ceil(iBase * (log.a===1 ? 0.1 : log.a===2 ? 0.25 : 0));
+                  var iC = (log.s===2 && log.a===2) ? 1 : 0;
                   
-                  let pauschale = hasPaidPauschaleThisCluster ? 0 : 1; 
+                  var pauschale = hasPaidPauschaleThisCluster ? 0 : 1; 
                   
-                  let penalty = iBase + iS + iA + iC + pauschale;
+                  var penalty = iBase + iS + iA + iC + pauschale;
                   debt += penalty; 
                   totalDebtEver += penalty; 
                   
@@ -1717,7 +1713,7 @@
                   
                   history.logDetails.push({ date: dStr, p: penalty, t: log.t, b: iBase, s: iS, a: iA, f: pauschale });
                   
-                  let pStr = `+${penalty} Tage (Basis: ${iBase}, S: ${iS}, A: ${iA}, Kombi: ${iC}`;
+                  var pStr = `+${penalty} Tage (Basis: ${iBase}, S: ${iS}, A: ${iA}, Kombi: ${iC}`;
                   if (pauschale > 0) pStr += `, Setup: ${pauschale})`;
                   else pStr += `, Setup: 0 - Stottern)`;
                   history.penaltyDict[dStr] = pStr;
@@ -1735,7 +1731,7 @@
                           currentBewDays.push(new Date(simDate));
                           
                           if (bewTimer <= 0) { 
-                              let canPayout = !isFuture || isSandbox; 
+                              var canPayout = !isFuture || isSandbox; 
 
                               if (canPayout) {
                                   debt -= withheldBonus; 
@@ -1763,8 +1759,8 @@
                       
                       if (debt <= 0 && !finalDebtZeroDate) finalDebtZeroDate = new Date(simDate);
                   } else {
-                      let canCountNirwana = !isFuture || isSandbox;
-                      if (canCountNirvana) {
+                      // V10.12 FIX: Inlined evaluation to prevent ReferenceErrors entirely
+                      if (!isFuture || isSandbox) {
                           history.n.push(new Date(simDate));
                       }
                   }
@@ -1816,7 +1812,6 @@
               dashState, nirvanaStreak, initialDebtTotal, basePenaltyStr, mFreeGoal, mFreeCurrent
           };
       } catch(err) {
-          // V10.11 FIX: Capture full crash details to display in the UI fallback card
           return {
               failed: true,
               cycleId: cycle ? cycle.id : 'unknown',
@@ -1858,7 +1853,7 @@
       const res = activeSimResult; 
       const activeCycle = getActiveCycle();
       
-      if(!res || !res.dashState || !activeCycle) {
+      if(!res || !res.dashState || !activeCycle || res.failed) {
           safeText('dash-status-badge', "Warte auf Startdatum...");
           safeProp('dash-status-badge', 'className', 'status-badge status-open');
           safeText('dash-sub', "Bitte trage im 'Aktuell'-Tab deine initiale Phase ein.");
@@ -1989,7 +1984,7 @@
           cloneB.logs[todayStr] = { type: 'ausrutscher', t:1, s:0, a:0, m:0, mood:0, note:'Phantom' };
           let resB = simulateCycle(cloneB);
 
-          if (resA && resB && resA.dashState && resB.dashState) {
+          if (resA && !resA.failed && resB && !resB.failed && resA.dashState && resB.dashState) {
               let debtA = resA.dashState.debt;
               let debtB = resB.dashState.debt;
               let etaA = resA.finalEnd.toLocaleDateString('de-DE');
@@ -2048,7 +2043,7 @@
 
   function renderHistorie() {
       const res = activeSimResult; 
-      if(!res) {
+      if(!res || res.failed) {
           safeDisplay('historie-output', 'none');
           return;
       }
@@ -2146,7 +2141,7 @@
       
       const archived = (getApp().cycles || []).filter(c => c.status === 'archived');
 
-      // V10.11 FIX: Enhanced Diagnostic Panel for debugging silent simulation failures
+      // V10.12: Debug UI Block
       let debugHtml = `<div style="background:#fff3cd; border:1px solid #ffeeba; padding:10px; font-size:0.85rem; margin-bottom:15px; border-radius:8px; color:#856404;">
           <strong>🛠️ DEBUG MONITOR (System-Röntgenblick):</strong><br><br>
           <strong>Zyklen im Speicher:</strong> ${(getApp().cycles || []).length}<br>
@@ -2395,7 +2390,7 @@
           [...archived].reverse().forEach(cycle => {
               const res = globalSimResults.find(r => r && r.cycleId === cycle.id); 
               
-              // V10.11 FIX: Robust Archive Fallback Card rendering exactly the captured error details
+              // V10.12 FIX: Show Diagnostic Fallback Card if simulated result has failed flag
               if(!res || res.failed) {
                   const card = document.createElement('div'); 
                   card.className = 'archive-card';
@@ -2415,7 +2410,7 @@
                     <div class="archive-stats" style="grid-template-columns: 1fr;"><div><strong>ID:</strong> ${cycle.id} | <strong>Start:</strong> ${startD} | <strong>Ende:</strong> ${endD}</div>
                     <div style="color:var(--danger); font-size:0.85rem; margin-top:5px;">Dieser Zyklus wurde gespeichert, aber die Zeitachsen-Berechnung schlug fehl:<br><br>${errDetails}</div></div>`;
                   archContainer.appendChild(card);
-                  return; // Skip normal rendering, show fallback instead
+                  return; 
               }
 
               if(!cycle.base || !cycle.base.start) return; 
@@ -2526,14 +2521,14 @@
                   customAlert("Simulation erfolgreich in die Sandbox geladen!");
               } else {
                   if (data.version >= 5) { 
-                      data.version = 10.11; appData = data; 
+                      data.version = 10.12; appData = data; 
                   } else if (data.base && !data.cycles) { 
-                      appData = { version: 10.11, cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }], breatheLogs: {} };
+                      appData = { version: 10.12, cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }], breatheLogs: {} };
                   } else if (data.tDays !== undefined && !data.base) {
                       let base = { start: data.startDate, end: data.endDate, tDays: parseInt(data.tDays)||0, sLevel: parseInt(data.stress)||0, aLevel: parseInt(data.alcohol)||0, mLevel: 0, isOpen: false };
                       let logs = {}; 
                       if(data.interruptions) { data.interruptions.forEach(int => { logs[int.start] = { type: 'ausrutscher', t: parseInt(int.t)||1, s: parseInt(int.s)||0, a: parseInt(int.a)||0, m: 0 }; }); }
-                      appData = { version: 10.11, cycles: [{ id: Date.now(), status: 'active', base: base, logs: logs }], breatheLogs: {} };
+                      appData = { version: 10.12, cycles: [{ id: Date.now(), status: 'active', base: base, logs: logs }], breatheLogs: {} };
                   } else { 
                       appData = data; 
                   }
@@ -2583,7 +2578,7 @@
       const aLevels = ['Kein', 'Moderat', 'Hoch'];
       const mLevels = ['Kein', 'Moderat', 'Hoch'];
       
-      let desc = isSandbox ? `ReTrack SIMULATION\n\n` : `ReTrack V10.11\n\n`;
+      let desc = isSandbox ? `ReTrack SIMULATION\n\n` : `ReTrack V10.12\n\n`;
       desc += `--- Basis-Phase ---\n`;
       desc += `Start: ${parseLocal(activeCycle.base.start).toLocaleDateString('de-DE')}\n`;
       desc += `Ende: ${parseLocal(activeCycle.base.end).toLocaleDateString('de-DE')}\n`;
