@@ -8,7 +8,7 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
 
-  <title>ReTrack 11.0</title>
+  <title>ReTrack 11.1</title>
   
   <link rel="manifest" href="./manifest.json" />
   <meta name="theme-color" content="#f1c40f" />
@@ -143,7 +143,7 @@
     .btn-ausrutscher { background: #e74c3c; box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3); }
     .undo-link { color: #7f8c8d; font-size: 0.85rem; text-decoration: underline; cursor: pointer; display: inline-block; margin-top: 10px; }
 
-    /* Modals - PANZERUNG (z-index) */
+    /* Modals - Z-Index Protected */
     #modal-alert, #modal-confirm { z-index: 9999 !important; }
     .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 100; justify-content: center; align-items: center; padding: 20px; }
     .modal-overlay.active { display: flex; animation: fadeIn 0.2s; }
@@ -316,7 +316,7 @@
 
   <header onclick="openBreatheOverlay()" title="Geheime Atem-Übung öffnen">
     <h1>🧪 ReTrack</h1>
-    <div class="version">Version 11.0 – Clean Slate</div>
+    <div class="version">Version 11.1 – Smart Stotter-Engine</div>
   </header>
 
   <div class="tabs">
@@ -481,7 +481,7 @@
       <button class="btn-tool" style="color:var(--danger); border-color:#fadbd8; width:100%; grid-column: 1 / -1;" onclick="hardReset()">⚠️ Werkseinstellungen (Alles löschen)</button>
     </div>
 
-    <!-- V11.0 Debug Monitor Container -->
+    <!-- V11.0 Debug Monitor Container (Moved to bottom) -->
     <div id="debug-container" style="margin-top: 2rem;"></div>
   </div>
 
@@ -663,7 +663,7 @@
   </div>
 
 <script>
-  // --- Defensive DOM Helpers (V11.0) ---
+  // --- Defensive DOM Helpers (V11.1) ---
   const safeVal = (id) => { const e = document.getElementById(id); return e ? e.value : null; };
   const safeSetVal = (id, val) => { const e = document.getElementById(id); if(e) e.value = val; };
   const safeText = (id, text) => { const e = document.getElementById(id); if(e) e.textContent = text; };
@@ -671,7 +671,7 @@
   const safeDisplay = (id, display) => { const e = document.getElementById(id); if(e) e.style.display = display; };
   const safeProp = (id, prop, val) => { const e = document.getElementById(id); if(e) e[prop] = val; };
 
-  let appData = { version: 11.0, cycles: [], breatheLogs: {} };
+  let appData = { version: 11.1, cycles: [], breatheLogs: {} };
   let isSandbox = false; 
   let sandboxData = null;
 
@@ -819,14 +819,14 @@
 
   function loadData() {
       const saved = localStorage.getItem('regenAppData_v6') || localStorage.getItem('regenAppData_v5');
-      let parsedData = { version: 11.0, cycles: [], breatheLogs: {} };
+      let parsedData = { version: 11.1, cycles: [], breatheLogs: {} };
       if (saved) {
           try { 
               let data = JSON.parse(saved); 
               if (data && typeof data === 'object') {
                   if (data.version >= 5) { 
                       parsedData = data; 
-                      parsedData.version = 11.0; 
+                      parsedData.version = 11.1; 
                   } else if (!data.cycles && data.base) { 
                       parsedData.cycles = [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }];
                   } else if (data.tDays !== undefined && !data.base) {
@@ -910,7 +910,7 @@
       if (isSandbox) return customAlert("Im Simulations-Modus kannst du keinen Hard-Reset durchführen.");
       customConfirm("ACHTUNG: Möchtest du wirklich ALLE Daten löschen? (Werkseinstellungen)", () => {
           localStorage.removeItem('regenAppData_v5'); localStorage.removeItem('regenAppData_v6'); localStorage.removeItem('regenAppData_v7');
-          appData = { version: 11.0, cycles: [], breatheLogs: {} }; 
+          appData = { version: 11.1, cycles: [], breatheLogs: {} }; 
           customAlert("Gelöscht.", () => { window.location.href = window.location.href.split('?')[0]; });
       });
   }
@@ -1011,7 +1011,6 @@
       if(force) saveData();
   }
 
-  // --- V11.0: Historical Logging Form ---
   let histRowCount = 0;
   
   function openHistoricalModal() {
@@ -1569,7 +1568,7 @@
       }
   }
 
-  // --- ENGINE V11.0 (Clean Slate Edition) ---
+  // --- ENGINE V11.1 (Smart Stotter-Engine mit Cluster-Memory) ---
   function runAllSimulations() {
       try {
           globalSimResults = (getApp().cycles || []).map(cycle => simulateCycle(cycle));
@@ -1585,10 +1584,9 @@
 
   function simulateCycle(cycle) {
       try {
-          if (!cycle) return { failed: true, cycleId: 'unknown', errorName: "DataError", errorMessage: "Zyklus Objekt ist undefined." };
-          if (!cycle.base) return { failed: true, cycleId: cycle.id, errorName: "DataError", errorMessage: "Basis-Datenobjekt (cycle.base) fehlt." };
-          if (!cycle.base.start) return { failed: true, cycleId: cycle.id, errorName: "DataError", errorMessage: "Startdatum fehlt." };
-          if (!cycle.base.end) return { failed: true, cycleId: cycle.id, errorName: "DataError", errorMessage: "Enddatum fehlt." };
+          if (!cycle || !cycle.base || !cycle.base.start || !cycle.base.end) {
+              return { failed: true, cycleId: cycle ? cycle.id : 'unknown', errorName: "DataError", errorMessage: "Zyklus- oder Basisdaten unvollständig." };
+          }
 
           const baseT = cycle.base.tDays || 0;
           const baseVal = baseT * 3;
@@ -1610,10 +1608,13 @@
           let totalDebtEver = debt; 
           let totalTDaysEver = baseT;
 
+          // V11.1 FIX: Neue Variablen für das Stotter-Gedächtnis
           let state = 'BEWAEHRUNG'; 
-          let bewTimer = 3; 
+          let currentBlockT = baseT;
+          let currentBlockServed = 0;
+          let bewTimer = currentBlockT * 3; 
           let withheldBonus = 0; 
-          let hasPaidPauschaleThisCluster = false; 
+          let hasPaidPauschaleThisCluster = true; 
           
           let currentBewDays = [];
           let totalDiscardedBonus = 0;
@@ -1697,6 +1698,7 @@
                   var iA = log.t < 4 ? (log.a===1 ? 1 : log.a===2 ? 2 : 0) : Math.ceil(iBase * (log.a===1 ? 0.1 : log.a===2 ? 0.25 : 0));
                   var iC = (log.s===2 && log.a===2) ? 1 : 0;
                   
+                  // V11.1 FIX: Wenn im gleichen Cluster, keine Pauschale, aber Cluster-Verlängerung
                   var pauschale = hasPaidPauschaleThisCluster ? 0 : 1; 
                   
                   var penalty = iBase + iS + iA + iC + pauschale;
@@ -1704,13 +1706,24 @@
                   totalDebtEver += penalty; 
                   
                   state = 'BEWAEHRUNG'; 
-                  bewTimer = log.t * 3; 
-                  hasPaidPauschaleThisCluster = true; 
+                  
+                  if (!hasPaidPauschaleThisCluster) {
+                      currentBlockT = log.t;
+                      currentBlockServed = 0;
+                      hasPaidPauschaleThisCluster = true; 
+                  } else {
+                      currentBlockT += log.t;
+                  }
+                  
+                  // Neue Bewährungs-Formel (Cluster-Schuld minus schon abgesessene Tage im Cluster)
+                  bewTimer = (currentBlockT * 3) - currentBlockServed;
                   
                   if (currentBewDays.length > 0) {
                       history.b.push(...currentBewDays);
                       currentBewDays = [];
                   }
+                  
+                  totalDiscardedBonus += withheldBonus; 
                   withheldBonus = 0; 
                   
                   history.logDetails.push({ date: dStr, p: penalty, t: log.t, b: iBase, s: iS, a: iA, f: pauschale });
@@ -1729,6 +1742,7 @@
                           
                           withheldBonus += 0.5; 
                           bewTimer--; 
+                          currentBlockServed++;
                           
                           currentBewDays.push(new Date(simDate));
                           
@@ -1752,6 +1766,8 @@
                               withheldBonus = 0; 
                               state = 'REGEN'; 
                               hasPaidPauschaleThisCluster = false; 
+                              currentBlockT = 0;
+                              currentBlockServed = 0;
                           }
                       } else { 
                           debt -= 1.0; 
@@ -2160,7 +2176,6 @@
       let archiveMonths = {};
 
       (getApp().cycles || []).forEach((cycle) => {
-          // V11.0 FIX: Match correctly by ID, irrespective of array sorting changes.
           const res = globalSimResults.find(r => r && r.cycleId === cycle.id); 
           if(!res || res.failed) return; 
           
@@ -2469,7 +2484,6 @@
       }
       safeHTML('archive-months-container', archMonthsHtml);
 
-      // V11.0: Render Debug Monitor at the bottom as collapsible <details>
       let debugHtml = `
       <details style="background:#fff3cd; border:1px solid #ffeeba; padding:10px; font-size:0.85rem; border-radius:8px; color:#856404; margin-bottom: 20px;">
           <summary style="font-weight:bold; cursor:pointer;">🛠️ System-Diagnose (Debug Monitor)</summary>
@@ -2526,14 +2540,14 @@
                   customAlert("Simulation erfolgreich in die Sandbox geladen!");
               } else {
                   if (data.version >= 5) { 
-                      data.version = 11.0; appData = data; 
+                      data.version = 11.1; appData = data; 
                   } else if (data.base && !data.cycles) { 
-                      appData = { version: 11.0, cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }], breatheLogs: {} };
+                      appData = { version: 11.1, cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }], breatheLogs: {} };
                   } else if (data.tDays !== undefined && !data.base) {
                       let base = { start: data.startDate, end: data.endDate, tDays: parseInt(data.tDays)||0, sLevel: parseInt(data.stress)||0, aLevel: parseInt(data.alcohol)||0, mLevel: 0, isOpen: false };
                       let logs = {}; 
                       if(data.interruptions) { data.interruptions.forEach(int => { logs[int.start] = { type: 'ausrutscher', t: parseInt(int.t)||1, s: parseInt(int.s)||0, a: parseInt(int.a)||0, m: 0 }; }); }
-                      appData = { version: 11.0, cycles: [{ id: Date.now(), status: 'active', base: base, logs: logs }], breatheLogs: {} };
+                      appData = { version: 11.1, cycles: [{ id: Date.now(), status: 'active', base: base, logs: logs }], breatheLogs: {} };
                   } else { 
                       appData = data; 
                   }
@@ -2583,7 +2597,7 @@
       const aLevels = ['Kein', 'Moderat', 'Hoch'];
       const mLevels = ['Kein', 'Moderat', 'Hoch'];
       
-      let desc = isSandbox ? `ReTrack SIMULATION\n\n` : `ReTrack V11.0\n\n`;
+      let desc = isSandbox ? `ReTrack SIMULATION\n\n` : `ReTrack V11.1\n\n`;
       desc += `--- Basis-Phase ---\n`;
       desc += `Start: ${parseLocal(activeCycle.base.start).toLocaleDateString('de-DE')}\n`;
       desc += `Ende: ${parseLocal(activeCycle.base.end).toLocaleDateString('de-DE')}\n`;
