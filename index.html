@@ -8,7 +8,7 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
 
-  <title>ReTrack 12.8</title>
+  <title>ReTrack 12.9</title>
   
   <link rel="manifest" href="./manifest.json" />
   <meta name="theme-color" content="#f1c40f" />
@@ -299,6 +299,7 @@
 </head>
 <body>
 
+  <!-- PWA UPDATE BANNER -->
   <div id="update-banner">
       🚀 Eine neue App-Version ist verfügbar!
       <div class="sandbox-actions">
@@ -306,6 +307,7 @@
       </div>
   </div>
 
+  <!-- SANDBOX BANNER -->
   <div id="sandbox-banner">
       🧪 SIMULATIONS-MODUS AKTIV
       <div class="sandbox-actions">
@@ -316,7 +318,7 @@
 
   <header onclick="openBreatheOverlay()" title="Geheime Atem-Übung öffnen">
     <h1>🧪 ReTrack</h1>
-    <div class="version">Version 12.8 – Small Days & Fairness</div>
+    <div class="version">Version 12.9 – Core Engine Stability</div>
   </header>
 
   <div class="tabs">
@@ -373,7 +375,8 @@
                     <div style="font-size:0.8rem; opacity:0.8;">Wann möchtest du regeneriert sein?</div>
                 </div>
             </div>
-            
+
+            <!-- Outlook Box -->
             <div id="dash-outlook" class="outlook-box" style="display:none;"></div>
 
             <div id="daily-action-area">
@@ -421,7 +424,7 @@
         </div>
         <div>
             <label>Stress (Max)</label>
-            <select id="base-s">
+            <select id="base-s" onchange="saveBase()">
                 <option value="0">Kein</option>
                 <option value="1">Moderat</option>
                 <option value="2">Hoch</option>
@@ -429,7 +432,7 @@
         </div>
         <div>
             <label>Alkohol (Max)</label>
-            <select id="base-a">
+            <select id="base-a" onchange="saveBase()">
                 <option value="0">Kein</option>
                 <option value="1">Moderat</option>
                 <option value="2">Hoch</option>
@@ -437,7 +440,7 @@
         </div>
         <div>
             <label>Masturbation (M)</label>
-            <select id="base-m">
+            <select id="base-m" onchange="saveBase()">
                 <option value="0">Kein</option>
                 <option value="1">Moderat</option>
                 <option value="2">Hoch</option>
@@ -565,6 +568,7 @@
 
     <h3 style="margin-left:5px; color:#7f8c8d;">Abgeschlossene Zyklen</h3>
     <div id="archive-container"></div>
+    
     <div id="archive-months-container"></div>
     
     <div class="tool-grid" style="margin-top:2rem;">
@@ -579,7 +583,7 @@
     <div class="modal-card" style="text-align:center;">
       <h3>ℹ️ Hinweis</h3>
       <p id="alert-message" style="margin-bottom: 20px; color: #555;"></p>
-      <button class="btn-quick btn-pausiert" style="width:100%;" id="alert-ok-btn">OK</button>
+      <button class="btn-quick btn-pausiert" style="width:100%;" id="alert-ok-btn" onclick="closeModal('modal-alert')">OK</button>
     </div>
   </div>
   
@@ -683,9 +687,10 @@
     </div>
   </div>
 
-  <!-- Pause Modal (Refactored V12.8) -->
+  <!-- Pause Modal -->
   <div id="modal-pause" class="modal-overlay">
     <div class="modal-card"><h3 style="color:var(--btn-calc)">🟢 Pause eintragen</h3>
+      <p style="font-size:0.8rem; color:#666; margin-bottom: 15px;">Pausentage mit Stress/Alkohol/M drosseln <strong>nicht</strong> deine Regenerationsdauer, füttern aber die Statistik.</p>
       <div class="form-grid">
           <div class="form-group-full">
               <label>Datum</label>
@@ -732,9 +737,11 @@
               <textarea id="modal-p-note" rows="2" maxlength="150" placeholder="Was ging dir heute durch den Kopf?"></textarea>
           </div>
       </div>
-      <div class="modal-actions-row" style="margin-top:20px;">
-          <button class="btn-tool" onclick="closeModal('modal-pause')">Abbrechen</button>
-          <button class="btn-quick btn-pausiert" onclick="submitPause()">Speichern</button>
+      <div class="modal-actions">
+        <div class="modal-actions-row">
+            <button class="btn-tool" onclick="closeModal('modal-pause')">Abbrechen</button>
+            <button class="btn-quick btn-pausiert" onclick="submitPause()">💾 Eintragen</button>
+        </div>
       </div>
     </div>
   </div>
@@ -933,7 +940,7 @@
       if (e) e[prop] = val; 
   };
 
-  let appData = { version: 12.8, cycles: [], breatheLogs: {} };
+  let appData = { version: 12.9, cycles: [], breatheLogs: {} };
   let isSandbox = false; 
   let sandboxData = null;
 
@@ -981,7 +988,7 @@
       return Math.round((d2 - d1) / (24 * 60 * 60 * 1000));
   };
 
-  // --- Modal Logic (Klassenbasiert) ---
+  // --- Modal Logic ---
   function closeModal(id) { 
       const m = document.getElementById(id);
       if (m) {
@@ -1050,7 +1057,6 @@
       saveData(); 
   }
 
-  // --- Budget Calculation Logic (Pessimistisch: Nimmt immer Standard-Tage (x3) an) ---
   function calculateBudget(targetETAStr) {
       let active = getActiveCycle(); 
       if (!active || !activeSimResult || activeSimResult.failed) {
@@ -1093,14 +1099,13 @@
               mood: 0, 
               note: "Budget-Test", 
               isSimulated: true,
-              isSmall: false // Immer Standard-Strafe für pessimistisches Budget!
+              isSmall: false 
           };
           
           let res = simulateCycle(testCycle);
           
           if (res && !res.failed && res.finalEnd <= targetDate) { 
               budget++; 
-              // Skip 4 days forward to ensure the next virtual slip-up is an isolated block
               simDate.setDate(simDate.getDate() + 4); 
           } else {
               break; 
@@ -1198,11 +1203,11 @@
               let data = JSON.parse(saved); 
               if (data && typeof data === 'object') {
                   if (data.version >= 5) { 
-                      data.version = 12.8; 
+                      data.version = 12.9; 
                       appData = data; 
                   } else if (data.base) { 
                       appData = { 
-                          version: 12.8, 
+                          version: 12.9, 
                           cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }], 
                           breatheLogs: {} 
                       }; 
@@ -1212,14 +1217,12 @@
                       appData.cycles = appData.cycles.filter(c => c && c.base && c.base.start); 
                       appData.cycles.forEach(c => { 
                           if (c.base.mLevel === undefined) c.base.mLevel = 0; 
-                          // Abwärtskompatibilität für isSmall bei Base
                           if (c.base.isSmall === undefined) c.base.isSmall = false; 
                           
                           if (!c.logs) c.logs = {}; 
                           Object.values(c.logs).forEach(l => {
                               if (l && typeof l === 'object') {
                                   if (l.m === undefined) l.m = 0;
-                                  // Abwärtskompatibilität für isSmall bei Logs
                                   if (l.isSmall === undefined) l.isSmall = false; 
                               }
                           }); 
@@ -1650,8 +1653,6 @@
               active.base.end = toIsoString(addDays(parseLocal(dStr), t-1)); 
               active.base.tDays += t; 
               
-              // Wenn die bestehende Basis oder der neue Zusatz NICHT klein sind, 
-              // wird die gesamte Basis als "normal" (groß) gewertet. Das ist sicherer bei Verlängerungen.
               if (!isSmall) active.base.isSmall = false; 
               
               active.base.sLevel = Math.max(active.base.sLevel || 0, s); 
@@ -1903,7 +1904,6 @@
           safeSetVal('edit-day-note', log.note || "");
           
           safeProp('edit-day-type', 'disabled', isBase); 
-          // edit-day-t und edit-day-small dürfen nicht disabled sein, wenn man Ausrutscher editiert!
           safeProp('edit-day-t', 'disabled', isBase); 
           safeProp('edit-day-small', 'disabled', isBase);
           safeProp('edit-day-s', 'disabled', isBase); 
@@ -2007,7 +2007,7 @@
       }
   }
 
-  // --- Core Engine V12.8 (Stotter-Bewährung & Kleiner Tag x2) ---
+  // --- Core Engine V12.9 ---
   function runAllSimulations() {
       try {
           const app = getApp();
@@ -2029,9 +2029,8 @@
           }
           
           let baseT = cycle.base.tDays || 1;
-          let isBaseSmall = cycle.base.isSmall === true; // Abwärtskompatibel
+          let isBaseSmall = cycle.base.isSmall === true;
           
-          // V12.8 FIX: "Kleiner Tag" nutzt x2 für die Base
           let baseVal = isBaseSmall ? (baseT * 2) : (baseT * 3);
           
           let sAdd = 0, aAdd = 0;
@@ -2054,7 +2053,6 @@
           let totalTDaysEver = baseT;
           let state = 'BEWAEHRUNG';
           
-          // V12.8 FIX: Bewährungskonto für gemischte Stotter-Cluster
           let currentBlockTargetBew = isBaseSmall ? (baseT * 2) : (baseT * 3);
           let currentBlockServed = 0;
           let bewTimer = currentBlockTargetBew - currentBlockServed;
@@ -2135,7 +2133,7 @@
                   activeAusrutscherDays = log.t - 1; 
                   totalTDaysEver += log.t;
                   
-                  isLogSmall = log.isSmall === true; // Abwärtskompatibel
+                  isLogSmall = log.isSmall === true; 
                   
                   iBase = isLogSmall ? (log.t * 2) : (log.t * 3);
                   
@@ -2150,7 +2148,6 @@
                   totalDebtEver += penalty; 
                   state = 'BEWAEHRUNG';
                   
-                  // V12.8 FIX: Kontoführung für Bewährung in gemischten Blöcken
                   if (!hasPaidPauschaleThisCluster) { 
                       currentBlockTargetBew = isLogSmall ? (log.t * 2) : (log.t * 3);
                       currentBlockServed = 0; 
@@ -2192,11 +2189,8 @@
                                   if (withheldBonus > 0) history.bonusDict[dStr] = `🎉 Bonus: -${withheldBonus}`;
                                   history.r.push(...currentBewDays); 
                               } else { 
-                                  // Wenn Zukunft, wird der Block hart beendet, kein Bonus-Payout
                                   history.b.push(...currentBewDays); 
                               }
-                              
-                              // Block endgültig und sauber schließen
                               currentBewDays = []; 
                               withheldBonus = 0; 
                               state = 'REGEN'; 
@@ -2231,7 +2225,6 @@
               history.b.push(...currentBewDays);
           }
           
-          // Wenn die Engine vor dem ersten Ausrutscher stoppt, ist die initiale Base-Bewährung zu übergeben
           if (!dashState && cycle.status === 'active') {
               let initialBewTimer = isBaseSmall ? (baseT * 2) : (baseT * 3);
               dashState = { debt: initialDebtTotal, totalDebtEver: initialDebtTotal, state: 'BEWAEHRUNG', bewTimer: initialBewTimer, gotBonusToday: false };
@@ -2405,7 +2398,7 @@
           safeDisplay('dash-streak', 'none');
       }
 
-      // V12.8 Budget UI Live Updater
+      // V12.9 Budget UI Live Updater
       if (!isSandbox && !res.isOpen) {
           safeDisplay('dash-budget-box', 'block');
           
@@ -2510,15 +2503,14 @@
       
       const totalT = res.totalTDaysEver || 0; 
       const totalRegenDebt = res.totalDebtEver || 0; 
-      // V12.8: Der Aufschlag ist dynamisch, da kleine Tage x2 gerechnet werden.
-      const initialPenaltyBasis = active.base.isSmall ? (active.base.tDays * 2) : (active.base.tDays * 3);
-      let logsBaseTotal = 0;
-      Object.values(active.logs || {}).forEach(l => {
-          if (l.type === 'ausrutscher') {
-              logsBaseTotal += l.isSmall ? (l.t * 2) : (l.t * 3);
-          }
-      });
-      const expectedBaseDebt = initialPenaltyBasis + logsBaseTotal;
+      
+      // V12.9 FIX: Aufschlag-Berechnung 100% synchron mit simulateCycle.
+      let expectedBaseDebt = active.base.isSmall ? (active.base.tDays * 2) : (active.base.tDays * 3);
+      if (res.history && res.history.logDetails) {
+          res.history.logDetails.forEach(l => {
+              expectedBaseDebt += l.b; 
+          });
+      }
       const aufschlag = totalRegenDebt - expectedBaseDebt;
       
       let html = `
@@ -2851,7 +2843,7 @@
                       </div>
                       <div class="archive-stats" style="grid-template-columns: 1fr;">
                           <div><strong>ID:</strong> ${cycle.id} | <strong>Start:</strong> ${cycle.base?.start||'Unbekannt'} | <strong>Ende:</strong> ${cycle.base?.end||'Unbekannt'}</div>
-                          <div style="color:var(--danger); font-size:0.85rem; margin-top:5px;">Dieser Zyklus wurde gespeichert, aber die Zeitachsen-Berechnung schlug fehl:<br><br>${!res?"Die Engine hat für diesen Zyklus kein Ergebnis zurückgegeben.":`<strong>${res.errorName}:</strong> ${res.errorMessage}<br><pre style="font-size:0.7rem; background:#f8d7da; padding:5px; margin-top:5px; overflow-x:auto;">${res.stack || 'Kein Stacktrace'}</pre>`}</div>
+                          <div style="color:var(--danger); font-size:0.85rem; margin-top:5px;">Dieser Zyklus wurde gespeichert, aber die Zeitachsen-Berechnung schlug fehl:<br><br>${!res?"Die Engine hat für diesen Zyklus kein Ergebnis zurückgegeben.":`<strong>${res.errorName}:</strong> ${res.errorMessage}`}</div>
                       </div>`;
                   archContainer.appendChild(card); 
                   return; 
@@ -2924,7 +2916,7 @@
       }
       safeHTML('archive-months-container', archMonthsHtml);
 
-      // V12.8 SAUBERER RÖNTGENBLICK OHNE TEMPLATE-LITERAL CONFLICTS
+      // SAUBERER RÖNTGENBLICK OHNE TEMPLATE-LITERAL CONFLICTS
       let debugIds = (getApp().cycles || []).map(c=>c.id).join(', ');
       let debugRes = globalSimResults.map(r => r ? (r.failed ? '[FAILED: ' + r.cycleId + ']' : r.cycleId) : '[NULL]').join(', ');
       
@@ -2982,15 +2974,15 @@
                   customAlert("Simulation erfolgreich in die Sandbox geladen!");
               } else {
                   if (data.version >= 5) { 
-                      data.version = 12.8; 
+                      data.version = 12.9; 
                       appData = data; 
                   } else if (data.base && !data.cycles) { 
-                      appData = { version: 12.8, cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }], breatheLogs: {} };
+                      appData = { version: 12.9, cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }], breatheLogs: {} };
                   } else if (data.tDays !== undefined && !data.base) {
                       let base = { start: data.startDate, end: data.endDate, tDays: parseInt(data.tDays)||0, sLevel: parseInt(data.stress)||0, aLevel: parseInt(data.alcohol)||0, mLevel: 0, isOpen: false };
                       let logs = {}; 
                       if(data.interruptions) { data.interruptions.forEach(int => { logs[int.start] = { type: 'ausrutscher', t: parseInt(int.t)||1, s: parseInt(int.s)||0, a: parseInt(int.a)||0, m: 0 }; }); }
-                      appData = { version: 12.8, cycles: [{ id: Date.now(), status: 'active', base: base, logs: logs }], breatheLogs: {} };
+                      appData = { version: 12.9, cycles: [{ id: Date.now(), status: 'active', base: base, logs: logs }], breatheLogs: {} };
                   } else { 
                       appData = data; 
                   }
@@ -3044,7 +3036,7 @@
       const aLevels = ['Kein', 'Moderat', 'Hoch'];
       const mLevels = ['Kein', 'Moderat', 'Hoch'];
       
-      let desc = isSandbox ? `ReTrack SIMULATION\n\n` : `ReTrack V12.8\n\n`;
+      let desc = isSandbox ? `ReTrack SIMULATION\n\n` : `ReTrack V12.9\n\n`;
       desc += `--- Basis-Phase ---\n`;
       desc += `Start: ${parseLocal(activeCycle.base.start).toLocaleDateString('de-DE')}\n`;
       desc += `Ende: ${parseLocal(activeCycle.base.end).toLocaleDateString('de-DE')}\n`;
@@ -3059,18 +3051,26 @@
           const sortedLogs = [...res.history.logDetails].sort((a,b) => parseLocal(a.date) - parseLocal(b.date));
           sortedLogs.forEach(l => {
               let origLog = (activeCycle.logs || {})[l.date] || {};
-              let smallTxt = origLog.isSmall ? ' (Klein x2)' : '';
               let detailStr = res.history.penaltyDict[l.date] || `Strafe: +${l.p} Tage`;
-              desc += `[${parseLocal(l.date).toLocaleDateString('de-DE')}] Dauer: ${l.t}d${smallTxt} | S: ${sLevels[l.s]} | A: ${aLevels[l.a]} | M: ${mLevels[origLog.m || 0]} -> ${detailStr}\n`;
+              desc += `[${parseLocal(l.date).toLocaleDateString('de-DE')}] Dauer: ${l.t}d | S: ${sLevels[l.s]} | A: ${aLevels[l.a]} | M: ${mLevels[origLog.m || 0]} -> ${detailStr}\n`;
           });
       }
 
       const totalT = res.totalTDaysEver; 
       const totalRegenDebt = res.totalDebtEver; 
-      const aufschlag = totalRegenDebt - (totalT * 3); // Für die grobe Übersicht hier vereinfacht dargestellt.
+      
+      let expectedBaseDebtICS = activeCycle.base.isSmall ? (activeCycle.base.tDays * 2) : (activeCycle.base.tDays * 3);
+      if (res.history && res.history.logDetails) {
+          res.history.logDetails.forEach(l => {
+              expectedBaseDebtICS += l.b;
+          });
+      }
+      const aufschlag = totalRegenDebt - expectedBaseDebtICS;
       
       desc += `\n--- Gesamtbilanz ---\n`;
       desc += `T-Tage (Konsum) gesamt: ${totalT}\n`; 
+      desc += `Basis Schuld gesamt: ${expectedBaseDebtICS} Tage\n`;
+      desc += `Zusätzlicher Aufschlag: +${aufschlag} Tage\n`;
       desc += `Regenerationsschuld gesamt: ${totalRegenDebt} Tage\n`;
       desc += `\nEmpfohlene M-freie Tage: ${res.mFreeGoal}\n`;
       desc += `Ziel: ${res.finalEnd.toLocaleDateString('de-DE')}\n`;
@@ -3102,6 +3102,65 @@
       const link = document.createElement("a"); 
       link.href = URL.createObjectURL(blob); 
       link.download = isSandbox ? "simulation.ics" : "regeneration.ics"; 
+      link.click();
+  }
+
+  function exportDiaryTxt() {
+      const activeCycle = getActiveCycle();
+      if (!activeCycle || !activeCycle.base || !activeCycle.base.start) {
+          return customAlert("Kein aktiver Zyklus zum Exportieren gefunden.");
+      }
+
+      let txt = isSandbox ? `ReTrack SIMULATION TAGEBUCH\n\n` : `ReTrack TAGEBUCH\n\n`;
+
+      let curr = parseLocal(activeCycle.base.start);
+      const todayStr = toIsoString(new Date());
+      let endStr = isSandbox ? (activeSimResult && activeSimResult.finalEnd ? toIsoString(activeSimResult.finalEnd) : todayStr) : todayStr;
+
+      const sLevels = ['S:0', 'S:1', 'S:2'];
+      const aLevels = ['A:0', 'A:1', 'A:2'];
+      const mLevels = ['M:0', 'M:1', 'M:2'];
+      const moodEmojis = ["➖", "😞", "🙁", "😐", "🙂", "🤩"];
+
+      while (toIsoString(curr) <= endStr) {
+          let dStr = toIsoString(curr);
+          let log = (activeCycle.logs || {})[dStr];
+          let isBaseDay = (dStr >= activeCycle.base.start && dStr <= activeCycle.base.end);
+          let formattedDate = curr.toLocaleDateString('de-DE', {weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric'});
+
+          if (isBaseDay || log) {
+              let note = (log && log.note) ? log.note : "";
+              let mood = (log && log.mood > 0) ? log.mood : 0;
+              let moodStr = mood > 0 ? moodEmojis[mood] : "➖";
+
+              let typeStr = "";
+              let metaStr = "";
+
+              if (isBaseDay) {
+                  typeStr = activeCycle.base.isSmall ? "Basis-Phase (Klein)" : "Basis-Phase";
+                  metaStr = `M:${activeCycle.base.mLevel||0} | Mood: ${moodStr}`;
+              } else {
+                  if (log.type === 'ausrutscher') {
+                      typeStr = log.isSmall ? `Rauchen (${log.t}d, Klein)` : `Rauchen (${log.t}d)`;
+                  } else {
+                      typeStr = "Pause";
+                  }
+                  metaStr = `${sLevels[log.s||0]} | ${aLevels[log.a||0]} | ${mLevels[log.m||0]} | Mood: ${moodStr}`;
+              }
+
+              txt += `${formattedDate} | ${typeStr} | ${metaStr}\n`;
+              if (note) {
+                  txt += `Notiz: ${note}\n`;
+              }
+              txt += `--------------------------------------------------\n`;
+          }
+          curr.setDate(curr.getDate() + 1);
+      }
+
+      const blob = new Blob([txt], { type: "text/plain;charset=utf-8" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = isSandbox ? "simulation_tagebuch.txt" : "tagebuch.txt";
       link.click();
   }
 
