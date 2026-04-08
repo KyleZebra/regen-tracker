@@ -3,11 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
 
-  <title>ReTrack 12.3</title>
+  <title>ReTrack 12.4</title>
   
   <link rel="manifest" href="./manifest.json" />
   <meta name="theme-color" content="#f1c40f" />
@@ -301,7 +302,7 @@
       </div>
   </div>
 
-  <!-- SANDBOX BANNER -->
+  <!-- SANDBOX BANNER (ohne "Als Ziel setzen" Button) -->
   <div id="sandbox-banner">
       🧪 SIMULATIONS-MODUS AKTIV
       <div class="sandbox-actions">
@@ -312,7 +313,7 @@
 
   <header onclick="openBreatheOverlay()" title="Geheime Atem-Übung öffnen">
     <h1>🧪 ReTrack</h1>
-    <div class="version">Version 12.3 – Expanded & Robust</div>
+    <div class="version">Version 12.4 – Dynamic Budget Engine</div>
   </header>
 
   <div class="tabs">
@@ -354,8 +355,8 @@
                 </div>
             </div>
 
-            <!-- Budget Box -->
-            <div id="dash-budget-box" class="outlook-box" style="display:none; background:#fdfafb; border: 2px dashed #9b59b6; cursor:pointer;" onclick="openTargetModal()">
+            <!-- Budget Box V12.4 -->
+            <div id="dash-budget-box" class="outlook-box" style="display:none; background:#fdfafb; border: 2px dashed #9b59b6; cursor:pointer;" onclick="openTargetModal()" title="Ziel & Budget bearbeiten">
                 <div id="budget-content-active" style="display:none;">
                     <div class="outlook-title" style="justify-content:space-between; color:#8e44ad;">
                         <span>🎯 Ziel: <span id="budget-target-date"></span></span>
@@ -575,7 +576,7 @@
     </div>
   </div>
 
-  <!-- Target Modal -->
+  <!-- Target Modal V12.4 -->
   <div id="modal-target" class="modal-overlay">
     <div class="modal-card">
       <h3 style="color:#8e44ad; margin-bottom: 5px;">🎯 Ziel & Budget</h3>
@@ -890,7 +891,7 @@
       if(e) e[prop] = val; 
   };
 
-  let appData = { version: 12.3, cycles: [], breatheLogs: {} };
+  let appData = { version: 12.4, cycles: [], breatheLogs: {} };
   let isSandbox = false; 
   let sandboxData = null;
 
@@ -969,7 +970,7 @@
       safeDisplay(id, 'none'); 
   }
 
-  // --- Target/Budget Functions ---
+  // --- Target/Budget Functions (V12.4) ---
   function openTargetModal() { 
       let active = getActiveCycle(); 
       if(!active) return; 
@@ -996,6 +997,60 @@
       }
       closeModal('modal-target'); 
       saveData(); 
+  }
+
+  // --- Budget Calculation Logic (Isolated Virtual Clone) ---
+  function calculateBudget(targetETAStr) {
+      let active = getActiveCycle(); 
+      if (!active || !activeSimResult || activeSimResult.failed) return { budget: 0, over: false };
+      
+      let targetDate = parseLocal(targetETAStr); 
+      if (!targetDate || isNaN(targetDate.getTime())) return { budget: 0, over: false };
+
+      let currentEnd = new Date(activeSimResult.finalEnd); 
+      if (currentEnd > targetDate) {
+          return { budget: diffDays(targetDate, currentEnd), over: true }; 
+      }
+      
+      let budget = 0;
+      let testCycle = JSON.parse(JSON.stringify(active));
+      if (!testCycle.logs) testCycle.logs = {};
+
+      let safety = 0;
+      let simDate = new Date(); 
+      simDate.setDate(simDate.getDate() + 1);
+
+      while (budget < 50 && safety < 150) { 
+          safety++;
+          let testDateStr = toIsoString(simDate);
+          
+          if (testCycle.logs[testDateStr] !== undefined) { 
+              simDate.setDate(simDate.getDate() + 1); 
+              continue; 
+          }
+          
+          testCycle.logs[testDateStr] = { 
+              type: 'ausrutscher', 
+              t: 1, 
+              s: 0, 
+              a: 0, 
+              m: 0, 
+              mood: 0, 
+              note: "Budget-Test", 
+              isSimulated: true 
+          };
+          
+          let res = simulateCycle(testCycle);
+          
+          if (res && !res.failed && res.finalEnd <= targetDate) { 
+              budget++; 
+              // Skip 4 days forward to ensure the next virtual slip-up is an isolated block (pessimistic)
+              simDate.setDate(simDate.getDate() + 4); 
+          } else {
+              break; 
+          }
+      }
+      return { budget: budget, over: false };
   }
 
   window.deleteArchivedCycle = function(id) {
@@ -1086,11 +1141,11 @@
               let data = JSON.parse(saved); 
               if (data && typeof data === 'object') {
                   if (data.version >= 5) { 
-                      data.version = 12.3; 
+                      data.version = 12.4; 
                       appData = data; 
                   } else if (data.base) { 
                       appData = { 
-                          version: 12.3, 
+                          version: 12.4, 
                           cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }], 
                           breatheLogs: {} 
                       }; 
@@ -1800,60 +1855,6 @@
       }
   }
 
-  // --- V12.3: Dynamic Budget Calculator (Hardened Loop) ---
-  function calculateBudget(targetETAStr) {
-      let active = getActiveCycle(); 
-      if (!active || !activeSimResult || activeSimResult.failed) return { budget: 0, over: false };
-      
-      let targetDate = parseLocal(targetETAStr); 
-      if (!targetDate || isNaN(targetDate.getTime())) return { budget: 0, over: false };
-
-      let currentEnd = new Date(activeSimResult.finalEnd); 
-      if (currentEnd > targetDate) {
-          return { budget: diffDays(targetDate, currentEnd), over: true }; 
-      }
-      
-      let budget = 0;
-      let testCycle = JSON.parse(JSON.stringify(active));
-      if (!testCycle.logs) testCycle.logs = {};
-
-      let safety = 0;
-      let simDate = new Date(); 
-      simDate.setDate(simDate.getDate() + 1);
-
-      while (budget < 50 && safety < 150) { 
-          safety++;
-          let testDateStr = toIsoString(simDate);
-          
-          if (testCycle.logs[testDateStr] !== undefined) { 
-              simDate.setDate(simDate.getDate() + 1); 
-              continue; 
-          }
-          
-          testCycle.logs[testDateStr] = { 
-              type: 'ausrutscher', 
-              t: 1, 
-              s: 0, 
-              a: 0, 
-              m: 0, 
-              mood: 0, 
-              note: "Budget-Test", 
-              isSimulated: true 
-          };
-          
-          let res = simulateCycle(testCycle);
-          
-          if (res && !res.failed && res.finalEnd <= targetDate) { 
-              budget++; 
-              // Skip 4 days forward to ensure the next virtual slip-up is an isolated block
-              simDate.setDate(simDate.getDate() + 4); 
-          } else {
-              break; 
-          }
-      }
-      return { budget: budget, over: false };
-  }
-
   function updateUI() {
       const active = getActiveCycle();
       safeDisplay('dashboard-main', active ? 'block' : 'none');
@@ -1993,7 +1994,7 @@
           safeDisplay('dash-streak', 'none');
       }
 
-      // V12.3 Budget UI Live Updater
+      // V12.4 Budget UI Live Updater
       if (!isSandbox && !res.isOpen) {
           safeDisplay('dash-budget-box', 'block');
           
@@ -2196,6 +2197,7 @@
       safeHTML("calendar", calHtml);
   }
 
+  // --- Weitere Rendering Funktionen ---
   function renderArchiv() {
       const archContainer = document.getElementById('archive-container'); 
       if(!archContainer) return;
@@ -2264,7 +2266,7 @@
               if (i===0 || diffDays(pastN[i-1], pastN[i]) === 1) {
                   currentStreak++; 
               } else { 
-                  maxNirwana = Math.max(maxNirwana, currentStreak); 
+                  maxNirwana = Math.max(maxNirvana, currentStreak); 
                   currentStreak = 1; 
               } 
           }
@@ -2515,6 +2517,415 @@
               ${globalSimResults.map(r => r ? (r.failed ? \`[FAILED: \${r.cycleId}]\` : r.cycleId) : '[NULL]').join(', ')}
           </div>
       </details>`);
+  }
+
+  // --- EXPORT & IMPORT ---
+  function exportData() {
+      let exportObj = JSON.parse(JSON.stringify(getApp())); 
+      if (isSandbox) exportObj.isSandbox = true;
+      const blob = new Blob([JSON.stringify(exportObj, null, 2)], {type: "application/json"});
+      const link = document.createElement('a'); 
+      link.href = URL.createObjectURL(blob); 
+      link.download = isSandbox ? "lifetracker_simulation.json" : "lifetracker_backup.json"; 
+      link.click();
+  }
+
+  function importData(input) {
+      const file = input.files[0]; 
+      if (!file) return; 
+      const reader = new FileReader();
+      
+      reader.onload = function(e) {
+          try {
+              let data = JSON.parse(e.target.result);
+              
+              if (!data || typeof data !== 'object' || (!data.cycles && !data.base && data.tDays === undefined)) {
+                  throw new Error("Ungültiges Dateiformat. Keine App-Daten gefunden.");
+              }
+              if (data.cycles && !Array.isArray(data.cycles)) {
+                  throw new Error("Ungültiges Dateiformat. Zyklen müssen eine Liste sein.");
+              }
+
+              if (!isSandbox && data.isSandbox) { 
+                  input.value = ''; 
+                  return customAlert("Achtung: Dies ist eine Simulations-Datei. Du kannst sie nur im Labor (Ring klicken) laden!"); 
+              }
+              
+              if (isSandbox) { 
+                  sandboxData = data; 
+                  runAllSimulations(); 
+                  input.value = ''; 
+                  customAlert("Simulation erfolgreich in die Sandbox geladen!");
+              } else {
+                  if (data.version >= 5) { 
+                      data.version = 12.4; 
+                      appData = data; 
+                  } else if (data.base && !data.cycles) { 
+                      appData = { version: 12.4, cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }], breatheLogs: {} };
+                  } else if (data.tDays !== undefined && !data.base) {
+                      let base = { start: data.startDate, end: data.endDate, tDays: parseInt(data.tDays)||0, sLevel: parseInt(data.stress)||0, aLevel: parseInt(data.alcohol)||0, mLevel: 0, isOpen: false };
+                      let logs = {}; 
+                      if(data.interruptions) { data.interruptions.forEach(int => { logs[int.start] = { type: 'ausrutscher', t: parseInt(int.t)||1, s: parseInt(int.s)||0, a: parseInt(int.a)||0, m: 0 }; }); }
+                      appData = { version: 12.4, cycles: [{ id: Date.now(), status: 'active', base: base, logs: logs }], breatheLogs: {} };
+                  } else { 
+                      appData = data; 
+                  }
+                  
+                  if (appData.cycles && Array.isArray(appData.cycles)) {
+                      appData.cycles = appData.cycles.filter(c => c && c.base && c.base.start);
+                      appData.cycles.forEach(c => {
+                          if (c.base.mLevel === undefined) c.base.mLevel = 0;
+                          if (!c.logs) c.logs = {};
+                          Object.values(c.logs).forEach(l => {
+                              if (l && typeof l === 'object' && l.m === undefined) l.m = 0;
+                          });
+                          if (!c.monthlyNotes) c.monthlyNotes = {};
+                      });
+                  }
+                  
+                  appData.cycles = Array.isArray(appData.cycles) ? appData.cycles : []; 
+                  appData.breatheLogs = appData.breatheLogs || {};
+                  
+                  saveData(true); 
+                  const hasActive = appData.cycles.some(c => c.status === 'active'); 
+                  if (!hasActive && appData.cycles.length > 0) { sessionStorage.setItem('retrack_target_tab', 'archiv'); }
+                  customAlert("Daten erfolgreich geladen! Die Seite wird nun aktualisiert.", () => { 
+                      input.value = ''; 
+                      if (!isSandbox) window.location.href = window.location.href.split('?')[0]; 
+                  });
+              }
+          } catch(err) { 
+              input.value = ''; 
+              customAlert("Fehler beim Laden: " + err.message || err); 
+          }
+      };
+      reader.onerror = function() { input.value = ''; customAlert("Fehler beim Lesen der Datei auf dem Gerät."); };
+      reader.readAsText(file); 
+  }
+  
+  function downloadICS() {
+      if(!activeSimResult) return; 
+      const res = activeSimResult; 
+      const activeCycle = getActiveCycle();
+      
+      if (!activeCycle || !activeCycle.base || !activeCycle.base.start) {
+          return customAlert("Kein aktiver Zyklus zum Exportieren gefunden.");
+      }
+      
+      const sLevels = ['Kein', 'Moderat', 'Hoch']; 
+      const aLevels = ['Kein', 'Moderat', 'Hoch'];
+      const mLevels = ['Kein', 'Moderat', 'Hoch'];
+      
+      let desc = isSandbox ? `ReTrack SIMULATION\n\n` : `ReTrack V12.4\n\n`;
+      desc += `--- Basis-Phase ---\n`;
+      desc += `Start: ${parseLocal(activeCycle.base.start).toLocaleDateString('de-DE')}\n`;
+      desc += `Ende: ${parseLocal(activeCycle.base.end).toLocaleDateString('de-DE')}\n`;
+      desc += `T-Tage: ${activeCycle.base.tDays}d\n`;
+      desc += `Stress (Max): ${sLevels[activeCycle.base.sLevel]}\n`;
+      desc += `Alkohol (Max): ${aLevels[activeCycle.base.aLevel]}\n`;
+      desc += `Masturbation (M): ${mLevels[activeCycle.base.mLevel || 0]}\n`;
+      desc += `${res.basePenaltyStr}\n`;
+      
+      if(res.history.logDetails.length > 0) {
+          desc += `\n--- Rauchen / Logs ---\n`;
+          const sortedLogs = [...res.history.logDetails].sort((a,b) => parseLocal(a.date) - parseLocal(b.date));
+          sortedLogs.forEach(l => {
+              let detailStr = res.history.penaltyDict[l.date] || `Strafe: +${l.p} Tage`;
+              let origLog = (activeCycle.logs || {})[l.date] || {};
+              desc += `[${parseLocal(l.date).toLocaleDateString('de-DE')}] Dauer: ${l.t}d | S: ${sLevels[l.s]} | A: ${aLevels[l.a]} | M: ${mLevels[origLog.m || 0]} -> ${detailStr}\n`;
+          });
+      }
+
+      const totalT = res.totalTDaysEver; 
+      const totalRegenDebt = res.totalDebtEver; 
+      const aufschlag = totalRegenDebt - (totalT * 3);
+      
+      desc += `\n--- Gesamtbilanz ---\n`;
+      desc += `T-Tage (Konsum) gesamt: ${totalT}\n`; 
+      desc += `x3 Schuld: ${totalT * 3} Tage\n`; 
+      desc += `Zusätzlicher Aufschlag: +${aufschlag} Tage\n`; 
+      desc += `Regenerationsschuld gesamt: ${totalRegenDebt} Tage\n`;
+      desc += `\nEmpfohlene M-freie Tage: ${res.mFreeGoal}\n`;
+      desc += `Ziel: ${res.finalEnd.toLocaleDateString('de-DE')}\n`;
+
+      if (activeCycle.monthlyNotes && Object.keys(activeCycle.monthlyNotes).length > 0) {
+          desc += `\n--- Monats-Notizen ---\n`;
+          const monthNames = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
+          Object.keys(activeCycle.monthlyNotes).sort().forEach(mKey => {
+              let parts = mKey.split('-');
+              let mName = `${monthNames[parseInt(parts[1])-1]} ${parts[0]}`;
+              let notes = activeCycle.monthlyNotes[mKey];
+              if (notes.erk || notes.dtx) {
+                  desc += `${mName}:\n`;
+                  if (notes.erk) desc += ` Erkenntnisse: ${notes.erk.replace(/\n/g, ' ')}\n`;
+                  if (notes.dtx) desc += ` DTX: ${notes.dtx.replace(/\n/g, ' ')}\n`;
+              }
+          });
+      }
+
+      const exportDates = [...res.history.b, ...res.history.r].sort((a,b) => a-b);
+      if(exportDates.length === 0) return customAlert("Keine Erholungstage zum Exportieren gefunden.");
+      
+      const start = exportDates[0]; 
+      const end = addDays(exportDates[exportDates.length - 1], 1); 
+      const formatDate = d => `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
+      
+      const ics = `BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nUID:${Date.now()}@regenrechner\nDTSTAMP:${formatDate(new Date())}T000000Z\nDTSTART;VALUE=DATE:${formatDate(start)}\nDTEND;VALUE=DATE:${formatDate(end)}\nSUMMARY:${isSandbox ? 'Simulation:' : ''} Regenerationsphase (${exportDates.length} Tage)\nDESCRIPTION:${desc.replace(/\n/g, '\\n')}\nEND:VEVENT\nEND:VCALENDAR`;
+      const blob = new Blob([ics], { type: "text/calendar" }); 
+      const link = document.createElement("a"); 
+      link.href = URL.createObjectURL(blob); 
+      link.download = isSandbox ? "simulation.ics" : "regeneration.ics"; 
+      link.click();
+  }
+
+  function downloadImage() {
+      const exportCard = document.getElementById("export-card"); 
+      if(!exportCard) return;
+      const wrapper = exportCard.querySelector('.calendar-wrapper');
+      const oldOverflow = wrapper.style.overflowX; 
+      const oldWidth = exportCard.style.width;
+      
+      wrapper.style.overflowX = 'visible'; 
+      exportCard.style.width = wrapper.scrollWidth + 40 + 'px'; 
+      
+      html2canvas(exportCard, { scale: 2, backgroundColor: isSandbox ? "#f5eef8" : "#ffffff" }).then(canvas => {
+          wrapper.style.overflowX = oldOverflow; 
+          exportCard.style.width = oldWidth;
+          const link = document.createElement("a"); 
+          link.download = isSandbox ? "simulation_zyklus.png" : "aktueller_zyklus.png"; 
+          link.href = canvas.toDataURL("image/png"); 
+          link.click();
+      });
+  }
+
+  // --- BREATHE MODULE ---
+  let isBreatheActive = false; 
+  let brAnimationId = null; 
+  let brStartTime = 0; 
+  let brTotalDuration = 0; 
+  let brCurrentPhase = -1; 
+  let brWakeLock = null; 
+  let audioCtx = null;
+  
+  function openBreatheOverlay() { 
+      if (isBreatheActive) return; 
+      safeDisplay('breathe-overlay', 'flex'); 
+      safeDisplay('br-setup', 'block'); 
+      safeDisplay('br-active', 'none'); 
+      safeDisplay('br-done', 'none'); 
+      
+      safeSetVal('br-duration', 3); 
+      safeText('br-duration-display', '3');
+  }
+  
+  async function requestWakeLock() { 
+      try { if ('wakeLock' in navigator) brWakeLock = await navigator.wakeLock.request('screen'); } catch (err) {} 
+  }
+  
+  function releaseWakeLock() { 
+      if (brWakeLock !== null) { brWakeLock.release(); brWakeLock = null; } 
+  }
+  
+  function initAudio() { 
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); 
+      if (audioCtx.state === 'suspended') audioCtx.resume(); 
+  }
+  
+  function playPhaseSound(phase) {
+      if (!audioCtx) return; 
+      const osc = audioCtx.createOscillator(); 
+      const gain = audioCtx.createGain(); 
+      osc.connect(gain); 
+      gain.connect(audioCtx.destination); 
+      const now = audioCtx.currentTime;
+      
+      if (phase === 0) { 
+          osc.type = 'sine'; 
+          osc.frequency.setValueAtTime(261.63, now); 
+          osc.frequency.linearRampToValueAtTime(329.63, now + 4); 
+          gain.gain.setValueAtTime(0, now); 
+          gain.gain.linearRampToValueAtTime(0.3, now + 1); 
+          gain.gain.setValueAtTime(0.3, now + 3); 
+          gain.gain.linearRampToValueAtTime(0, now + 4); 
+          osc.start(now); 
+          osc.stop(now + 4);
+      } else if (phase === 1) { 
+          osc.type = 'triangle'; 
+          osc.frequency.setValueAtTime(659.25, now); 
+          gain.gain.setValueAtTime(0, now); 
+          gain.gain.linearRampToValueAtTime(0.15, now + 0.05); 
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 2); 
+          osc.start(now); 
+          osc.stop(now + 2);
+      } else if (phase === 2) { 
+          osc.type = 'sine'; 
+          osc.frequency.setValueAtTime(329.63, now); 
+          osc.frequency.linearRampToValueAtTime(196.00, now + 4); 
+          gain.gain.setValueAtTime(0, now); 
+          gain.gain.linearRampToValueAtTime(0.3, now + 1); 
+          gain.gain.setValueAtTime(0.3, now + 3); 
+          gain.gain.linearRampToValueAtTime(0, now + 4); 
+          osc.start(now); 
+          osc.stop(now + 4);
+      } else if (phase === 3) { 
+          osc.type = 'triangle'; 
+          osc.frequency.setValueAtTime(440.00, now); 
+          gain.gain.setValueAtTime(0, now); 
+          gain.gain.linearRampToValueAtTime(0.2, now + 0.05); 
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 1.5); 
+          osc.start(now); 
+          osc.stop(now + 1.5); 
+      }
+  }
+  
+  function startBreathe() {
+      const minutes = parseInt(safeVal('br-duration')); 
+      if (isNaN(minutes) || minutes < 1 || minutes > 60) return customAlert("Bitte eine Dauer zwischen 1 und 60 Minuten wählen.");
+      
+      brTotalDuration = minutes * 60 * 1000; 
+      isBreatheActive = true; 
+      brStartTime = 0; 
+      brCurrentPhase = -1;
+      
+      safeDisplay('br-setup', 'none'); 
+      safeDisplay('br-active', 'flex');
+      
+      initAudio(); 
+      requestWakeLock(); 
+      brAnimationId = requestAnimationFrame(breatheLoop);
+  }
+  
+  function breatheLoop(timestamp) {
+      if (!isBreatheActive) return; 
+      if (!brStartTime) brStartTime = timestamp;
+      
+      const elapsed = timestamp - brStartTime; 
+      const timeLeft = brTotalDuration - elapsed;
+      
+      if (timeLeft <= 0) { finishBreathe(); return; }
+      
+      const secsLeft = Math.ceil(timeLeft / 1000); 
+      const m = String(Math.floor(secsLeft / 60)).padStart(2, '0'); 
+      const s = String(secsLeft % 60).padStart(2, '0'); 
+      safeText('br-timer', `${m}:${s}`);
+      
+      const cycleTime = elapsed % 16000; 
+      let phase = Math.floor(cycleTime / 4000); 
+      let phaseProgress = (cycleTime % 4000) / 4000; 
+      
+      if (phase !== brCurrentPhase) {
+          brCurrentPhase = phase; 
+          playPhaseSound(phase); 
+          const textEl = document.getElementById('br-text');
+          if (textEl) {
+              if (phase === 0) { textEl.textContent = "Einatmen"; textEl.style.color = "#ecf0f1"; } 
+              else if (phase === 1) { textEl.textContent = "Halten"; textEl.style.color = "#f1c40f"; } 
+              else if (phase === 2) { textEl.textContent = "Ausatmen"; textEl.style.color = "#ecf0f1"; } 
+              else if (phase === 3) { textEl.textContent = "Halten"; textEl.style.color = "#95a5a6"; }
+          }
+      }
+      
+      const circle = document.getElementById('br-circle'); 
+      let scale = 1;
+      
+      if (phase === 0) { 
+          const ease = phaseProgress < 0.5 ? 2 * phaseProgress * phaseProgress : 1 - Math.pow(-2 * phaseProgress + 2, 2) / 2; 
+          scale = 1 + ease * 1.8; 
+      } else if (phase === 1) { 
+          scale = 2.8; 
+      } else if (phase === 2) { 
+          const ease = phaseProgress < 0.5 ? 2 * phaseProgress * phaseProgress : 1 - Math.pow(-2 * phaseProgress + 2, 2) / 2; 
+          scale = 2.8 - ease * 1.8; 
+      } else if (phase === 3) { 
+          scale = 1; 
+      }
+      
+      if(circle) circle.style.transform = `scale(${scale})`; 
+      brAnimationId = requestAnimationFrame(breatheLoop);
+  }
+  
+  function finishBreathe() {
+      isBreatheActive = false; 
+      cancelAnimationFrame(brAnimationId); 
+      releaseWakeLock();
+      
+      if (audioCtx) { 
+          const now = audioCtx.currentTime; 
+          const osc = audioCtx.createOscillator(); 
+          const gain = audioCtx.createGain(); 
+          osc.connect(gain); 
+          gain.connect(audioCtx.destination); 
+          osc.type = 'sine'; 
+          osc.frequency.setValueAtTime(440, now); 
+          osc.frequency.setValueAtTime(523.25, now + 1); 
+          gain.gain.setValueAtTime(0, now); 
+          gain.gain.linearRampToValueAtTime(0.3, now + 0.1); 
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 3); 
+          osc.start(now); 
+          osc.stop(now + 3); 
+      }
+      
+      safeDisplay('br-active', 'none'); 
+      safeDisplay('br-done', 'block');
+      
+      const todayStr = toIsoString(new Date()); 
+      if (!appData.breatheLogs) appData.breatheLogs = {}; 
+      
+      let currentLog = appData.breatheLogs[todayStr];
+      if (typeof currentLog === 'number') {
+          currentLog = { count: currentLog, minutes: currentLog * 3 };
+      } else if (!currentLog) {
+          currentLog = { count: 0, minutes: 0 };
+      }
+      
+      currentLog.count += 1;
+      currentLog.minutes += Math.round(brTotalDuration / 60000); 
+      
+      appData.breatheLogs[todayStr] = currentLog;
+      
+      localStorage.setItem('regenAppData_v6', JSON.stringify(appData)); 
+      
+      if (isSandbox && sandboxData) { 
+          sandboxData.breatheLogs = JSON.parse(JSON.stringify(appData.breatheLogs)); 
+      }
+      
+      updateUI(); 
+      if (document.getElementById('diary-container')?.style.display === 'block') { renderDiaryList(); }
+  }
+  
+  function abortBreathe() { 
+      isBreatheActive = false; 
+      if (brAnimationId) cancelAnimationFrame(brAnimationId); 
+      releaseWakeLock(); 
+      safeDisplay('breathe-overlay', 'none'); 
+  }
+  
+  // --- SW UPDATE LOGIC ---
+  let newWorker; 
+  function applyPwaUpdate() { 
+      if (newWorker) newWorker.postMessage({ action: 'skipWaiting' }); 
+  }
+
+  if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js').then(reg => {
+              reg.addEventListener('updatefound', () => { 
+                  newWorker = reg.installing; 
+                  newWorker.addEventListener('statechange', () => { 
+                      if (newWorker.state === 'installed' && navigator.serviceWorker.controller) { 
+                          safeDisplay('update-banner', 'block'); 
+                      } 
+                  }); 
+              });
+          }).catch(err => console.error('Service Worker Fehler', err));
+          
+          let refreshing; 
+          navigator.serviceWorker.addEventListener('controllerchange', () => { 
+              if (refreshing) return; 
+              refreshing = true; 
+              window.location.reload(); 
+          });
+      });
   }
 </script>
 </body>
