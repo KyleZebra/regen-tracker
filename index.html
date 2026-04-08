@@ -8,7 +8,7 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
 
-  <title>ReTrack 12.6</title>
+  <title>ReTrack 12.7</title>
   
   <link rel="manifest" href="./manifest.json" />
   <meta name="theme-color" content="#f1c40f" />
@@ -142,10 +142,22 @@
     .btn-ausrutscher { background: #e74c3c; box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3); }
     .undo-link { color: #7f8c8d; font-size: 0.85rem; text-decoration: underline; cursor: pointer; display: inline-block; margin-top: 10px; }
 
-    /* Modals - Z-Index Protected */
+    /* Modals - Sicherung der Z-Indexes & Pointer-Events */
     #modal-alert, #modal-confirm, #modal-target { z-index: 9999 !important; }
-    .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 100; justify-content: center; align-items: center; padding: 20px; }
-    .modal-overlay.active { display: flex; animation: fadeIn 0.2s; }
+    .modal-overlay { 
+        display: none; 
+        position: fixed; 
+        top: 0; left: 0; right: 0; bottom: 0; 
+        background: rgba(0,0,0,0.5); 
+        z-index: 100; 
+        justify-content: center; 
+        align-items: center; 
+        padding: 20px; 
+    }
+    .modal-overlay.active { 
+        display: flex !important; 
+        animation: fadeIn 0.2s; 
+    }
     .modal-card { background: white; padding: 20px; border-radius: 16px; width: 100%; max-width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto;}
     .modal-actions { display: flex; gap: 10px; margin-top: 20px; flex-direction: column;} 
     .modal-actions-row { display: flex; gap: 10px; width: 100%;}
@@ -313,7 +325,7 @@
 
   <header onclick="openBreatheOverlay()" title="Geheime Atem-Übung öffnen">
     <h1>🧪 ReTrack</h1>
-    <div class="version">Version 12.6 – Stable Budget Edition</div>
+    <div class="version">Version 12.7 – Stable UI Modals</div>
   </header>
 
   <div class="tabs">
@@ -384,7 +396,7 @@
             <div id="daily-done-area" style="display:none; text-align: center; padding: 15px; background: #f0fdf4; border-radius: 12px; color: #155724; border: 1px solid #c3e6cb;">
                 <div style="font-weight: 800; font-size: 1.1rem; margin-bottom: 5px;">✅ Eintrag gespeichert!</div>
                 <div style="font-size: 0.9rem; opacity: 0.9;">Die Statistik wurde aktualisiert.</div>
-                <span class="undo-link" onclick="editToday()">Eintrag für heute bearbeiten / löschen</span>
+                <span class="undo-link" onclick="editToday()">Eintrag bearbeiten / löschen</span>
             </div>
         </div>
     </div>
@@ -562,7 +574,7 @@
     <div class="modal-card" style="text-align:center;">
       <h3>ℹ️ Hinweis</h3>
       <p id="alert-message" style="margin-bottom: 20px; color: #555;"></p>
-      <button class="btn-quick btn-pausiert" style="width:100%;" id="alert-ok-btn" onclick="closeModal('modal-alert')">OK</button>
+      <button class="btn-quick btn-pausiert" style="width:100%;" id="alert-ok-btn">OK</button>
     </div>
   </div>
   
@@ -577,7 +589,7 @@
     </div>
   </div>
 
-  <!-- Target Modal V12.6 -->
+  <!-- Target Modal V12.7 -->
   <div id="modal-target" class="modal-overlay">
     <div class="modal-card">
       <h3 style="color:#8e44ad; margin-bottom: 5px;">🎯 Ziel & Budget</h3>
@@ -730,9 +742,12 @@
                   <option value="ausrutscher">🔴 Rauchen</option>
               </select>
           </div>
+          
           <div class="form-group-full" id="edit-t-wrapper" style="display:none;">
-              <input type="hidden" id="edit-day-t" value="1">
+              <label>Dauer (Tage)</label>
+              <input type="number" id="edit-day-t" value="1" min="1">
           </div>
+
           <div>
               <label>Stress</label>
               <select id="edit-day-s">
@@ -892,7 +907,7 @@
       if (e) e[prop] = val; 
   };
 
-  let appData = { version: 12.6, cycles: [], breatheLogs: {} };
+  let appData = { version: 12.7, cycles: [], breatheLogs: {} };
   let isSandbox = false; 
   let sandboxData = null;
 
@@ -940,9 +955,20 @@
       return Math.round((d2 - d1) / (24 * 60 * 60 * 1000));
   };
 
+  // --- Modal Logic (Restored to 11.1 classList system) ---
+  function closeModal(id) { 
+      const m = document.getElementById(id);
+      if (m) {
+          m.classList.remove('active'); 
+          m.style.display = ''; // Clean up any rogue inline styles
+      }
+  }
+
   function customAlert(msg, callback) { 
       safeText('alert-message', msg); 
-      safeDisplay('modal-alert', 'flex'); 
+      const m = document.getElementById('modal-alert');
+      if (m) m.classList.add('active'); 
+      
       const b = document.getElementById('alert-ok-btn'); 
       if (b) {
           b.onclick = () => { 
@@ -956,7 +982,8 @@
   function customConfirm(msg, action) { 
       safeText('confirm-message', msg); 
       pendingConfirmAction = action; 
-      safeDisplay('modal-confirm', 'flex'); 
+      const m = document.getElementById('modal-confirm');
+      if (m) m.classList.add('active'); 
   }
   
   function executeConfirm() { 
@@ -966,17 +993,14 @@
           pendingConfirmAction = null; 
       } 
   }
-  
-  function closeModal(id) { 
-      safeDisplay(id, 'none'); 
-  }
 
-  // --- Target/Budget Functions (V12.6) ---
+  // --- Target/Budget Functions ---
   function openTargetModal() { 
       let active = getActiveCycle(); 
       if (!active) return; 
       safeSetVal('target-input-date', active.targetETA || ""); 
-      safeDisplay('modal-target', 'flex'); 
+      const m = document.getElementById('modal-target');
+      if (m) m.classList.add('active'); 
   }
   
   function saveTargetETA() { 
@@ -1022,7 +1046,6 @@
       let simDate = new Date(); 
       simDate.setDate(simDate.getDate() + 1);
 
-      // Wir erstellen EINE exakte, isolierte Kopie des aktiven Zyklus für alle Tests.
       let testCycle = JSON.parse(JSON.stringify(active));
       if (!testCycle.logs) testCycle.logs = {};
 
@@ -1030,13 +1053,11 @@
           safety++;
           let testDateStr = toIsoString(simDate);
           
-          // Finde den nächsten noch nicht belegten Tag in der Zukunft
           if (testCycle.logs[testDateStr] !== undefined) { 
               simDate.setDate(simDate.getDate() + 1); 
               continue; 
           }
           
-          // Füge einen fiktiven Standard-Ausrutscher hinzu
           testCycle.logs[testDateStr] = { 
               type: 'ausrutscher', 
               t: 1, 
@@ -1052,8 +1073,6 @@
           
           if (res && !res.failed && res.finalEnd <= targetDate) { 
               budget++; 
-              // Setze das Datum 4 Tage in die Zukunft, um zu garantieren, dass der nächste
-              // fiktive Test-Rückfall isoliert gewertet wird (damit die Pauschalstrafe voll greift).
               simDate.setDate(simDate.getDate() + 4); 
           } else {
               break; 
@@ -1150,11 +1169,11 @@
               let data = JSON.parse(saved); 
               if (data && typeof data === 'object') {
                   if (data.version >= 5) { 
-                      data.version = 12.6; 
+                      data.version = 12.7; 
                       appData = data; 
                   } else if (data.base) { 
                       appData = { 
-                          version: 12.6, 
+                          version: 12.7, 
                           cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }], 
                           breatheLogs: {} 
                       }; 
@@ -1506,7 +1525,11 @@
   }
 
   function editToday() { 
-      openDiaryEdit(toIsoString(new Date())); 
+      try {
+          openDiaryEdit(toIsoString(new Date())); 
+      } catch (e) {
+          console.error("editToday Error:", e);
+      }
   }
 
   function openAusrutscherModal(isPast = false) { 
@@ -1633,6 +1656,283 @@
       } 
   }
 
+  function toggleDiary() { 
+      try {
+          const d = document.getElementById('diary-container'); 
+          if(!d) return;
+          const isHidden = (d.style.display === 'none' || d.style.display === '');
+          if (isHidden) { 
+              d.style.display = 'block'; 
+              renderDiaryList(); 
+          } else { 
+              d.style.display = 'none'; 
+          } 
+      } catch (e) {
+          console.error("toggleDiary error:", e);
+      }
+  }
+  
+  function saveMonthlyNotes(mKey, btn) {
+      const active = getActiveCycle();
+      if(!active) return;
+      if(!active.monthlyNotes) active.monthlyNotes = {};
+      
+      const erkVal = (safeVal(`note-erk-${mKey}`) || "").trim();
+      const dtxVal = (safeVal(`note-dtx-${mKey}`) || "").trim();
+      
+      active.monthlyNotes[mKey] = { erk: erkVal, dtx: dtxVal };
+      saveData(true); 
+      
+      if(btn && btn.nextElementSibling) {
+          const msg = btn.nextElementSibling;
+          msg.style.display = 'inline-block';
+          setTimeout(() => msg.style.display = 'none', 2000);
+      }
+  }
+
+  function renderDiaryList() {
+      try {
+          const active = getActiveCycle(); 
+          if(!active || !active.base || !active.base.start) return;
+          
+          let curr = parseLocal(active.base.start); 
+          if(!curr || isNaN(curr.getTime())) return;
+
+          const todayStr = toIsoString(new Date());
+          let endStr = isSandbox ? (activeSimResult && activeSimResult.finalEnd ? toIsoString(activeSimResult.finalEnd) : todayStr) : todayStr;
+          
+          const moodEmojis = ["", "😞", "🙁", "😐", "🙂", "🤩"]; 
+          const sLevels = ['S:0', 'S:1', 'S:2']; 
+          const aLevels = ['A:0', 'A:1', 'A:2']; 
+          const mLevels = ['M:0', 'M:1', 'M:2'];
+          let items = [];
+
+          while (toIsoString(curr) <= endStr) {
+              let dStr = toIsoString(curr); 
+              let log = (active.logs || {})[dStr]; 
+              let isBaseDay = (dStr >= active.base.start && dStr <= active.base.end);
+              let formattedDate = curr.toLocaleDateString('de-DE', {weekday: 'short', day: '2-digit', month: '2-digit'}); 
+              let monthYear = curr.toLocaleDateString('de-DE', {month: 'long', year: 'numeric'});
+              let mKey = `${curr.getFullYear()}-${String(curr.getMonth()+1).padStart(2,'0')}`;
+              
+              const app = getApp();
+              let brLog = app.breatheLogs ? app.breatheLogs[dStr] : null;
+              let breatheCount = 0;
+              if (typeof brLog === 'number') breatheCount = brLog;
+              else if (brLog && typeof brLog === 'object') breatheCount = brLog.count || 0;
+              
+              if (isBaseDay) { 
+                  items.push({dStr, formattedDate, monthYear, mKey, log: log || {}, isImplicit: false, isBase: true, breatheCount}); 
+                  if (log && log.type === 'ausrutscher' && log.t > 1) { curr.setDate(curr.getDate() + log.t - 1); }
+              } else if (log) { 
+                  items.push({dStr, formattedDate, monthYear, mKey, log, isImplicit: false, isBase: false, breatheCount}); 
+                  if (log.type === 'ausrutscher' && log.t > 1) { curr.setDate(curr.getDate() + log.t - 1); } 
+              } else if (dStr <= todayStr) { 
+                  items.push({dStr, formattedDate, monthYear, mKey, log: null, isImplicit: true, isBase: false, breatheCount}); 
+              }
+              curr.setDate(curr.getDate() + 1);
+          }
+          
+          items.reverse(); 
+          let grouped = {}; 
+          items.forEach(item => { 
+              if(!grouped[item.mKey]) grouped[item.mKey] = { title: item.monthYear, items: [] }; 
+              grouped[item.mKey].items.push(item); 
+          });
+
+          let recentMoods = items.filter(i => (!i.isImplicit || i.isBase) && i.log && i.log.mood > 0).slice(0, 7); 
+          let trendHtml = "";
+          if (recentMoods.length > 0) { 
+              let avg = (recentMoods.reduce((sum, i) => sum + parseInt(i.log.mood), 0) / recentMoods.length).toFixed(1); 
+              let trendIcon = avg >= 3.5 ? "↗️ (Positiv)" : (avg <= 2.5 ? "↘️ (Kritisch)" : "➡️ (Stabil)"); 
+              trendHtml = `<div style="font-size: 0.85rem; background: #e8f6f3; color: #16a085; padding: 8px 12px; border-radius: 8px; margin-bottom: 15px; font-weight: bold; text-align: center;">📈 Stimmungstendenz (letzte Einträge): Ø ${avg} ${trendIcon}</div>`; 
+          }
+
+          let html = trendHtml; 
+          let isFirst = true; 
+          const h = activeSimResult?.history;
+
+          for (let mKey in grouped) {
+              let g = grouped[mKey];
+              html += `<details class="diary-month-group" ${isFirst ? 'open' : ''}><summary class="diary-month-title">${g.title} <span class="diary-count">${g.items.length} Einträge</span></summary><div class="diary-month-content">`;
+              
+              g.items.forEach(item => {
+                  let badge = "", meta = "", noteStr = (item.log && item.log.note) ? `<div class="diary-note">${escapeHTML(item.log.note)}</div>` : "";
+                  let moodStr = (item.log && item.log.mood > 0) ? moodEmojis[item.log.mood] : "➖";
+                  let breatheStr = item.breatheCount > 0 ? `<span style="color:#2980b9; font-weight:900; margin-left:8px;">🧘‍♂️ ${item.breatheCount}x</span>` : "";
+                  
+                  let penaltyStr = (h && h.penaltyDict && h.penaltyDict[item.dStr]) ? `<div class="diary-meta" style="color: #c0392b; font-weight: bold; font-size: 0.75rem;">${h.penaltyDict[item.dStr]}</div>` : "";
+                  let bonusStr = (h && h.bonusDict && h.bonusDict[item.dStr]) ? `<div class="diary-meta" style="color: #27ae60; font-weight: bold; font-size: 0.75rem;">${h.bonusDict[item.dStr]}</div>` : "";
+                  let basePenalty = "";
+                  
+                  if (item.isBase) { 
+                      let isLastBaseDay = item.dStr === active.base.end; 
+                      let isTodayWhenOpen = active.base.isOpen && item.dStr === todayStr; 
+                      if (isLastBaseDay || isTodayWhenOpen) { 
+                          basePenalty = `<div class="diary-meta" style="color: #8e44ad; font-weight: bold; font-size: 0.75rem;">${activeSimResult ? activeSimResult.basePenaltyStr : ''}</div>`; 
+                      } 
+                  }
+                  
+                  if (item.isBase) { 
+                      badge = `<span class="diary-badge badge-base">⭐ Basis-Phase</span>`; 
+                      meta = `M:${active.base.mLevel||0} | Mood: ${moodStr}${breatheStr}`; 
+                  } else if (!item.isImplicit) { 
+                      badge = item.log.type === 'ausrutscher' ? `<span class="diary-badge badge-aus">🔴 Rauchen (${item.log.t}d)</span>` : `<span class="diary-badge badge-pause">🟢 Pause</span>`; 
+                      meta = `${sLevels[item.log.s||0]} | ${aLevels[item.log.a||0]} | ${mLevels[item.log.m||0]} | Mood: ${moodStr}${breatheStr}`; 
+                  } else { 
+                      badge = `<span class="diary-badge badge-pause" style="background:#e9ecef; color:#666;">⚪ Pause (Auto)</span>`; 
+                      meta = `Kein Eintrag${breatheStr}`; 
+                  }
+                  
+                  html += `<div class="diary-item" style="${item.isImplicit && item.breatheCount === 0 ? 'opacity: 0.7;' : ''}">
+                      <div style="flex:1;"><div class="diary-date">${item.formattedDate}</div>${badge}<div class="diary-meta">${meta}</div>${basePenalty}${penaltyStr}${bonusStr}${noteStr}</div><button class="diary-edit-btn" onclick="openDiaryEdit('${item.dStr}')">Edit</button></div>`;
+              });
+              
+              let activeNotes = (active.monthlyNotes || {})[mKey] || {erk: '', dtx: ''};
+              html += `<div style="margin-top:15px; padding-top:15px; border-top:2px dashed #eee;">
+                    <label>💡 Erkenntnisse in diesem Monat:</label>
+                    <textarea id="note-erk-${mKey}" rows="3" placeholder="Deine Erkenntnisse...">${escapeHTML(activeNotes.erk)}</textarea>
+                    <label style="margin-top:10px;">🌿 Gedanken zur Entgiftung (DTX):</label>
+                    <textarea id="note-dtx-${mKey}" rows="3" placeholder="Deine DTX-Gedanken...">${escapeHTML(activeNotes.dtx)}</textarea>
+                    <div style="display:flex; align-items:center; gap:10px; margin-top:10px;">
+                        <button class="btn-tool" style="padding:8px 15px; min-width:auto;" onclick="saveMonthlyNotes('${mKey}', this)">💾 Speichern</button>
+                        <span style="display:none; color:#27ae60; font-weight:bold; font-size:0.85rem;">✅ Gespeichert</span>
+                    </div>
+              </div>`;
+              
+              html += `</div></details>`; 
+              isFirst = false;
+          }
+          safeHTML('diary-list-content', html || "<div style='text-align:center; padding: 20px; color: #7f8c8d;'>Noch keine Einträge vorhanden.</div>");
+      } catch(e) {
+          console.error("Diary render error", e);
+      }
+  }
+
+  function openDiaryEdit(dateStr) {
+      try {
+          const active = getActiveCycle(); 
+          if(!active || !active.base) return;
+
+          const isBase = (dateStr >= active.base.start && dateStr <= active.base.end);
+          
+          const pl = parseLocal(dateStr);
+          if(pl) safeHTML('edit-day-title', `✏️ Tag bearbeiten: <span style="color:var(--accent)">${pl.toLocaleDateString('de-DE')}</span>`);
+          
+          safeSetVal('edit-day-date', dateStr); 
+          safeSetVal('edit-is-base', isBase ? "1" : "0");
+          
+          const log = (active.logs || {})[dateStr] || {}; 
+          safeSetVal('edit-day-type', isBase ? 'ausrutscher' : (log.type || 'pause'));
+          safeSetVal('edit-day-t', log.t || 1); 
+          safeSetVal('edit-day-s', log.s || 0); 
+          safeSetVal('edit-day-a', log.a || 0); 
+          safeSetVal('edit-day-m', log.m || 0);
+          safeSetVal('edit-day-mood', log.mood || 0); 
+          safeSetVal('edit-day-note', log.note || "");
+          
+          safeProp('edit-day-type', 'disabled', isBase); 
+          safeProp('edit-day-t', 'disabled', isBase); 
+          safeProp('edit-day-s', 'disabled', isBase); 
+          safeProp('edit-day-a', 'disabled', isBase);
+          safeProp('edit-day-m', 'disabled', isBase);
+          
+          toggleEditFields(); 
+          const m = document.getElementById('modal-edit-day'); 
+          if(m) m.classList.add('active');
+      } catch(e) {
+          console.error("openDiaryEdit error:", e);
+      }
+  }
+
+  function toggleEditFields() { 
+      const type = safeVal('edit-day-type'); 
+      const isBase = safeVal('edit-is-base') === "1"; 
+      safeDisplay('edit-t-wrapper', (type === 'ausrutscher' && !isBase) ? 'block' : 'none'); 
+  }
+
+  function submitEditDay() {
+      const active = getActiveCycle(); 
+      if(!active) return;
+
+      const dStr = safeVal('edit-day-date'); 
+      const isBase = safeVal('edit-is-base') === "1"; 
+      const mood = parseInt(safeVal('edit-day-mood')) || 0; 
+      const note = (safeVal('edit-day-note') || "").trim();
+      const type = safeVal('edit-day-type'); 
+      const t = parseInt(safeVal('edit-day-t')) || 1; 
+
+      if (type === 'ausrutscher' && !isBase && t > 21) {
+          customAlert("Eine initiale Konsumphase von mehr als drei Wochen überlastet die Simulation.");
+          return;
+      }
+      
+      if (!active.logs) active.logs = {};
+
+      if (isBase) { 
+          const existing = active.logs[dStr] || { type: 'ausrutscher', t:1, s:0, a:0, m:0 }; 
+          active.logs[dStr] = { ...existing, mood, note };
+      } else {
+          const s = parseInt(safeVal('edit-day-s')) || 0; 
+          const a = parseInt(safeVal('edit-day-a')) || 0;
+          const m = parseInt(safeVal('edit-day-m')) || 0;
+          
+          if (type === 'ausrutscher') { 
+              active.logs[dStr] = { type: 'ausrutscher', t, s, a, m, mood, note }; 
+          } else { 
+              active.logs[dStr] = { type: 'pause', s, a, m, mood, note }; 
+          }
+      }
+      
+      if (dStr === toIsoString(new Date())) sessionStorage.removeItem('bonusShown_' + dStr);
+
+      closeModal('modal-edit-day'); 
+      saveData(); 
+      if(document.getElementById('diary-container')?.style.display === 'block') renderDiaryList();
+  }
+
+  function deleteEditDay() {
+      const active = getActiveCycle(); 
+      if(!active) return;
+
+      const dStr = safeVal('edit-day-date');
+      closeModal('modal-edit-day'); 
+
+      if (active.base && active.base.start === dStr && getApp().cycles.length > 1) {
+          let hasRealLogs = Object.keys(active.logs || {}).some(k => active.logs[k].type === 'pause' || active.logs[k].type === 'ausrutscher');
+          if (!hasRealLogs) {
+              customConfirm("Möchtest du diesen neu gestarteten Zyklus komplett löschen und deinen alten Zyklus aus dem Archiv zurückholen?", () => { 
+                  const app = getApp();
+                  if(app && Array.isArray(app.cycles)) app.cycles.pop(); 
+                  const prev = app.cycles[app.cycles.length - 1];
+                  if(prev) prev.status = 'active'; 
+                  
+                  if (dStr === toIsoString(new Date())) sessionStorage.removeItem('bonusShown_' + dStr);
+                  
+                  saveData(); 
+                  if(document.getElementById('diary-container')?.style.display === 'block') renderDiaryList(); 
+              }); 
+              return;
+          } else { 
+              customAlert("Dieser Zyklus hat bereits weitere Einträge. Du kannst das Startdatum nicht löschen. Ändere stattdessen die Start-Parameter im 'Aktuell'-Tab."); 
+              return; 
+          }
+      }
+      
+      if (active.logs && active.logs[dStr]) { 
+          customConfirm("Eintrag unwiderruflich löschen?", () => { 
+              delete active.logs[dStr]; 
+              
+              if (dStr === toIsoString(new Date())) sessionStorage.removeItem('bonusShown_' + dStr);
+              
+              saveData(); 
+              if(document.getElementById('diary-container')?.style.display === 'block') renderDiaryList(); 
+          });
+      } else { 
+          customAlert("An diesem Tag gibt es keinen spezifischen Eintrag zum Löschen."); 
+      }
+  }
+
   // --- Core Engine ---
   function runAllSimulations() {
       try {
@@ -1736,7 +2036,7 @@
           let cLogs = cycle.logs || {};
           let lastRealDayStr = (cLogs[todayStr] && typeof cLogs[todayStr] === 'object' && cLogs[todayStr].type !== undefined) ? todayStr : yesterdayStr;
 
-          // Scope Isolation variables (wie in 11.1 umgesetzt zur Sicherheit)
+          // Scope Isolation variables 
           var dStr, log, isLogged, isFuture, iBase, iS, iA, iC, pauschale, penalty, canPayout, pStr;
 
           while ((debt > 0 || toIsoString(simDate) <= endSimLimit) && safety < 25000) {
@@ -1877,13 +2177,14 @@
       const active = getActiveCycle();
       safeDisplay('dashboard-main', active ? 'block' : 'none');
       safeDisplay('setup-warning', active ? 'none' : 'block');
+      
       if (active) { 
           populateBaseForm(); 
-          renderDashboard(); 
-          renderHistorie(); 
+          try { renderDashboard(); } catch(e) { console.error("Render Dashboard Error", e); }
+          try { renderHistorie(); } catch(e) { console.error("Render Historie Error", e); }
       }
-      renderArchiv(); 
-      renderSandboxManager();
+      try { renderArchiv(); } catch(e) { console.error("Render Archiv Error", e); }
+      try { renderSandboxManager(); } catch(e) { console.error("Render Sandbox Error", e); }
   }
 
   function renderDashboard() {
@@ -2012,7 +2313,7 @@
           safeDisplay('dash-streak', 'none');
       }
 
-      // V12.6 Budget UI Live Updater
+      // V12.7 Budget UI Live Updater
       if (!isSandbox && !res.isOpen) {
           safeDisplay('dash-budget-box', 'block');
           
@@ -2522,6 +2823,10 @@
       }
       safeHTML('archive-months-container', archMonthsHtml);
 
+      // V12.7 SAUBERER RÖNTGENBLICK OHNE TEMPLATE-LITERAL CONFLICTS
+      let debugIds = (getApp().cycles || []).map(c=>c.id).join(', ');
+      let debugRes = globalSimResults.map(r => r ? (r.failed ? '[FAILED: ' + r.cycleId + ']' : r.cycleId) : '[NULL]').join(', ');
+      
       safeHTML('debug-container', `
       <details style="background:#fff3cd; border:1px solid #ffeeba; padding:10px; font-size:0.85rem; border-radius:8px; color:#856404; margin-bottom: 20px;">
           <summary style="font-weight:bold; cursor:pointer;">🛠️ System-Diagnose (Debug Monitor)</summary>
@@ -2530,9 +2835,9 @@
               <strong>Archivierte Zyklen (UI):</strong> ${archived.length}<br>
               <strong>Simulations-Ergebnisse:</strong> ${globalSimResults.length} Elemente<br><br>
               <strong>Gespeicherte Cycle-IDs:</strong><br>
-              ${(getApp().cycles || []).map(c=>c.id).join(', ')}<br><br>
+              ${debugIds}<br><br>
               <strong>Erfolgreiche Res-IDs:</strong><br>
-              ${globalSimResults.map(r => r ? (r.failed ? '[FAILED: ' + r.cycleId + ']' : r.cycleId) : '[NULL]').join(', ')}
+              ${debugRes}
           </div>
       </details>`);
   }
@@ -2576,15 +2881,15 @@
                   customAlert("Simulation erfolgreich in die Sandbox geladen!");
               } else {
                   if (data.version >= 5) { 
-                      data.version = 12.6; 
+                      data.version = 12.7; 
                       appData = data; 
                   } else if (data.base && !data.cycles) { 
-                      appData = { version: 12.6, cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }], breatheLogs: {} };
+                      appData = { version: 12.7, cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }], breatheLogs: {} };
                   } else if (data.tDays !== undefined && !data.base) {
                       let base = { start: data.startDate, end: data.endDate, tDays: parseInt(data.tDays)||0, sLevel: parseInt(data.stress)||0, aLevel: parseInt(data.alcohol)||0, mLevel: 0, isOpen: false };
                       let logs = {}; 
                       if(data.interruptions) { data.interruptions.forEach(int => { logs[int.start] = { type: 'ausrutscher', t: parseInt(int.t)||1, s: parseInt(int.s)||0, a: parseInt(int.a)||0, m: 0 }; }); }
-                      appData = { version: 12.6, cycles: [{ id: Date.now(), status: 'active', base: base, logs: logs }], breatheLogs: {} };
+                      appData = { version: 12.7, cycles: [{ id: Date.now(), status: 'active', base: base, logs: logs }], breatheLogs: {} };
                   } else { 
                       appData = data; 
                   }
@@ -2634,7 +2939,7 @@
       const aLevels = ['Kein', 'Moderat', 'Hoch'];
       const mLevels = ['Kein', 'Moderat', 'Hoch'];
       
-      let desc = isSandbox ? `ReTrack SIMULATION\n\n` : `ReTrack V12.6\n\n`;
+      let desc = isSandbox ? `ReTrack SIMULATION\n\n` : `ReTrack V12.7\n\n`;
       desc += `--- Basis-Phase ---\n`;
       desc += `Start: ${parseLocal(activeCycle.base.start).toLocaleDateString('de-DE')}\n`;
       desc += `Ende: ${parseLocal(activeCycle.base.end).toLocaleDateString('de-DE')}\n`;
