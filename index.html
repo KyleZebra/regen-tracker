@@ -301,7 +301,6 @@
       </div>
   </div>
 
-  <!-- Sandbox Banner (ohne Ziel-Setzen Button) -->
   <div id="sandbox-banner">
       🧪 SIMULATIONS-MODUS AKTIV
       <div class="sandbox-actions">
@@ -589,6 +588,7 @@
   </div>
 
 <script>
+  // --- Helpers ---
   const safeVal = (id) => { const e = document.getElementById(id); return e ? e.value : null; };
   const safeSetVal = (id, val) => { const e = document.getElementById(id); if(e) e.value = val; };
   const safeText = (id, text) => { const e = document.getElementById(id); if(e) e.textContent = text; };
@@ -601,60 +601,170 @@
   let sandboxData = null;
 
   const getApp = () => isSandbox ? sandboxData : appData;
-  const getActiveCycle = () => { const app = getApp(); return app && Array.isArray(app.cycles) ? app.cycles.find(c => c.status === 'active') : undefined; };
+  
+  const getActiveCycle = () => { 
+      const app = getApp(); 
+      if (!app || !Array.isArray(app.cycles)) return undefined; 
+      return app.cycles.find(c => c.status === 'active'); 
+  };
   
   let globalSimResults = []; 
   let activeSimResult = null; 
   let lastRenderDateStr = null;
 
   const escapeHTML = str => str ? str.replace(/[&<>'"]/g, tag => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'}[tag])) : "";
-  const parseLocal = (dateStr) => { if(!dateStr || dateStr.indexOf('-')===-1) return null; const p = dateStr.split('-'); return new Date(parseInt(p[0],10), parseInt(p[1],10)-1, parseInt(p[2],10)); };
-  const toIsoString = (date) => { if (!date || isNaN(date.getFullYear())) return "1970-01-01"; const y = date.getFullYear(); const m = String(date.getMonth() + 1).padStart(2, '0'); const d = String(date.getDate()).padStart(2, '0'); return `${y}-${m}-${d}`; };
-  const addDays = (date, days) => { if(!date || isNaN(date.getTime())) return new Date(); const r = new Date(date); r.setDate(r.getDate() + days); return r; };
+  
+  const parseLocal = (dateStr) => { 
+      if(!dateStr || typeof dateStr !== 'string' || dateStr.indexOf('-') === -1) return null; 
+      const p = dateStr.split('-'); 
+      return new Date(parseInt(p[0], 10), parseInt(p[1], 10) - 1, parseInt(p[2], 10)); 
+  };
+  
+  const toIsoString = (date) => { 
+      if (!date || isNaN(date.getFullYear())) return "1970-01-01"; 
+      const y = date.getFullYear(); 
+      const m = String(date.getMonth() + 1).padStart(2, '0'); 
+      const d = String(date.getDate()).padStart(2, '0'); 
+      return `${y}-${m}-${d}`; 
+  };
+  
+  const addDays = (date, days) => { 
+      if(!date || isNaN(date.getTime())) return new Date(); 
+      const r = new Date(date); 
+      r.setDate(r.getDate() + days); 
+      return r; 
+  };
+  
   const diffDays = (d1, d2) => Math.round((d2 - d1) / (24 * 60 * 60 * 1000));
 
-  function customAlert(msg, callback) { safeText('alert-message', msg); safeDisplay('modal-alert', 'flex'); const b = document.getElementById('alert-ok-btn'); if(b) b.onclick = () => { closeModal('modal-alert'); if(callback) callback(); }; }
+  function customAlert(msg, callback) { 
+      safeText('alert-message', msg); 
+      safeDisplay('modal-alert', 'flex'); 
+      const b = document.getElementById('alert-ok-btn'); 
+      if(b) b.onclick = () => { closeModal('modal-alert'); if(callback) callback(); }; 
+  }
+  
   let pendingConfirmAction = null; 
-  function customConfirm(msg, action) { safeText('confirm-message', msg); pendingConfirmAction = action; safeDisplay('modal-confirm', 'flex'); }
-  function executeConfirm() { closeModal('modal-confirm'); if(pendingConfirmAction) { pendingConfirmAction(); pendingConfirmAction = null; } }
+  function customConfirm(msg, action) { 
+      safeText('confirm-message', msg); 
+      pendingConfirmAction = action; 
+      safeDisplay('modal-confirm', 'flex'); 
+  }
+  
+  function executeConfirm() { 
+      closeModal('modal-confirm'); 
+      if(pendingConfirmAction) { pendingConfirmAction(); pendingConfirmAction = null; } 
+  }
+  
   function closeModal(id) { safeDisplay(id, 'none'); }
 
-  function openTargetModal() { let active = getActiveCycle(); if(!active) return; safeSetVal('target-input-date', active.targetETA || ""); safeDisplay('modal-target', 'flex'); }
-  function saveTargetETA() { let active = getActiveCycle(); if(!active) return; let d = safeVal('target-input-date'); if(!d) return; active.targetETA = d; closeModal('modal-target'); saveData(); }
-  function clearTargetETA() { let active = getActiveCycle(); if(active) delete active.targetETA; closeModal('modal-target'); saveData(); }
-
-  window.deleteArchivedCycle = function(id) { customConfirm("Zyklus löschen?", () => { const app = getApp(); app.cycles = app.cycles.filter(c => c.id !== id); saveData(); }); };
-
-  document.addEventListener("DOMContentLoaded", () => { lastRenderDateStr = toIsoString(new Date()); loadData(); const t = sessionStorage.getItem('retrack_target_tab'); if (t) { sessionStorage.removeItem('retrack_target_tab'); switchTab(t); }});
-  document.addEventListener("visibilitychange", () => { if (document.visibilityState === 'hidden' && isBreatheActive) abortBreathe(); if (document.visibilityState === 'visible' && !isSandbox && !isBreatheActive) { const nowStr = toIsoString(new Date()); if (nowStr !== lastRenderDateStr) { lastRenderDateStr = nowStr; loadData(); } }});
-
-  function openSandbox() {
-      if(isSandbox) return; const app = getApp(); 
-      if(!app || !app.cycles || app.cycles.length === 0) return customAlert("Du musst erst einen echten Zyklus anlegen.");
-      isSandbox = true; sandboxData = JSON.parse(JSON.stringify(appData)); document.body.classList.add('sandbox-mode'); safeDisplay('sandbox-banner', 'block');
-      runAllSimulations(); switchTab('historie'); 
+  // --- Target/Budget Functions ---
+  function openTargetModal() { 
+      let active = getActiveCycle(); 
+      if(!active) return; 
+      safeSetVal('target-input-date', active.targetETA || ""); 
+      safeDisplay('modal-target', 'flex'); 
   }
-  function resetSandbox() { if(!isSandbox) return; sandboxData = JSON.parse(JSON.stringify(appData)); clearSandboxForm(); runAllSimulations(); customAlert("Labor zurückgesetzt."); }
-  function clearSandboxForm() { safeSetVal('sim-a-date', ''); safeSetVal('sim-a-t', '1'); safeSetVal('sim-a-s', '0'); safeSetVal('sim-a-a', '0'); safeSetVal('sim-a-m', '0'); }
-  function closeSandbox() { if(!isSandbox) return; isSandbox = false; sandboxData = null; document.body.classList.remove('sandbox-mode'); safeDisplay('sandbox-banner', 'none'); clearSandboxForm(); populateBaseForm(); runAllSimulations(); switchTab('dashboard'); }
-  function applySandboxGoal() { /* Obsolete, button removed */ }
+  
+  function saveTargetETA() { 
+      let active = getActiveCycle(); 
+      if(!active) return; 
+      let d = safeVal('target-input-date'); 
+      if(!d) return; 
+      active.targetETA = d; 
+      closeModal('modal-target'); 
+      saveData(); 
+  }
+  
+  function clearTargetETA() { 
+      let active = getActiveCycle(); 
+      if(active) delete active.targetETA; 
+      closeModal('modal-target'); 
+      saveData(); 
+  }
 
+  // --- Init ---
+  document.addEventListener("DOMContentLoaded", () => { 
+      lastRenderDateStr = toIsoString(new Date()); 
+      loadData(); 
+      const t = sessionStorage.getItem('retrack_target_tab'); 
+      if (t) { sessionStorage.removeItem('retrack_target_tab'); switchTab(t); }
+  });
+  
+  document.addEventListener("visibilitychange", () => { 
+      if (document.visibilityState === 'hidden' && isBreatheActive) abortBreathe(); 
+      if (document.visibilityState === 'visible' && !isSandbox && !isBreatheActive) { 
+          const nowStr = toIsoString(new Date()); 
+          if (nowStr !== lastRenderDateStr) { lastRenderDateStr = nowStr; loadData(); } 
+      }
+  });
+
+  // --- Sandbox ---
+  function openSandbox() {
+      if(isSandbox) return; 
+      const app = getApp(); 
+      if(!app || !app.cycles || app.cycles.length === 0) return customAlert("Du musst erst einen echten Zyklus anlegen.");
+      isSandbox = true; 
+      sandboxData = JSON.parse(JSON.stringify(appData)); 
+      document.body.classList.add('sandbox-mode'); 
+      safeDisplay('sandbox-banner', 'block');
+      runAllSimulations(); 
+      switchTab('historie'); 
+  }
+  
+  function resetSandbox() { 
+      if(!isSandbox) return; 
+      sandboxData = JSON.parse(JSON.stringify(appData)); 
+      clearSandboxForm(); 
+      runAllSimulations(); 
+      customAlert("Labor zurückgesetzt."); 
+  }
+  
+  function clearSandboxForm() { 
+      safeSetVal('sim-a-date', ''); safeSetVal('sim-a-t', '1'); safeSetVal('sim-a-s', '0'); safeSetVal('sim-a-a', '0'); safeSetVal('sim-a-m', '0'); 
+  }
+  
+  function closeSandbox() { 
+      if(!isSandbox) return; 
+      isSandbox = false; 
+      sandboxData = null; 
+      document.body.classList.remove('sandbox-mode'); 
+      safeDisplay('sandbox-banner', 'none'); 
+      clearSandboxForm(); 
+      populateBaseForm(); 
+      runAllSimulations(); 
+      switchTab('dashboard'); 
+  }
+
+  // --- Data Management ---
   function loadData() {
       const saved = localStorage.getItem('regenAppData_v6') || localStorage.getItem('regenAppData_v5');
       if (saved) {
           try { 
               let data = JSON.parse(saved); 
               if (data && typeof data === 'object') {
-                  if (data.version >= 5) { data.version = 12.2; appData = data; } 
-                  else if (data.base) { appData = { version: 12.2, cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }], breatheLogs: {} }; }
+                  if (data.version >= 5) { 
+                      data.version = 12.2; 
+                      appData = data; 
+                  } else if (data.base) { 
+                      appData = { version: 12.2, cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }], breatheLogs: {} }; 
+                  }
                   
                   if (appData.cycles && Array.isArray(appData.cycles)) {
                       appData.cycles = appData.cycles.filter(c => c && c.base && c.base.start); 
-                      appData.cycles.forEach(c => { if(c.base.mLevel===undefined) c.base.mLevel=0; if(!c.logs) c.logs={}; Object.values(c.logs).forEach(l => {if(l&&typeof l==='object'&&l.m===undefined)l.m=0;}); if(!c.monthlyNotes) c.monthlyNotes={}; });
+                      appData.cycles.forEach(c => { 
+                          if(c.base.mLevel===undefined) c.base.mLevel=0; 
+                          if(!c.logs) c.logs={}; 
+                          Object.values(c.logs).forEach(l => {
+                              if(l && typeof l==='object' && l.m===undefined) l.m=0;
+                          }); 
+                          if(!c.monthlyNotes) c.monthlyNotes={}; 
+                      });
                   }
               }
           } catch(e) { console.error("Load error", e); }
       }
+      
       appData.cycles = Array.isArray(appData.cycles) ? appData.cycles : []; 
       appData.breatheLogs = appData.breatheLogs || {}; 
       const active = getActiveCycle();
@@ -664,25 +774,45 @@
           safeHTML('setup-warning', appData.cycles.length > 0 
             ? `<h3>Bereit für einen neuen Zyklus? 🚀</h3><p>Historie ist im Archiv.</p><div style="display:flex; gap:10px; justify-content:center;"><button class="btn-tool" style="background:var(--header-bg); border:none; color:white;" onclick="switchTab('historie')">✏️ Neuen Zyklus starten</button></div>` 
             : `<h3>Willkommen bei ReTrack! 👋</h3><p>Lege deinen ersten Zyklus an.</p><div style="display:flex; gap:10px; justify-content:center;"><button class="btn-tool" style="background:var(--header-bg); border:none; color:white;" onclick="switchTab('historie')">✏️ Ersten Zyklus starten</button></div>`);
-          safeDisplay('dashboard-main', 'none'); safeDisplay('base-form-card', 'block');
+          safeDisplay('dashboard-main', 'none'); 
+          safeDisplay('base-form-card', 'block');
       } else {
-          safeDisplay('setup-warning', 'none'); safeDisplay('dashboard-main', 'block');
+          safeDisplay('setup-warning', 'none'); 
+          safeDisplay('dashboard-main', 'block');
           if (active.base && active.base.isOpen && active.base.end) {
               const todayStr = toIsoString(new Date()), expectedNext = toIsoString(addDays(parseLocal(active.base.end), 1));
-              if (todayStr > active.base.end) { if (!active.logs) active.logs = {}; if (!active.logs[expectedNext] || active.logs[expectedNext].type !== 'ausrutscher') { active.base.isOpen = false; saveData(true); } }
+              if (todayStr > active.base.end) { 
+                  if (!active.logs) active.logs = {}; 
+                  if (!active.logs[expectedNext] || active.logs[expectedNext].type !== 'ausrutscher') { 
+                      active.base.isOpen = false; 
+                      saveData(true); 
+                  } 
+              }
           }
-          populateBaseForm(); runAllSimulations();
+          populateBaseForm(); 
+          runAllSimulations();
       }
   }
 
   function saveData(silent = false) { 
       const app = getApp();
-      if (app && Array.isArray(app.cycles)) app.cycles.sort((a, b) => (a.base.start || "9999").localeCompare(b.base.start || "9999"));
-      if (!isSandbox) localStorage.setItem('regenAppData_v6', JSON.stringify(appData)); 
-      if(!silent) runAllSimulations(); 
+      if (app && Array.isArray(app.cycles)) {
+          app.cycles.sort((a, b) => (a.base.start || "9999").localeCompare(b.base.start || "9999"));
+      }
+      if (!isSandbox) {
+          localStorage.setItem('regenAppData_v6', JSON.stringify(appData)); 
+      }
+      if (!silent) runAllSimulations(); 
   }
   
-  function hardReset() { if(isSandbox) return; customConfirm("Alles löschen?", () => { localStorage.removeItem('regenAppData_v5'); localStorage.removeItem('regenAppData_v6'); window.location.reload(); }); }
+  function hardReset() { 
+      if(isSandbox) return; 
+      customConfirm("Alles löschen?", () => { 
+          localStorage.removeItem('regenAppData_v5'); 
+          localStorage.removeItem('regenAppData_v6'); 
+          window.location.reload(); 
+      }); 
+  }
 
   function switchTab(tabId) {
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tabId));
@@ -690,15 +820,38 @@
       updateUI();
   }
 
-  function calcBaseT() { const s = parseLocal(safeVal('base-start')), e = parseLocal(safeVal('base-end')); if (s && e && !isNaN(s.getTime()) && !isNaN(e.getTime())) safeSetVal('base-t', Math.max(0, diffDays(s, e) + 1)); else safeSetVal('base-t', ""); }
+  function calcBaseT() { 
+      const s = parseLocal(safeVal('base-start')); 
+      const e = parseLocal(safeVal('base-end')); 
+      if (s && e && !isNaN(s.getTime()) && !isNaN(e.getTime())) { 
+          safeSetVal('base-t', Math.max(0, diffDays(s, e) + 1)); 
+      } else { 
+          safeSetVal('base-t', ""); 
+      } 
+  }
   
   function populateBaseForm() {
-      const active = getActiveCycle(); if(!active || !active.base) return;
-      safeSetVal('base-start', active.base.start || ""); safeSetVal('base-end', active.base.end || ""); safeSetVal('base-t', active.base.tDays || "");
-      safeSetVal('base-s', active.base.sLevel || 0); safeSetVal('base-a', active.base.aLevel || 0); safeSetVal('base-m', active.base.mLevel || 0);
+      const active = getActiveCycle(); 
+      if(!active || !active.base) return;
+      
+      safeSetVal('base-start', active.base.start || ""); 
+      safeSetVal('base-end', active.base.end || ""); 
+      safeSetVal('base-t', active.base.tDays || "");
+      safeSetVal('base-s', active.base.sLevel || 0); 
+      safeSetVal('base-a', active.base.aLevel || 0); 
+      safeSetVal('base-m', active.base.mLevel || 0);
+      
       let lock = active.base.isOpen;
-      if (isSandbox) { const rAct = appData.cycles.find(c=>c.status==='active'); if(active.id===rAct?.id && rAct && activeSimResult && activeSimResult.dashState?.debt>0) lock = true; }
-      safeProp('base-start', 'readOnly', lock); safeProp('base-end', 'readOnly', lock); safeProp('base-s', 'disabled', lock); safeProp('base-a', 'disabled', lock); safeProp('base-m', 'disabled', lock);
+      if (isSandbox) { 
+          const rAct = appData.cycles.find(c=>c.status==='active'); 
+          if(active.id === rAct?.id && rAct && activeSimResult && activeSimResult.dashState?.debt>0) lock = true; 
+      }
+      safeProp('base-start', 'readOnly', lock); 
+      safeProp('base-end', 'readOnly', lock); 
+      safeProp('base-s', 'disabled', lock); 
+      safeProp('base-a', 'disabled', lock); 
+      safeProp('base-m', 'disabled', lock);
+      
       safeDisplay('open-base-warning', active.base.isOpen ? 'block' : 'none');
       if(active.base.isOpen) safeHTML('open-base-warning', "⚠️ Initiale Konsumphase ist noch offen! Drücke auf 'Pause', um sie abzuschließen.");
   }
@@ -708,228 +861,369 @@
       if(!s || !e || isNaN(t)) { if(force) customAlert("Bitte Start und Ende eintragen."); return; }
       if (t < 1 || s > e) { if(force) customAlert("Startdatum darf nicht nach Enddatum liegen."); return; }
       if (t > 21) { customAlert("Initiale Konsumphase > 3 Wochen blockiert."); return; }
-      let active = getActiveCycle(); if (!active) { active = { id: Date.now(), status: 'active', logs: {}, base: {} }; getApp().cycles.push(active); }
-      if(!active.base) active.base = {}; active.base.start = s; active.base.end = e; active.base.tDays = t;
-      if (!active.base.isOpen) { active.base.sLevel = parseInt(safeVal('base-s'))||0; active.base.aLevel = parseInt(safeVal('base-a'))||0; active.base.mLevel = parseInt(safeVal('base-m'))||0; }
+      
+      let active = getActiveCycle(); 
+      if (!active) { 
+          active = { id: Date.now(), status: 'active', logs: {}, base: {} }; 
+          getApp().cycles.push(active); 
+      }
+      
+      if(!active.base) active.base = {}; 
+      active.base.start = s; active.base.end = e; active.base.tDays = t;
+      
+      if (!active.base.isOpen) { 
+          active.base.sLevel = parseInt(safeVal('base-s'))||0; 
+          active.base.aLevel = parseInt(safeVal('base-a'))||0; 
+          active.base.mLevel = parseInt(safeVal('base-m'))||0; 
+      }
+      
       if(active.base.isOpen === undefined) active.base.isOpen = false;
       if(force) saveData();
   }
 
-  let histRowCount = 0;
-  function openHistoricalModal() { safeSetVal('hist-base-start',''); safeSetVal('hist-base-end',''); safeSetVal('hist-base-t',''); safeSetVal('hist-base-s','0'); safeSetVal('hist-base-a','0'); safeSetVal('hist-base-m','0'); safeHTML('hist-logs-container',''); histRowCount=0; addHistLogRow(); const m = document.getElementById('modal-historical'); if(m) m.classList.add('active'); }
-  function calcHistBaseT() { const s = parseLocal(safeVal('hist-base-start')), e = parseLocal(safeVal('hist-base-end')); if(s && e && !isNaN(s.getTime()) && !isNaN(e.getTime())) safeSetVal('hist-base-t', Math.max(0, diffDays(s, e)+1)); else safeSetVal('hist-base-t', ""); }
-  function addHistLogRow() { histRowCount++; const rId = `hist-row-${histRowCount}`; const h = `<div id="${rId}" style="background:#f9f9f9; padding:15px 10px 10px; border-radius:8px; position:relative; border:1px solid #e8daef; margin-bottom:8px;"><span style="position:absolute; top:5px; right:10px; color:var(--danger); font-weight:bold; cursor:pointer; font-size:1.2rem; line-height:1;" onclick="document.getElementById('${rId}').remove()">&times;</span><div class="form-grid" style="margin-top:10px; gap:8px;"><div class="form-group-full" style="margin-bottom:0;"><label>Datum (1 Tag)</label><input type="date" class="hist-row-date"></div><div><label>S</label><select class="hist-row-s"><option value="0">0</option><option value="1">1</option><option value="2">2</option></select></div><div><label>A</label><select class="hist-row-a"><option value="0">0</option><option value="1">1</option><option value="2">2</option></select></div><div><label>M</label><select class="hist-row-m"><option value="0">0</option><option value="1">1</option><option value="2">2</option></select></div></div></div>`; const c = document.getElementById('hist-logs-container'); if(c) c.insertAdjacentHTML('beforeend', h); }
-  
-  function saveHistorical() {
-      const s = safeVal('hist-base-start'), e = safeVal('hist-base-end'), t = parseInt(safeVal('hist-base-t')), sL = parseInt(safeVal('hist-base-s'))||0, aL = parseInt(safeVal('hist-base-a'))||0, mL = parseInt(safeVal('hist-base-m'))||0;
-      if(!s || !e || isNaN(t)) return customAlert("Basisphase unvollständig."); if(t < 1 || s > e) return customAlert("Ungültige Basisphase."); if(t > 21) return customAlert("Basisphase > 21 Tage blockiert."); if(s >= toIsoString(new Date())) return customAlert("Historische Zyklen müssen in Vergangenheit liegen.");
-      const app = getApp(); if(!app || !Array.isArray(app.cycles)) return;
-      if(app.cycles.some(c => c.base?.start && c.base?.end && s <= c.base.end && e >= c.base.start)) return customAlert("Zeitraum überschneidet sich mit existierendem Zyklus.");
-      let logsToSave = {}, rowsValid = true, overlapError = false;
-      document.querySelectorAll('#hist-logs-container > div').forEach(row => {
-          let dateEl = row.querySelector('.hist-row-date'); if(!dateEl) return; let dStr = dateEl.value;
-          if(dStr) { if(dStr >= toIsoString(new Date())) rowsValid = false; if(dStr >= s && dStr <= e) overlapError = true; logsToSave[dStr] = { type: 'ausrutscher', t: 1, s: parseInt(row.querySelector('.hist-row-s').value)||0, a: parseInt(row.querySelector('.hist-row-a').value)||0, m: parseInt(row.querySelector('.hist-row-m').value)||0, mood: 0, note: "Historisch" }; }
-      });
-      if(!rowsValid) return customAlert("Rauchen-Datum darf nicht in der Zukunft liegen."); if(overlapError) return customAlert("Rauchen darf sich nicht mit Basisphase überschneiden.");
-      app.cycles.push({ id: Date.now(), status: 'archived', base: { start: s, end: e, tDays: t, sLevel: sL, aLevel: aL, mLevel: mL, isOpen: false }, logs: logsToSave });
-      closeModal('modal-historical'); saveData(); customAlert("Historischer Zyklus ins Archiv integriert!"); switchTab('archiv');
-  }
-
-  function openPauseModal() { safeSetVal('modal-p-date', toIsoString(new Date())); safeSetVal('modal-p-s', 0); safeSetVal('modal-p-a', 0); safeSetVal('modal-p-m', 0); safeSetVal('modal-p-mood', 0); safeSetVal('modal-p-note', ""); const m = document.getElementById('modal-pause'); if(m) m.classList.add('active'); }
-  function submitPause(isQuick) {
-      const dStr = safeVal('modal-p-date'), s = isQuick?0:parseInt(safeVal('modal-p-s'))||0, a = isQuick?0:parseInt(safeVal('modal-p-a'))||0, m = isQuick?0:parseInt(safeVal('modal-p-m'))||0, mood = isQuick?0:parseInt(safeVal('modal-p-mood')), note = isQuick?"":(safeVal('modal-p-note')||"").trim(), todayStr = toIsoString(new Date());
-      if(!isSandbox && dStr > todayStr) return customAlert("Keine Logs in Zukunft möglich!");
-      const active = getActiveCycle(); if(!active) return customAlert("Kein aktiver Zyklus!");
-      if(active.base?.isOpen && dStr > active.base.end) active.base.isOpen = false;
-      if (!active.logs) active.logs = {}; active.logs[dStr] = { type: 'pause', s, a, m, mood, note }; 
-      closeModal('modal-pause'); saveData();
-  }
-
-  function editToday() { openDiaryEdit(toIsoString(new Date())); }
-
-  function openAusrutscherModal(isPast = false) { safeSetVal('modal-a-t', 1); safeSetVal('modal-a-s', 0); safeSetVal('modal-a-a', 0); safeSetVal('modal-a-m', 0); safeSetVal('modal-a-mood', 0); safeSetVal('modal-a-note', ""); safeSetVal('modal-a-date', isPast ? "" : toIsoString(new Date())); const modal = document.getElementById('modal-ausrutscher'); if(modal) modal.classList.add('active'); }
-  function submitAusrutscher() {
-      const dStr = safeVal('modal-a-date'), t = parseInt(safeVal('modal-a-t'))||1, s = parseInt(safeVal('modal-a-s'))||0, a = parseInt(safeVal('modal-a-a'))||0, m = parseInt(safeVal('modal-a-m'))||0, mood = parseInt(safeVal('modal-a-mood'))||0, note = (safeVal('modal-a-note')||"").trim(), todayStr = toIsoString(new Date());
-      if(!dStr) return customAlert("Datum fehlt!"); if (t > 21) return customAlert("Konsumphase > 3 Wochen blockiert."); if(!isSandbox && dStr > todayStr) return customAlert("Keine Logs in Zukunft möglich!");
-      let active = getActiveCycle(); if(!active) return customAlert("Kein aktiver Zyklus!");
-      
-      if (activeSimResult && activeSimResult.dashState && activeSimResult.dashState.debt <= 0) {
-          if (dStr > toIsoString(activeSimResult.finalEnd)) {
-              active.status = 'archived';
-              const newEndStr = toIsoString(addDays(parseLocal(dStr), t-1));
-              const newCycle = { id: Date.now(), status: 'active', base: { start: dStr, end: newEndStr, tDays: t, sLevel: s, aLevel: a, mLevel: m, isOpen: true }, logs: {} };
-              if (mood > 0 || note !== "") newCycle.logs[dStr] = { mood, note };
-              const app = getApp(); if(app && Array.isArray(app.cycles)) app.cycles.push(newCycle); 
-              closeModal('modal-ausrutscher'); saveData(); return;
-          }
-      }
-      if(active.base?.start && dStr >= active.base.start && dStr <= active.base.end) { if (!active.base.isOpen) return customAlert("Datum liegt in geschlossener T-Phase."); }
-      if (active.base?.isOpen) {
-          const expectedNext = toIsoString(addDays(parseLocal(active.base.end), 1));
-          if (dStr === expectedNext) { active.base.end = toIsoString(addDays(parseLocal(dStr), t-1)); active.base.tDays += t; active.base.sLevel = Math.max(active.base.sLevel||0, s); active.base.aLevel = Math.max(active.base.aLevel||0, a); active.base.mLevel = Math.max(active.base.mLevel||0, m); closeModal('modal-ausrutscher'); saveData(); return; } 
-          else if (dStr > expectedNext) active.base.isOpen = false; 
-      }
-      if(!active.logs) active.logs = {}; active.logs[dStr] = { type: 'ausrutscher', t, s, a, m, mood, note }; 
-      closeModal('modal-ausrutscher'); saveData();
-  }
-
-  function submitFutureSim() {
-      const dStr = safeVal('sim-a-date'), t = parseInt(safeVal('sim-a-t'))||1, s = parseInt(safeVal('sim-a-s'))||0, a = parseInt(safeVal('sim-a-a'))||0, m = parseInt(safeVal('sim-a-m'))||0, todayStr = toIsoString(new Date());
-      if(!dStr) return customAlert("Bitte Datum wählen."); if (t > 21) return customAlert("Max 21 Tage."); if(dStr <= todayStr) return customAlert("Für vergangene Einträge Heute-Tab nutzen.");
-      let active = getActiveCycle(); if(!active) return customAlert("Kein aktiver Zyklus!");
-      if (activeSimResult && activeSimResult.dashState && activeSimResult.dashState.debt <= 0) {
-          if (dStr > toIsoString(activeSimResult.finalEnd)) {
-              active.status = 'archived';
-              const newEndStr = toIsoString(addDays(parseLocal(dStr), t-1));
-              const newCycle = { id: Date.now(), status: 'active', base: { start: dStr, end: newEndStr, tDays: t, sLevel: s, aLevel: a, mLevel: m, isOpen: true }, logs: {} };
-              newCycle.logs[dStr] = { type: 'ausrutscher', t, s, a, m, mood: 0, note: "🔮 Zukunft", isSimulated: true };
-              getApp().cycles.push(newCycle); saveData(); customAlert("Zukunft berechnet! Neuer Zyklus gestartet."); return;
-          }
-      }
-      if(!active.logs) active.logs = {}; active.logs[dStr] = { type: 'ausrutscher', t, s, a, m, mood: 0, note: "🔮 Zukunft", isSimulated: true }; 
-      saveData(); customAlert("Zukunft berechnet! Siehe Kalender.");
-  }
-
-  function deleteSimulation(dStr) { const active = getActiveCycle(); if(active?.logs?.[dStr]) { delete active.logs[dStr]; saveData(); } }
-
+  // --- Engine & Budget Loop ---
   function runAllSimulations() {
       try {
-          globalSimResults = (getApp().cycles || []).map(cycle => simulateCycle(cycle));
-          let activeIdx = (getApp().cycles || []).findIndex(c => c.status === 'active');
-          activeSimResult = activeIdx !== -1 ? globalSimResults[activeIdx] : (globalSimResults.length > 0 ? globalSimResults[globalSimResults.length - 1] : null);
+          const app = getApp();
+          globalSimResults = (app.cycles || []).map(cycle => simulateCycle(cycle));
+          
+          let activeIdx = (app.cycles || []).findIndex(c => c.status === 'active');
+          activeSimResult = activeIdx !== -1 ? globalSimResults[activeIdx] : null;
+          
           updateUI();
-      } catch (e) { console.error("Simulation crash", e); }
+      } catch (e) {
+          console.error("Simulation crash", e);
+      }
   }
 
   function simulateCycle(cycle) {
       try {
-          if (!cycle || !cycle.base?.start || !cycle.base?.end) return { failed: true, cycleId: cycle ? cycle.id : 'unknown', errorName: "DataError", errorMessage: "Zyklus/Basis unvollständig." };
-          let baseT = cycle.base.tDays || 0, baseVal = baseT * 3, sAdd = 0, aAdd = 0;
-          if (baseT < 4) { sAdd = (cycle.base.sLevel===1 ? 1 : cycle.base.sLevel===2 ? 2 : 0); aAdd = (cycle.base.aLevel===1 ? 1 : cycle.base.aLevel===2 ? 2 : 0); } 
-          else { sAdd = Math.ceil(baseVal * (cycle.base.sLevel===1 ? 0.1 : cycle.base.sLevel===2 ? 0.25 : 0)); aAdd = Math.ceil(baseVal * (cycle.base.aLevel===1 ? 0.1 : cycle.base.aLevel===2 ? 0.25 : 0)); }
+          if (!cycle || !cycle.base?.start || !cycle.base?.end) {
+              return { failed: true, cycleId: cycle ? cycle.id : 'unknown', errorMessage: "Daten unvollständig." };
+          }
+          
+          let baseT = cycle.base.tDays || 1;
+          let baseVal = baseT * 3;
+          let sAdd = 0, aAdd = 0;
+          
+          if (baseT < 4) { 
+              sAdd = (cycle.base.sLevel===1 ? 1 : cycle.base.sLevel===2 ? 2 : 0); 
+              aAdd = (cycle.base.aLevel===1 ? 1 : cycle.base.aLevel===2 ? 2 : 0); 
+          } else { 
+              sAdd = Math.ceil(baseVal * (cycle.base.sLevel===1 ? 0.1 : cycle.base.sLevel===2 ? 0.25 : 0)); 
+              aAdd = Math.ceil(baseVal * (cycle.base.aLevel===1 ? 0.1 : cycle.base.aLevel===2 ? 0.25 : 0)); 
+          }
           let comboAdd = (cycle.base.sLevel===2 && cycle.base.aLevel===2) ? 1 : 0;
+          
           let initialDebtTotal = baseVal + sAdd + aAdd + comboAdd;
-          let basePenaltyStr = `Initiale Schuld: ${initialDebtTotal} Tage (Basis: ${baseVal}, Stress: ${sAdd}, Alk: ${aAdd}, Kombi: ${comboAdd})`;
+          let basePenaltyStr = `Initiale Schuld: ${initialDebtTotal} Tage`;
 
-          let debt = initialDebtTotal, totalDebtEver = debt, totalTDaysEver = baseT, state = 'BEWAEHRUNG', currentBlockT = baseT, currentBlockServed = 0, bewTimer = currentBlockT * 3, withheldBonus = 0, hasPaidPauschaleThisCluster = true, currentBewDays = [];
-          let pEnd = parseLocal(cycle.base.end); if(!pEnd || isNaN(pEnd.getTime())) return { failed: true, cycleId: cycle.id, errorName: "DataError", errorMessage: `Ungültiges Enddatum` };
-          let simDate = pEnd; simDate.setDate(simDate.getDate() + 1);
-          let todayObj = new Date(), todayStr = toIsoString(todayObj), yesterdayStr = toIsoString(addDays(todayObj, -1));
-          let app = getApp(), cycleIndex = app.cycles.findIndex(c => c.id === cycle.id), nextCycle = cycleIndex !== -1 ? app.cycles[cycleIndex + 1] : null;
+          let debt = initialDebtTotal;
+          let totalDebtEver = debt;
+          let totalTDaysEver = baseT;
+          let state = 'BEWAEHRUNG';
+          
+          let currentBlockT = baseT;
+          let currentBlockServed = 0;
+          let bewTimer = currentBlockT * 3;
+          
+          let withheldBonus = 0;
+          let hasPaidPauschaleThisCluster = true;
+          let currentBewDays = [];
+          
+          let pEnd = parseLocal(cycle.base.end); 
+          if(!pEnd || isNaN(pEnd.getTime())) return { failed: true, cycleId: cycle.id, errorMessage: `Ungültiges Enddatum` };
+          
+          let simDate = new Date(pEnd); 
+          simDate.setDate(simDate.getDate() + 1);
+          
+          let todayObj = new Date();
+          let todayStr = toIsoString(todayObj);
+          let yesterdayStr = toIsoString(addDays(todayObj, -1));
+          
+          let app = getApp();
+          let cycleIndex = app.cycles.findIndex(c => c.id === cycle.id);
+          let nextCycle = cycleIndex !== -1 ? app.cycles[cycleIndex + 1] : null;
+          
           let endSimLimit = todayStr;
-          if (nextCycle?.base?.start) { let nxStart = parseLocal(nextCycle.base.start); if (nxStart && !isNaN(nxStart.getTime())) endSimLimit = toIsoString(addDays(nxStart, -1)); }
-          if (isSandbox && !nextCycle) { let logsStr = Object.keys(cycle.logs || {}).sort(); if (logsStr.length > 0 && logsStr[logsStr.length - 1] > endSimLimit) endSimLimit = `${new Date().getFullYear()}-12-31`; }
+          if (nextCycle?.base?.start) { 
+              let nxStart = parseLocal(nextCycle.base.start); 
+              if (nxStart && !isNaN(nxStart.getTime())) endSimLimit = toIsoString(addDays(nxStart, -1)); 
+          }
+          
+          let activeAusrutscherDays = 0;
+          let history = { t: [], r: [], b: [], a: [], n: [], logDetails: [], penaltyDict: {}, bonusDict: {} };
+          
+          let cBase = parseLocal(cycle.base.start);
+          let endBase = parseLocal(cycle.base.end);
+          if(!cBase || isNaN(cBase.getTime())) return { failed: true, cycleId: cycle.id, errorMessage: `Ungültiges Startdatum` };
+          
+          if(cBase && endBase) { 
+              while (cBase <= endBase) { 
+                  history.t.push(new Date(cBase)); 
+                  cBase.setDate(cBase.getDate() + 1); 
+              } 
+          }
 
-          let activeAusrutscherDays = 0, history = { t: [], r: [], b: [], a: [], n: [], logDetails: [], penaltyDict: {}, bonusDict: {} };
-          let cBase = parseLocal(cycle.base.start), endBase = parseLocal(cycle.base.end);
-          if(!cBase || isNaN(cBase.getTime())) return { failed: true, cycleId: cycle.id, errorName: "DataError", errorMessage: `Ungültiges Startdatum` };
-          if(cBase && endBase) { while (cBase <= endBase) { history.t.push(new Date(cBase)); cBase.setDate(cBase.getDate() + 1); } }
-
-          let safety = 0, dashState = null, finalDebtZeroDate = null, gotBonusForToday = false, cLogs = cycle.logs || {};
+          let safety = 0;
+          let dashState = null;
+          let finalDebtZeroDate = null;
+          let gotBonusForToday = false;
+          let cLogs = cycle.logs || {};
           let lastRealDayStr = (cLogs[todayStr] && typeof cLogs[todayStr] === 'object' && cLogs[todayStr].type !== undefined) ? todayStr : yesterdayStr;
 
-          // Scope isolation
-          var dStr, log, isLogged, isFuture, iBase, iS, iA, iC, pauschale, penalty, canPayout;
-
           while ((debt > 0 || toIsoString(simDate) <= endSimLimit) && safety < 25000) {
-              safety++; dStr = toIsoString(simDate); log = cLogs[dStr];
-              isLogged = log && typeof log === 'object' && log.type !== undefined; isFuture = dStr > todayStr || (dStr === todayStr && !isLogged);
+              safety++; 
+              let dStr = toIsoString(simDate); 
+              let log = cLogs[dStr];
+              let isFuture = dStr > todayStr;
+              let isLogged = log && typeof log === 'object' && log.type !== undefined;
 
-              if (activeAusrutscherDays > 0) { history.a.push(new Date(simDate)); activeAusrutscherDays--; } 
-              else if (log && log.type === 'ausrutscher') {
-                  activeAusrutscherDays = log.t - 1; totalTDaysEver += log.t;
-                  iBase = log.t * 3; iS = log.t < 4 ? (log.s===1 ? 1 : log.s===2 ? 2 : 0) : Math.ceil(iBase * (log.s===1 ? 0.1 : log.s===2 ? 0.25 : 0)); iA = log.t < 4 ? (log.a===1 ? 1 : log.a===2 ? 2 : 0) : Math.ceil(iBase * (log.a===1 ? 0.1 : log.a===2 ? 0.25 : 0)); iC = (log.s===2 && log.a===2) ? 1 : 0;
-                  pauschale = hasPaidPauschaleThisCluster ? 0 : 1; penalty = iBase + iS + iA + iC + pauschale; debt += penalty; totalDebtEver += penalty; state = 'BEWAEHRUNG';
-                  if (!hasPaidPauschaleThisCluster) { currentBlockT = log.t; currentBlockServed = 0; hasPaidPauschaleThisCluster = true; } else { currentBlockT += log.t; }
+              if (activeAusrutscherDays > 0) {
+                  history.a.push(new Date(simDate)); 
+                  activeAusrutscherDays--;
+              } else if (log && log.type === 'ausrutscher') {
+                  activeAusrutscherDays = log.t - 1; 
+                  totalTDaysEver += log.t;
+                  
+                  let iBase = log.t * 3;
+                  let iS = log.t < 4 ? (log.s===1 ? 1 : log.s===2 ? 2 : 0) : Math.ceil(iBase * (log.s===1 ? 0.1 : log.s===2 ? 0.25 : 0));
+                  let iA = log.t < 4 ? (log.a===1 ? 1 : log.a===2 ? 2 : 0) : Math.ceil(iBase * (log.a===1 ? 0.1 : log.a===2 ? 0.25 : 0));
+                  let iC = (log.s===2 && log.a===2) ? 1 : 0;
+                  
+                  let pauschale = hasPaidPauschaleThisCluster ? 0 : 1; 
+                  let penalty = iBase + iS + iA + iC + pauschale;
+                  
+                  debt += penalty; 
+                  totalDebtEver += penalty; 
+                  state = 'BEWAEHRUNG';
+                  
+                  if (!hasPaidPauschaleThisCluster) { 
+                      currentBlockT = log.t; 
+                      currentBlockServed = 0; 
+                      hasPaidPauschaleThisCluster = true; 
+                  } else { 
+                      currentBlockT += log.t; 
+                  }
+                  
                   bewTimer = (currentBlockT * 3) - currentBlockServed;
-                  if (currentBewDays.length > 0) { history.b.push(...currentBewDays); currentBewDays = []; }
-                  withheldBonus = 0; history.logDetails.push({ date: dStr, p: penalty, t: log.t, b: iBase, s: iS, a: iA, f: pauschale });
-                  let pStr = `+${penalty} Tage (Basis: ${iBase}, S: ${iS}, A: ${iA}, Kombi: ${iC}`; history.penaltyDict[dStr] = pauschale > 0 ? pStr + `, Setup: ${pauschale})` : pStr + `, Setup: 0 - Stottern)`;
+                  
+                  if (currentBewDays.length > 0) { 
+                      history.b.push(...currentBewDays); 
+                      currentBewDays = []; 
+                  }
+                  withheldBonus = 0; 
+                  
+                  history.logDetails.push({ date: dStr, p: penalty, t: log.t, b: iBase, s: iS, a: iA, f: pauschale });
+                  history.penaltyDict[dStr] = `+${penalty} Tage`;
                   history.a.push(new Date(simDate));
               } else {
                   if (debt > 0) {
                       if (state === 'BEWAEHRUNG') {
-                          debt -= 0.5; withheldBonus += 0.5; bewTimer--; currentBlockServed++; currentBewDays.push(new Date(simDate));
+                          debt -= 0.5; 
+                          withheldBonus += 0.5; 
+                          bewTimer--; 
+                          currentBlockServed++; 
+                          currentBewDays.push(new Date(simDate));
+                          
                           if (bewTimer <= 0) {
-                              canPayout = !isFuture || isSandbox;
-                              if (canPayout) { debt -= withheldBonus; if (debt < 0) debt = 0; if (dStr === todayStr && isLogged) gotBonusForToday = true; if (withheldBonus > 0) history.bonusDict[dStr] = `🎉 Bonus gesichert: -${withheldBonus} Tage`; history.r.push(...currentBewDays); } 
-                              else { history.b.push(...currentBewDays); }
-                              currentBewDays = []; withheldBonus = 0; state = 'REGEN'; hasPaidPauschaleThisCluster = false; currentBlockT = 0; currentBlockServed = 0;
+                              let canPayout = !isFuture || isSandbox;
+                              if (canPayout) { 
+                                  debt -= withheldBonus; 
+                                  if (debt < 0) debt = 0; 
+                                  if (dStr === todayStr && isLogged) gotBonusForToday = true; 
+                                  history.r.push(...currentBewDays); 
+                              } else { 
+                                  history.b.push(...currentBewDays); 
+                              }
+                              currentBewDays = []; 
+                              withheldBonus = 0; 
+                              state = 'REGEN'; 
+                              hasPaidPauschaleThisCluster = false; 
+                              currentBlockT = 0; 
+                              currentBlockServed = 0;
                           }
-                      } else { debt -= 1.0; if (debt < 0) debt = 0; history.r.push(new Date(simDate)); }
+                      } else { 
+                          debt -= 1.0; 
+                          if (debt < 0) debt = 0; 
+                          history.r.push(new Date(simDate)); 
+                      }
                       if (debt <= 0 && !finalDebtZeroDate) finalDebtZeroDate = new Date(simDate);
-                  } else { if (!isFuture || isSandbox) history.n.push(new Date(simDate)); }
+                  } else { 
+                      if (!isFuture) history.n.push(new Date(simDate)); 
+                  }
               }
-              if (dStr === lastRealDayStr && cycle.status === 'active') dashState = { debt, totalDebtEver, state, bewTimer, gotBonusToday: (dStr === todayStr) ? gotBonusForToday : false };
+              
+              if (dStr === lastRealDayStr && cycle.status === 'active') {
+                  dashState = { debt, totalDebtEver, state, bewTimer, gotBonusToday: (dStr === todayStr) ? gotBonusForToday : false };
+              }
               simDate.setDate(simDate.getDate() + 1);
           }
+          
           if (currentBewDays.length > 0) history.b.push(...currentBewDays);
-          if (!dashState && cycle.status === 'active') dashState = { debt: initialDebtTotal, totalDebtEver: initialDebtTotal, state: 'BEWAEHRUNG', bewTimer: 3, gotBonusToday: false };
+          if (!dashState && cycle.status === 'active') {
+              dashState = { debt: initialDebtTotal, totalDebtEver: initialDebtTotal, state: 'BEWAEHRUNG', bewTimer: 3, gotBonusToday: false };
+          }
           
           let mFreeCurrent = 0;
-          [...history.b, ...history.r, ...history.n].forEach(d => { let checkStr = toIsoString(d); if (checkStr < todayStr || (checkStr === todayStr && cLogs[todayStr] && cLogs[todayStr].type !== undefined)) { if ((cLogs[checkStr]?.m || 0) === 0) mFreeCurrent++; } });
+          [...history.b, ...history.r, ...history.n].forEach(d => { 
+              let checkStr = toIsoString(d); 
+              if (checkStr < todayStr || (checkStr === todayStr && cLogs[todayStr] && cLogs[todayStr].type !== undefined)) { 
+                  if ((cLogs[checkStr]?.m || 0) === 0) mFreeCurrent++; 
+              } 
+          });
           
-          return { cycleId: cycle.id, status: cycle.status, isOpen: cycle.base.isOpen, history, finalEnd: finalDebtZeroDate || addDays(simDate, -1), totalTDaysEver, totalDebtEver, dashState, nirvanaStreak: history.n.length, initialDebtTotal, basePenaltyStr, mFreeGoal: totalTDaysEver * 2, mFreeCurrent };
-      } catch(err) { return { failed: true, cycleId: cycle ? cycle.id : 'unknown', errorName: err.name, errorMessage: err.message, stack: err.stack }; }
+          return { 
+              cycleId: cycle.id, 
+              status: cycle.status, 
+              isOpen: cycle.base.isOpen, 
+              history, 
+              finalEnd: finalDebtZeroDate || addDays(simDate, -1), 
+              totalTDaysEver, 
+              totalDebtEver, 
+              dashState, 
+              nirvanaStreak: history.n.length, 
+              initialDebtTotal, 
+              basePenaltyStr, 
+              mFreeGoal: totalTDaysEver * 2, 
+              mFreeCurrent 
+          };
+      } catch(err) { 
+          return { failed: true, cycleId: cycle ? cycle.id : 'unknown', errorMessage: err.message }; 
+      }
   }
 
-  // V12.2: Dynamic Budget Calculator
   function calculateBudget(targetETAStr) {
-      let active = getActiveCycle(); if (!active || !activeSimResult || activeSimResult.failed) return { budget: 0, over: false };
-      let targetDate = parseLocal(targetETAStr); if (!targetDate || isNaN(targetDate.getTime())) return { budget: 0, over: false };
-      let currentEnd = activeSimResult.finalEnd; if (currentEnd > targetDate) return { budget: diffDays(targetDate, currentEnd), over: true }; 
-      let budget = 0, testCycle = JSON.parse(JSON.stringify(active)), safety = 0, simDate = new Date(); simDate.setDate(simDate.getDate() + 1);
+      let active = getActiveCycle(); 
+      if (!active || !activeSimResult || activeSimResult.failed) return { budget: 0, over: false };
+      
+      let targetDate = parseLocal(targetETAStr); 
+      if (!targetDate || isNaN(targetDate.getTime())) return { budget: 0, over: false };
+
+      let currentEnd = new Date(activeSimResult.finalEnd); 
+      if (currentEnd > targetDate) return { budget: diffDays(targetDate, currentEnd), over: true }; 
+      
+      let budget = 0;
+      let testCycle = JSON.parse(JSON.stringify(active));
       if (!testCycle.logs) testCycle.logs = {};
-      while (budget < 50 && safety < 150) { 
+
+      let safety = 0;
+      let simDate = new Date(); 
+      simDate.setDate(simDate.getDate() + 1);
+
+      while (budget < 50 && safety < 200) { 
           safety++;
-          if (testCycle.logs[toIsoString(simDate)] !== undefined) { simDate.setDate(simDate.getDate() + 1); continue; }
           let testDateStr = toIsoString(simDate);
+          
+          if (testCycle.logs[testDateStr] !== undefined) { 
+              simDate.setDate(simDate.getDate() + 1); 
+              continue; 
+          }
+          
           testCycle.logs[testDateStr] = { type: 'ausrutscher', t: 1, s: 0, a: 0, m: 0, mood: 0, note: "Budget-Test", isSimulated: true };
           let res = simulateCycle(testCycle);
-          if (res && !res.failed && res.finalEnd <= targetDate) { budget++; simDate.setDate(simDate.getDate() + 4); /* Worst Case Spacing */ } 
-          else break; 
+          
+          if (res && !res.failed && res.finalEnd <= targetDate) { 
+              budget++; 
+              // Skip 4 days forward to avoid merging clusters and getting a "cheaper" penalty
+              simDate.setDate(simDate.getDate() + 4); 
+          } else {
+              break; 
+          }
       }
       return { budget, over: false };
   }
 
-  function renderDashboard() {
-      const res = activeSimResult, activeCycle = getActiveCycle();
-      if(!res || !res.dashState || !activeCycle || res.failed) {
-          safeText('dash-status-badge', "Warte auf Startdatum..."); safeProp('dash-status-badge', 'className', 'status-badge status-open'); safeText('dash-sub', "Bitte trage im 'Aktuell'-Tab deine initiale Phase ein."); safeText('dash-percent', "-"); safeText('dash-days-left', "Start ausstehend"); safeText('dash-target-date', "Ziel: Unbekannt"); safeDisplay('dash-progress', 'none'); safeDisplay('dash-budget-box', 'none'); safeDisplay('dash-outlook', 'none'); return;
+  function updateUI() {
+      const active = getActiveCycle();
+      safeDisplay('dashboard-main', active ? 'block' : 'none');
+      safeDisplay('setup-warning', active ? 'none' : 'block');
+      if (active) { 
+          populateBaseForm(); 
+          renderDashboard(); 
+          renderHistorie(); 
       }
-      const ds = res.dashState; safeText('dash-today-date', "Heute: " + new Date().toLocaleDateString('de-DE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }));
-      let displayDebt = ds.debt || 0, progress = displayDebt > 0 && ds.totalDebtEver > 0 ? Math.max(0, Math.min(100, 100 - (displayDebt / ds.totalDebtEver * 100))) : 100;
-      const ring = document.getElementById('dash-ring'); if(ring) { ring.setAttribute('stroke-dasharray', `${progress}, 100`); ring.classList.remove('regen', 'bewaehrung', 'nirvana'); }
-      const pTxt = document.getElementById('dash-percent'); if(pTxt) { pTxt.textContent = Math.round(progress) + '%'; pTxt.classList.remove('nirvana'); }
+      renderArchiv(); 
+      renderSandboxManager();
+  }
+
+  function renderDashboard() {
+      const res = activeSimResult; 
+      const activeCycle = getActiveCycle();
+      if(!res || !res.dashState || !activeCycle || res.failed) return;
+      
+      const ds = res.dashState; 
+      safeText('dash-today-date', "Heute: " + new Date().toLocaleDateString('de-DE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }));
+      
+      let displayDebt = ds.debt || 0;
+      let progress = displayDebt > 0 && ds.totalDebtEver > 0 ? Math.max(0, Math.min(100, 100 - (displayDebt / ds.totalDebtEver * 100))) : 100;
+      
+      const ring = document.getElementById('dash-ring'); 
+      if(ring) { 
+          ring.setAttribute('stroke-dasharray', `${progress}, 100`); 
+          ring.classList.remove('regen', 'bewaehrung', 'nirvana'); 
+      }
+      
+      const pTxt = document.getElementById('dash-percent'); 
+      if(pTxt) { 
+          pTxt.textContent = Math.round(progress) + '%'; 
+          pTxt.classList.remove('nirvana'); 
+      }
+      
       safeProp('dash-streak', 'className', 'streak-badge');
 
       if (ds.totalDebtEver > 0 && displayDebt > 0 && !res.isOpen) {
-          let g = Math.round((ds.totalDebtEver - displayDebt) * 10) / 10, tStr = Math.round(ds.totalDebtEver * 10) / 10;
-          safeText('dash-progress', `Tag ${Number.isInteger(g)?g:g.toFixed(1).replace('.',',')} von ${Number.isInteger(tStr)?tStr:tStr.toFixed(1).replace('.',',')} geschafft`); safeDisplay('dash-progress', 'inline-block');
+          let g = Math.round((ds.totalDebtEver - displayDebt) * 10) / 10;
+          let tStr = Math.round(ds.totalDebtEver * 10) / 10;
+          safeText('dash-progress', `Tag ${Number.isInteger(g)?g:g.toFixed(1).replace('.',',')} von ${Number.isInteger(tStr)?tStr:tStr.toFixed(1).replace('.',',')} geschafft`); 
+          safeDisplay('dash-progress', 'inline-block');
       } else safeDisplay('dash-progress', 'none'); 
+      
       let fDebt = Number.isInteger(Math.round(displayDebt * 10) / 10) ? Math.round(displayDebt * 10) / 10 : (Math.round(displayDebt * 10) / 10).toFixed(1).replace('.', ',');
 
       if (res.isOpen) {
-          safeProp('dash-status-badge', 'className', 'status-badge status-open'); safeText('dash-status-badge', "Konsumphase Aktiv"); if(ring) ring.setAttribute('stroke-dasharray', `0, 100`); safeText('dash-percent', "!"); safeText('dash-ring-label', "OFFEN"); safeText('dash-days-left', `Dauer: ${res.history.t.length}d`); safeText('dash-target-date', "Pausiere zum Start"); safeText('dash-sub', "Die initiale T-Phase wächst, bis du pausierst."); safeDisplay('dash-streak', 'none');
+          safeProp('dash-status-badge', 'className', 'status-badge status-open'); safeText('dash-status-badge', "Konsumphase Aktiv");
+          if(ring) ring.setAttribute('stroke-dasharray', `0, 100`); 
+          safeText('dash-percent', "!"); safeText('dash-ring-label', "OFFEN");
+          safeText('dash-days-left', `Dauer: ${res.history.t.length}d`); safeText('dash-target-date', "Pausiere zum Start");
+          safeText('dash-sub', "Die initiale T-Phase wächst, bis du pausierst."); safeDisplay('dash-streak', 'none');
       } else if (displayDebt <= 0) {
-          let miles = [7, 14, 21, 30, 60, 90, 180, 365, 730, 9999], nextM = miles.find(m => res.nirvanaStreak < m) || 9999, prevM = [...miles].reverse().find(m => res.nirvanaStreak >= m) || 0;
+          let miles = [7, 14, 21, 30, 60, 90, 180, 365, 730, 9999];
+          let nextM = miles.find(m => res.nirvanaStreak < m) || 9999;
+          let prevM = [...miles].reverse().find(m => res.nirvanaStreak >= m) || 0;
           let nirvanaProgress = nextM !== 9999 ? ((res.nirvanaStreak - prevM) / (nextM - prevM)) * 100 : 100;
+          
           let s = res.nirvanaStreak, mStr = "";
           if (s >= 30) { let mo = Math.floor(s/30), w = Math.floor((s%30)/7), d = (s%30)%7, p=[]; p.push(`${mo} Monat${mo!==1?'e':''}`); if(w>0) p.push(`${w} Woche${w!==1?'n':''}`); if(d>0) p.push(`${d} Tag${d!==1?'e':''}`); mStr = p.join(', '); } 
           else if (s >= 7) { let w = Math.floor(s/7), d = s%7, p=[]; p.push(`${w} Woche${w!==1?'n':''}`); if(d>0) p.push(`${d} Tag${d!==1?'e':''}`); mStr = p.join(', '); } 
           else { mStr = `${s} Tag${s!==1?'e':''}`; }
-          safeProp('dash-status-badge', 'className', 'status-badge status-done'); safeText('dash-status-badge', "Nirwana Level-Up"); if(ring) { ring.classList.add('nirvana'); ring.setAttribute('stroke-dasharray', `${nirvanaProgress}, 100`); } if(pTxt) pTxt.classList.add('nirvana'); safeText('dash-percent', Math.round(nirvanaProgress) + '%'); safeText('dash-ring-label', "ZUM ZIEL"); safeText('dash-days-left', `Nächstes Ziel: ${nextM} Tage`); safeText('dash-target-date', `Bisher: ${mStr}`); safeText('dash-sub', isSandbox ? "Du bist in der Simulation clean." : "Regeneration abgeschlossen."); safeDisplay('dash-streak', 'inline-block'); const sb = document.getElementById('dash-streak'); if(sb) { sb.classList.add('nirvana'); sb.textContent = `💎 ${res.nirvanaStreak} Tage Clean-Streak`; }
+          
+          safeProp('dash-status-badge', 'className', 'status-badge status-done'); safeText('dash-status-badge', "Nirwana Level-Up");
+          if(ring) { ring.classList.add('nirvana'); ring.setAttribute('stroke-dasharray', `${nirvanaProgress}, 100`); }
+          if(pTxt) pTxt.classList.add('nirvana'); 
+          safeText('dash-percent', Math.round(nirvanaProgress) + '%'); safeText('dash-ring-label', "ZUM ZIEL");
+          safeText('dash-days-left', `Nächstes Ziel: ${nextM} Tage`); safeText('dash-target-date', `Bisher: ${mStr}`);
+          safeText('dash-sub', isSandbox ? "Du bist in der Simulation clean." : "Regeneration abgeschlossen.");
+          safeDisplay('dash-streak', 'inline-block'); 
+          const sb = document.getElementById('dash-streak'); if(sb) { sb.classList.add('nirvana'); sb.textContent = `💎 ${res.nirvanaStreak} Tage Clean-Streak`; }
       } else if (ds.state === 'BEWAEHRUNG') {
-          safeProp('dash-status-badge', 'className', 'status-badge status-bewaehrung'); safeText('dash-status-badge', "Bewährungsphase"); if(ring) ring.classList.add('bewaehrung'); safeText('dash-ring-label', "REGENERATION"); safeText('dash-days-left', `Schulden: ${fDebt} Tage`); safeText('dash-target-date', `Ziel: ${res.finalEnd.toLocaleDateString('de-DE')}`); safeText('dash-sub', `Regeneration: 0,5x. Halte noch ${ds.bewTimer} Tag(e) durch für den Bonus!`); safeDisplay('dash-streak', 'none');
+          safeProp('dash-status-badge', 'className', 'status-badge status-bewaehrung'); safeText('dash-status-badge', "Bewährungsphase");
+          if(ring) ring.classList.add('bewaehrung'); safeText('dash-ring-label', "REGENERATION");
+          safeText('dash-days-left', `Schulden: ${fDebt} Tage`); safeText('dash-target-date', `Ziel: ${res.finalEnd.toLocaleDateString('de-DE')}`);
+          safeText('dash-sub', `Regeneration: 0,5x. Halte noch ${ds.bewTimer} Tag(e) durch für den Bonus!`); safeDisplay('dash-streak', 'none');
       } else {
-          safeProp('dash-status-badge', 'className', 'status-badge status-regen'); safeText('dash-status-badge', "Tiefe Regeneration"); if(ring) ring.classList.add('regen'); safeText('dash-ring-label', "REGENERATION"); safeText('dash-days-left', `Schulden: ${fDebt} Tage`); safeText('dash-target-date', `Ziel: ${res.finalEnd.toLocaleDateString('de-DE')}`); safeText('dash-sub', "Du regenerierst mit 1,0x Geschwindigkeit."); safeDisplay('dash-streak', 'none');
+          safeProp('dash-status-badge', 'className', 'status-badge status-regen'); safeText('dash-status-badge', "Tiefe Regeneration");
+          if(ring) ring.classList.add('regen'); safeText('dash-ring-label', "REGENERATION");
+          safeText('dash-days-left', `Schulden: ${fDebt} Tage`); safeText('dash-target-date', `Ziel: ${res.finalEnd.toLocaleDateString('de-DE')}`);
+          safeText('dash-sub', "Du regenerierst mit 1,0x Geschwindigkeit."); safeDisplay('dash-streak', 'none');
       }
 
-      // V12.2 Budget UI
+      // V12.2 Budget UI Live Updater
       if (!isSandbox && !res.isOpen) {
           safeDisplay('dash-budget-box', 'block');
           if (activeCycle.targetETA) {
-              safeDisplay('budget-content-active', 'block'); safeDisplay('budget-content-empty', 'none');
+              safeDisplay('budget-content-active', 'block'); 
+              safeDisplay('budget-content-empty', 'none');
               const tD = parseLocal(activeCycle.targetETA);
               if (tD) {
                   safeText('budget-target-date', tD.toLocaleDateString('de-DE'));
@@ -945,13 +1239,20 @@
                       if(sub) { sub.style.color = '#7f8c8d'; sub.textContent = "Verfügbare T-Tage (Standard)"; }
                   }
               }
-          } else { safeDisplay('budget-content-active', 'none'); safeDisplay('budget-content-empty', 'block'); const box = document.getElementById('dash-budget-box'); if(box) { box.style.borderColor = '#9b59b6'; box.style.backgroundColor = '#fdfafb'; } }
+          } else { 
+              safeDisplay('budget-content-active', 'none'); 
+              safeDisplay('budget-content-empty', 'block'); 
+              const box = document.getElementById('dash-budget-box'); 
+              if(box) { box.style.borderColor = '#9b59b6'; box.style.backgroundColor = '#fdfafb'; } 
+          }
       } else safeDisplay('dash-budget-box', 'none');
 
       const todayStr = toIsoString(new Date()), isLoggedToday = activeCycle.logs && activeCycle.logs[todayStr] && activeCycle.logs[todayStr].type !== undefined;
+      
       if (!isSandbox && !isLoggedToday && !res.isOpen && displayDebt > 0) {
           let cloneA = JSON.parse(JSON.stringify(activeCycle)); if(!cloneA.logs) cloneA.logs = {}; cloneA.logs[todayStr] = { type: 'pause', s:0, a:0, m:0, mood:0, note:'Phantom' }; let resA = simulateCycle(cloneA);
           let cloneB = JSON.parse(JSON.stringify(activeCycle)); if(!cloneB.logs) cloneB.logs = {}; cloneB.logs[todayStr] = { type: 'ausrutscher', t:1, s:0, a:0, m:0, mood:0, note:'Phantom' }; let resB = simulateCycle(cloneB);
+          
           if (resA && !resA.failed && resB && !resB.failed && resA.dashState && resB.dashState) {
               let dA = Math.round(resA.dashState.debt*10)/10, dB = Math.round(resB.dashState.debt*10)/10;
               safeHTML('dash-outlook', `<div class="outlook-title">📊 Tagesausblick für heute</div><div class="outlook-row good"><span class="outlook-label">🟢 Bei Pause:</span><span class="outlook-value">Schuld sinkt auf ${Number.isInteger(dA)?dA:dA.toFixed(1).replace('.',',')} (Ziel: ${resA.finalEnd.toLocaleDateString('de-DE')})</span></div><div class="outlook-row bad"><span class="outlook-label">🔴 Bei Rauchen:</span><span class="outlook-value">Schuld steigt auf ${Number.isInteger(dB)?dB:dB.toFixed(1).replace('.',',')} (Ziel: ${resB.finalEnd.toLocaleDateString('de-DE')})</span></div>`);
@@ -959,36 +1260,90 @@
           } else safeDisplay('dash-outlook', 'none');
       } else safeDisplay('dash-outlook', 'none');
 
-      if (isLoggedToday && !isSandbox) { safeDisplay('daily-action-area', 'none'); safeDisplay('daily-done-area', 'block'); } else { safeDisplay('daily-action-area', 'block'); safeDisplay('daily-done-area', 'none'); }
+      if (isLoggedToday && !isSandbox) { 
+          safeDisplay('daily-action-area', 'none'); 
+          safeDisplay('daily-done-area', 'block'); 
+      } else { 
+          safeDisplay('daily-action-area', 'block'); 
+          safeDisplay('daily-done-area', 'none'); 
+      }
+      
+      if (!isSandbox && ds.gotBonusToday) triggerBonusConfetti();
   }
 
   function renderHistorie() {
-      const res = activeSimResult; if(!res || res.failed) { safeDisplay('historie-output', 'none'); return; }
+      const res = activeSimResult; 
+      if(!res || res.failed) { safeDisplay('historie-output', 'none'); return; }
+      
+      const active = getActiveCycle(); 
       safeDisplay('historie-output', 'block');
-      const totalT = res.totalTDaysEver || 0, totalRegenDebt = res.totalDebtEver || 0, aufschlag = totalRegenDebt - (totalT * 3);
+      
+      const totalT = res.totalTDaysEver || 0; 
+      const totalRegenDebt = res.totalDebtEver || 0; 
+      const aufschlag = totalRegenDebt - (totalT * 3);
       
       let html = `<div style="margin-top:0.5rem; font-weight:bold; color:#2c3e50; margin-bottom: 10px;">📊 Gesamtbilanz dieses Zyklus</div><div class="stat-grid" style="margin-bottom: 1rem;"><div class="stat-box" style="padding: 10px;"><div class="stat-val" style="font-size: 1.4rem;">${totalT}</div><div class="stat-label" style="font-size: 0.65rem;">T-Tage</div></div><div class="stat-box" style="padding: 10px;"><div class="stat-val" style="font-size: 1.4rem;">${totalT * 3}</div><div class="stat-label" style="font-size: 0.65rem;">x3 Schuld</div></div><div class="stat-box" style="padding: 10px;"><div class="stat-val danger" style="font-size: 1.4rem; color: var(--danger);">+${aufschlag}</div><div class="stat-label" style="font-size: 0.65rem;">Aufschlag</div></div><div class="stat-box" style="padding: 10px;"><div class="stat-val blue" style="font-size: 1.4rem; color: var(--nirvana-blue);">${totalRegenDebt}</div><div class="stat-label" style="font-size: 0.65rem;">Gesamtschuld</div></div></div>`;
-      if (res.mFreeGoal > 0 && !res.isOpen) { let mP = Math.min(100, (res.mFreeCurrent / res.mFreeGoal) * 100); html += `<div style="margin-top: 15px; padding: 15px; background: #fdfafb; border: 1px solid #e8daef; border-radius: 12px; text-align: center;"><div style="font-weight: 800; color: #8e44ad; margin-bottom: 5px;">M-freie Regeneration</div><div style="background: #eee; height: 12px; border-radius: 6px; overflow: hidden; margin-bottom: 5px;"><div style="background: #9b59b6; width: ${mP}%; height: 100%; transition: width 0.5s ease;"></div></div><div style="font-size: 0.85rem; font-weight: bold; color: #555;">${res.mFreeCurrent} von ${res.mFreeGoal} Tagen erreicht ${res.mFreeCurrent >= res.mFreeGoal ? '✅' : ''}</div></div>`; } else if (!res.isOpen) html += `<div style="margin-top:10px; padding:10px; background:#e8f6f3; border-radius:8px; color:#16a085; font-weight:bold; text-align:center;">Empfohlene M-freie Tage: ${res.mFreeGoal || 0}</div>`;
+      
+      if (res.mFreeGoal > 0 && !res.isOpen) {
+          let mProgress = Math.min(100, (res.mFreeCurrent / res.mFreeGoal) * 100);
+          html += `<div style="margin-top: 15px; padding: 15px; background: #fdfafb; border: 1px solid #e8daef; border-radius: 12px; text-align: center;"><div style="font-weight: 800; color: #8e44ad; margin-bottom: 5px;">M-freie Regeneration</div><div style="background: #eee; height: 12px; border-radius: 6px; overflow: hidden; margin-bottom: 5px;"><div style="background: #9b59b6; width: ${mProgress}%; height: 100%; transition: width 0.5s ease;"></div></div><div style="font-size: 0.85rem; font-weight: bold; color: #555;">${res.mFreeCurrent} von ${res.mFreeGoal} Tagen erreicht ${res.mFreeCurrent >= res.mFreeGoal ? '✅' : ''}</div></div>`;
+      } else if (!res.isOpen) {
+          html += `<div style="margin-top:10px; padding:10px; background:#e8f6f3; border-radius:8px; color:#16a085; font-weight:bold; text-align:center;">Empfohlene M-freie Tage: ${res.mFreeGoal || 0}</div>`;
+      }
+      
       safeHTML('bilanz-container', html);
 
-      const allDates = [...res.history.t, ...res.history.a, ...res.history.b, ...res.history.r, ...res.history.n]; if (allDates.length === 0) return;
-      const minDate = new Date(Math.min(...allDates.map(d => d.getTime()))); let rawMaxDate = new Date(Math.max(...allDates.map(d => d.getTime())));
-      const active = getActiveCycle(); if(active && active.targetETA) { const targetObj = parseLocal(active.targetETA); if (targetObj > rawMaxDate) rawMaxDate = targetObj; }
-      let current = new Date(minDate.getFullYear(), minDate.getMonth(), 1), realEnd = new Date(rawMaxDate.getFullYear(), rawMaxDate.getMonth() + 1, 0), todayStr = new Date().toDateString(), targetStrCheck = (active && active.targetETA) ? parseLocal(active.targetETA)?.toDateString() : null;
+      const allDates = [...res.history.t, ...res.history.a, ...res.history.b, ...res.history.r, ...res.history.n]; 
+      if (allDates.length === 0) return;
+      
+      const minDate = new Date(Math.min(...allDates.map(d => d.getTime())));
+      let rawMaxDate = new Date(Math.max(...allDates.map(d => d.getTime())));
+      
+      if(active && active.targetETA) { 
+          const targetObj = parseLocal(active.targetETA); 
+          if (targetObj > rawMaxDate) rawMaxDate = targetObj; 
+      }
+      
+      let current = new Date(minDate.getFullYear(), minDate.getMonth(), 1);
+      const realEnd = new Date(rawMaxDate.getFullYear(), rawMaxDate.getMonth() + 1, 0);
+      const todayStr = new Date().toDateString(); 
+      const targetStrCheck = (active && active.targetETA) ? parseLocal(active.targetETA)?.toDateString() : null;
+
       let calHtml = "<table><thead><tr><th>Mo</th><th>Di</th><th>Mi</th><th>Do</th><th>Fr</th><th>Sa</th><th>So</th></tr></thead><tbody><tr>";
-      let startDay = current.getDay() === 0 ? 6 : current.getDay() - 1; for (let i = 0; i < startDay; i++) calHtml += "<td></td>";
+      let startDay = current.getDay() === 0 ? 6 : current.getDay() - 1;
+      for (let i = 0; i < startDay; i++) calHtml += "<td></td>";
 
       while (current <= realEnd) {
-        const dStr = current.toDateString(), isoDStr = toIsoString(current); let log = (active.logs || {})[isoDStr], tagClass = "", tagText = "";
-        if (res.history.t.some(d => d.toDateString() === dStr)) { tagClass = "tday"; tagText="1. Konsum"; } else if (res.history.a.some(d => d.toDateString() === dStr)) { tagClass = "ausrutscher"; tagText="weiteres Rauchen"; } else if (res.history.b.some(d => d.toDateString() === dStr)) { tagClass = "bewaehrung"; tagText="Bewährung"; } else if (res.history.r.some(d => d.toDateString() === dStr)) { tagClass = "regen"; tagText="Regen."; } else if (res.history.n.some(d => d.toDateString() === dStr)) { tagClass = "nirvana"; tagText="Nirwana"; }
-        if (log && log.note) tagText += " 📝"; if (targetStrCheck && dStr === targetStrCheck) { tagText += " 🏁 Ziel"; tagClass += " target-flag"; }
-        calHtml += `<td class="active-month ${dStr === todayStr ? "today-highlight" : ""}"><span class="date-num">${current.getDate()}.</span>${tagText ? `<span class="tag ${tagClass}">${tagText.trim()}</span>` : ''}</td>`;
-        if (current.getDay() === 0 && current < realEnd) calHtml += "</tr><tr>"; current.setDate(current.getDate() + 1);
+        const dStr = current.toDateString(); 
+        const isoDStr = toIsoString(current); 
+        let log = (active.logs || {})[isoDStr];
+        let tagClass = "", tagText = ""; 
+        let isTodayClass = (dStr === todayStr) ? "today-highlight" : "";
+
+        if (res.history.t.some(d => d.toDateString() === dStr)) { tagClass = "tday"; tagText="1. Konsum"; }
+        else if (res.history.a.some(d => d.toDateString() === dStr)) { tagClass = "ausrutscher"; tagText="weiteres Rauchen"; }
+        else if (res.history.b.some(d => d.toDateString() === dStr)) { tagClass = "bewaehrung"; tagText="Bewährung"; }
+        else if (res.history.r.some(d => d.toDateString() === dStr)) { tagClass = "regen"; tagText="Regen."; }
+        else if (res.history.n.some(d => d.toDateString() === dStr)) { tagClass = "nirvana"; tagText="Nirwana"; }
+        
+        if (log && log.note) tagText += " 📝";
+        
+        if (targetStrCheck && dStr === targetStrCheck) { tagText += " 🏁 Ziel"; tagClass += " target-flag"; }
+
+        calHtml += `<td class="active-month ${isTodayClass}"><span class="date-num">${current.getDate()}.</span>${tagText ? `<span class="tag ${tagClass}">${tagText.trim()}</span>` : ''}</td>`;
+        if (current.getDay() === 0 && current < realEnd) calHtml += "</tr><tr>"; 
+        current.setDate(current.getDate() + 1);
       }
-      if (current.getDay() !== 1) { let endPad = current.getDay() === 0 ? 0 : 8 - current.getDay(); for (let i=0; i<endPad; i++) calHtml += "<td></td>"; }
-      calHtml += "</tr></tbody></table>"; safeHTML("calendar", calHtml);
+      
+      if (current.getDay() !== 1) { 
+          let endPad = current.getDay() === 0 ? 0 : 8 - current.getDay(); 
+          for (let i=0; i<endPad; i++) calHtml += "<td></td>"; 
+      }
+      calHtml += "</tr></tbody></table>"; 
+      safeHTML("calendar", calHtml);
   }
 
+  // --- Weitere Rendering Funktionen (Archiv, Tagebuch etc.) ---
   function renderArchiv() {
       const archContainer = document.getElementById('archive-container'); if(!archContainer) return;
       const archived = (getApp().cycles || []).filter(c => c.status === 'archived'); archContainer.innerHTML = "";
@@ -1073,7 +1428,7 @@
               const res = globalSimResults.find(r => r && r.cycleId === cycle.id); 
               if(!res || res.failed) {
                   const card = document.createElement('div'); card.className = 'archive-card'; card.style.borderLeftColor = 'var(--danger)'; card.style.backgroundColor = '#fff5f5';
-                  card.innerHTML = `<div class="archive-header"><div class="archive-title" style="color:var(--danger);">⚠️ Simulation ${!res?"fehlt (null)":"abgestürzt"}</div><div style="display:flex; align-items:center; gap:10px;"><button class="btn-tool" style="padding:4px 8px; border:1px solid var(--danger); color:var(--danger); min-width:auto;" onclick="deleteArchivedCycle(${cycle.id})" title="Zyklus löschen">🗑️</button></div></div><div class="archive-stats" style="grid-template-columns: 1fr;"><div><strong>ID:</strong> ${cycle.id} | <strong>Start:</strong> ${cycle.base?.start||'Unbekannt'} | <strong>Ende:</strong> ${cycle.base?.end||'Unbekannt'}</div><div style="color:var(--danger); font-size:0.85rem; margin-top:5px;">Dieser Zyklus wurde gespeichert, aber die Zeitachsen-Berechnung schlug fehl:<br><br>${!res?"Die Engine hat für diesen Zyklus kein Ergebnis zurückgegeben.":`<strong>${res.errorName}:</strong> ${res.errorMessage}<br><pre style="font-size:0.7rem; background:#f8d7da; padding:5px; margin-top:5px; overflow-x:auto;">${res.stack || 'Kein Stacktrace'}</pre>`}</div></div>`;
+                  card.innerHTML = `<div class="archive-header"><div class="archive-title" style="color:var(--danger);">⚠️ Simulation ${!res?"fehlt (null)":"abgestürzt"}</div><div style="display:flex; align-items:center; gap:10px;"><button class="btn-tool" style="padding:4px 8px; border:1px solid var(--danger); color:var(--danger); min-width:auto;" onclick="deleteArchivedCycle(${cycle.id})" title="Zyklus löschen">🗑️</button></div></div><div class="archive-stats" style="grid-template-columns: 1fr;"><div><strong>ID:</strong> ${cycle.id} | <strong>Start:</strong> ${cycle.base?.start||'Unbekannt'} | <strong>Ende:</strong> ${cycle.base?.end||'Unbekannt'}</div><div style="color:var(--danger); font-size:0.85rem; margin-top:5px;">Dieser Zyklus wurde gespeichert, aber die Zeitachsen-Berechnung schlug fehl:<br><br>${!res?"Die Engine hat für diesen Zyklus kein Ergebnis zurückgegeben.":`<strong>${res.errorName}:</strong> ${res.errorMessage}`}</div></div>`;
                   archContainer.appendChild(card); return; 
               }
               if(!cycle.base?.start) return; 
@@ -1098,25 +1453,8 @@
       }
       safeHTML('archive-months-container', archMonthsHtml);
 
-      safeHTML('debug-container', `<details style="background:#fff3cd; border:1px solid #ffeeba; padding:10px; font-size:0.85rem; border-radius:8px; color:#856404; margin-bottom: 20px;"><summary style="font-weight:bold; cursor:pointer;">🛠️ System-Diagnose (Debug Monitor)</summary><div style="margin-top: 10px;"><strong>Zyklen im Speicher:</strong> ${(getApp().cycles || []).length}<br><strong>Archivierte Zyklen (UI):</strong> ${archived.length}<br><strong>Simulations-Ergebnisse:</strong> ${globalSimResults.length} Elemente<br><br><strong>Gespeicherte Cycle-IDs:</strong><br>${(getApp().cycles || []).map(c=>c.id).join(', ')}<br><br><strong>Erfolgreiche Res-IDs:</strong><br>${globalSimResults.map(r => r ? (r.failed ? `[FAILED: ${r.cycleId}]` : r.cycleId) : '[NULL]').join(', ')}</div></details>`);
+      safeHTML('debug-container', `<details style="background:#fff3cd; border:1px solid #ffeeba; padding:10px; font-size:0.85rem; border-radius:8px; color:#856404; margin-bottom: 20px;"><summary style="font-weight:bold; cursor:pointer;">🛠️ System-Diagnose (Debug Monitor)</summary><div style="margin-top: 10px;"><strong>Zyklen im Speicher:</strong> ${(getApp().cycles || []).length}<br><strong>Archivierte Zyklen (UI):</strong> ${archived.length}<br><strong>Simulations-Ergebnisse:</strong> ${globalSimResults.length} Elemente<br><br><strong>Gespeicherte Cycle-IDs:</strong><br>${(getApp().cycles || []).map(c=>c.id).join(', ')}<br><br><strong>Erfolgreiche Res-IDs:</strong><br>${globalSimResults.map(r => r ? (r.failed ? \`[FAILED: \${r.cycleId}]\` : r.cycleId) : '[NULL]').join(', ')}</div></details>`);
   }
-
-  function exportData() { let exportObj = JSON.parse(JSON.stringify(getApp())); if (isSandbox) exportObj.isSandbox = true; const blob = new Blob([JSON.stringify(exportObj, null, 2)], {type: "application/json"}); const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = isSandbox ? "lifetracker_simulation.json" : "lifetracker_backup.json"; link.click(); }
-  function importData(input) { const file = input.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = function(e) { try { let data = JSON.parse(e.target.result); if (!data || typeof data !== 'object' || (!data.cycles && !data.base && data.tDays === undefined)) throw new Error("Ungültiges Dateiformat."); if (data.cycles && !Array.isArray(data.cycles)) throw new Error("Ungültiges Dateiformat."); if (!isSandbox && data.isSandbox) { input.value = ''; return customAlert("Achtung: Simulations-Datei nur im Labor ladbar!"); } if (isSandbox) { sandboxData = data; runAllSimulations(); input.value = ''; customAlert("Simulation in Sandbox geladen!"); } else { if (data.version >= 5) { data.version = 12.2; appData = data; } else if (data.base && !data.cycles) { appData = { version: 12.2, cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }], breatheLogs: {} }; } else if (data.tDays !== undefined && !data.base) { let base = { start: data.startDate, end: data.endDate, tDays: parseInt(data.tDays)||0, sLevel: parseInt(data.stress)||0, aLevel: parseInt(data.alcohol)||0, mLevel: 0, isOpen: false }; let logs = {}; if(data.interruptions) { data.interruptions.forEach(int => { logs[int.start] = { type: 'ausrutscher', t: parseInt(int.t)||1, s: parseInt(int.s)||0, a: parseInt(int.a)||0, m: 0 }; }); } appData = { version: 12.2, cycles: [{ id: Date.now(), status: 'active', base: base, logs: logs }], breatheLogs: {} }; } else { appData = data; } if (appData.cycles && Array.isArray(appData.cycles)) { appData.cycles = appData.cycles.filter(c => c && c.base && c.base.start); appData.cycles.forEach(c => { if (c.base.mLevel === undefined) c.base.mLevel = 0; if (!c.logs) c.logs = {}; Object.values(c.logs).forEach(l => { if (l && typeof l === 'object' && l.m === undefined) l.m = 0; }); if (!c.monthlyNotes) c.monthlyNotes = {}; }); } appData.cycles = Array.isArray(appData.cycles) ? appData.cycles : []; appData.breatheLogs = appData.breatheLogs || {}; saveData(true); const hasActive = appData.cycles.some(c => c.status === 'active'); if (!hasActive && appData.cycles.length > 0) sessionStorage.setItem('retrack_target_tab', 'archiv'); customAlert("Daten geladen!", () => { input.value = ''; if (!isSandbox) window.location.href = window.location.href.split('?')[0]; }); } } catch(err) { input.value = ''; customAlert("Fehler beim Laden: " + err.message); } }; reader.onerror = function() { input.value = ''; customAlert("Fehler beim Lesen der Datei."); }; reader.readAsText(file); }
-  function downloadICS() { if(!activeSimResult) return; const res = activeSimResult, activeCycle = getActiveCycle(); if (!activeCycle || !activeCycle.base || !activeCycle.base.start) return customAlert("Kein aktiver Zyklus zum Exportieren gefunden."); const sLevels = ['Kein', 'Moderat', 'Hoch'], aLevels = ['Kein', 'Moderat', 'Hoch'], mLevels = ['Kein', 'Moderat', 'Hoch']; let desc = isSandbox ? `ReTrack SIMULATION\n\n` : `ReTrack V12.2\n\n`; desc += `--- Basis-Phase ---\nStart: ${parseLocal(activeCycle.base.start).toLocaleDateString('de-DE')}\nEnde: ${parseLocal(activeCycle.base.end).toLocaleDateString('de-DE')}\nT-Tage: ${activeCycle.base.tDays}d\nStress (Max): ${sLevels[activeCycle.base.sLevel]}\nAlkohol (Max): ${aLevels[activeCycle.base.aLevel]}\nMasturbation (M): ${mLevels[activeCycle.base.mLevel || 0]}\n${res.basePenaltyStr}\n`; if(res.history.logDetails.length > 0) { desc += `\n--- Rauchen / Logs ---\n`; [...res.history.logDetails].sort((a,b) => parseLocal(a.date) - parseLocal(b.date)).forEach(l => { desc += `[${parseLocal(l.date).toLocaleDateString('de-DE')}] Dauer: ${l.t}d | S: ${sLevels[l.s]} | A: ${aLevels[l.a]} | M: ${mLevels[(activeCycle.logs||{})[l.date]?.m || 0]} -> ${res.history.penaltyDict[l.date] || `Strafe: +${l.p} Tage`}\n`; }); } const totalT = res.totalTDaysEver, totalRegenDebt = res.totalDebtEver, aufschlag = totalRegenDebt - (totalT * 3); desc += `\n--- Gesamtbilanz ---\nT-Tage gesamt: ${totalT}\nx3 Schuld: ${totalT * 3} Tage\nZusätzlicher Aufschlag: +${aufschlag} Tage\nRegenerationsschuld: ${totalRegenDebt} Tage\nEmpfohlene M-freie Tage: ${res.mFreeGoal}\nZiel: ${res.finalEnd.toLocaleDateString('de-DE')}\n`; if (activeCycle.monthlyNotes && Object.keys(activeCycle.monthlyNotes).length > 0) { desc += `\n--- Monats-Notizen ---\n`; const monthNames = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"]; Object.keys(activeCycle.monthlyNotes).sort().forEach(mKey => { let parts = mKey.split('-'); let notes = activeCycle.monthlyNotes[mKey]; if (notes.erk || notes.dtx) { desc += `${monthNames[parseInt(parts[1])-1]} ${parts[0]}:\n`; if (notes.erk) desc += ` Erkenntnisse: ${notes.erk.replace(/\n/g, ' ')}\n`; if (notes.dtx) desc += ` DTX: ${notes.dtx.replace(/\n/g, ' ')}\n`; } }); } const exportDates = [...res.history.b, ...res.history.r].sort((a,b) => a-b); if(exportDates.length === 0) return customAlert("Keine Erholungstage zum Exportieren gefunden."); const start = exportDates[0], end = addDays(exportDates[exportDates.length - 1], 1), formatDate = d => `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`; const ics = `BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nUID:${Date.now()}@regenrechner\nDTSTAMP:${formatDate(new Date())}T000000Z\nDTSTART;VALUE=DATE:${formatDate(start)}\nDTEND;VALUE=DATE:${formatDate(end)}\nSUMMARY:${isSandbox ? 'Simulation:' : ''} Regenerationsphase (${exportDates.length} Tage)\nDESCRIPTION:${desc.replace(/\n/g, '\\n')}\nEND:VEVENT\nEND:VCALENDAR`; const blob = new Blob([ics], { type: "text/calendar" }); const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = isSandbox ? "simulation.ics" : "regeneration.ics"; link.click(); }
-  function downloadImage() { const exportCard = document.getElementById("export-card"); if(!exportCard) return; const wrapper = exportCard.querySelector('.calendar-wrapper'), oldOverflow = wrapper.style.overflowX, oldWidth = exportCard.style.width; wrapper.style.overflowX = 'visible'; exportCard.style.width = wrapper.scrollWidth + 40 + 'px'; html2canvas(exportCard, { scale: 2, backgroundColor: isSandbox ? "#f5eef8" : "#ffffff" }).then(canvas => { wrapper.style.overflowX = oldOverflow; exportCard.style.width = oldWidth; const link = document.createElement("a"); link.download = isSandbox ? "simulation_zyklus.png" : "aktueller_zyklus.png"; link.href = canvas.toDataURL("image/png"); link.click(); }); }
-
-  function openBreatheOverlay() { if (isBreatheActive) return; safeDisplay('breathe-overlay', 'flex'); safeDisplay('br-setup', 'block'); safeDisplay('br-active', 'none'); safeDisplay('br-done', 'none'); safeSetVal('br-duration', 3); safeText('br-duration-display', '3'); }
-  async function requestWakeLock() { try { if ('wakeLock' in navigator) brWakeLock = await navigator.wakeLock.request('screen'); } catch (err) {} }
-  function releaseWakeLock() { if (brWakeLock !== null) { brWakeLock.release(); brWakeLock = null; } }
-  function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === 'suspended') audioCtx.resume(); }
-  function playPhaseSound(phase) { if (!audioCtx) return; const osc = audioCtx.createOscillator(), gain = audioCtx.createGain(); osc.connect(gain); gain.connect(audioCtx.destination); const now = audioCtx.currentTime; if (phase === 0) { osc.type = 'sine'; osc.frequency.setValueAtTime(261.63, now); osc.frequency.linearRampToValueAtTime(329.63, now + 4); gain.gain.setValueAtTime(0, now); gain.gain.linearRampToValueAtTime(0.3, now + 1); gain.gain.setValueAtTime(0.3, now + 3); gain.gain.linearRampToValueAtTime(0, now + 4); osc.start(now); osc.stop(now + 4); } else if (phase === 1) { osc.type = 'triangle'; osc.frequency.setValueAtTime(659.25, now); gain.gain.setValueAtTime(0, now); gain.gain.linearRampToValueAtTime(0.15, now + 0.05); gain.gain.exponentialRampToValueAtTime(0.001, now + 2); osc.start(now); osc.stop(now + 2); } else if (phase === 2) { osc.type = 'sine'; osc.frequency.setValueAtTime(329.63, now); osc.frequency.linearRampToValueAtTime(196.00, now + 4); gain.gain.setValueAtTime(0, now); gain.gain.linearRampToValueAtTime(0.3, now + 1); gain.gain.setValueAtTime(0.3, now + 3); gain.gain.linearRampToValueAtTime(0, now + 4); osc.start(now); osc.stop(now + 4); } else if (phase === 3) { osc.type = 'triangle'; osc.frequency.setValueAtTime(440.00, now); gain.gain.setValueAtTime(0, now); gain.gain.linearRampToValueAtTime(0.2, now + 0.05); gain.gain.exponentialRampToValueAtTime(0.001, now + 1.5); osc.start(now); osc.stop(now + 1.5); } }
-  function startBreathe() { const minutes = parseInt(safeVal('br-duration')); if (isNaN(minutes) || minutes < 1 || minutes > 60) return customAlert("Bitte Dauer wählen."); brTotalDuration = minutes * 60 * 1000; isBreatheActive = true; brStartTime = 0; brCurrentPhase = -1; safeDisplay('br-setup', 'none'); safeDisplay('br-active', 'flex'); initAudio(); requestWakeLock(); brAnimationId = requestAnimationFrame(breatheLoop); }
-  function breatheLoop(timestamp) { if (!isBreatheActive) return; if (!brStartTime) brStartTime = timestamp; const elapsed = timestamp - brStartTime, timeLeft = brTotalDuration - elapsed; if (timeLeft <= 0) return finishBreathe(); const secsLeft = Math.ceil(timeLeft / 1000), m = String(Math.floor(secsLeft / 60)).padStart(2, '0'), s = String(secsLeft % 60).padStart(2, '0'); safeText('br-timer', `${m}:${s}`); const cycleTime = elapsed % 16000; let phase = Math.floor(cycleTime / 4000), phaseProgress = (cycleTime % 4000) / 4000; if (phase !== brCurrentPhase) { brCurrentPhase = phase; playPhaseSound(phase); const textEl = document.getElementById('br-text'); if (textEl) { if (phase === 0) { textEl.textContent = "Einatmen"; textEl.style.color = "#ecf0f1"; } else if (phase === 1) { textEl.textContent = "Halten"; textEl.style.color = "#f1c40f"; } else if (phase === 2) { textEl.textContent = "Ausatmen"; textEl.style.color = "#ecf0f1"; } else if (phase === 3) { textEl.textContent = "Halten"; textEl.style.color = "#95a5a6"; } } } const circle = document.getElementById('br-circle'); let scale = 1; if (phase === 0) { const ease = phaseProgress < 0.5 ? 2 * phaseProgress * phaseProgress : 1 - Math.pow(-2 * phaseProgress + 2, 2) / 2; scale = 1 + ease * 1.8; } else if (phase === 1) { scale = 2.8; } else if (phase === 2) { const ease = phaseProgress < 0.5 ? 2 * phaseProgress * phaseProgress : 1 - Math.pow(-2 * phaseProgress + 2, 2) / 2; scale = 2.8 - ease * 1.8; } else if (phase === 3) { scale = 1; } if(circle) circle.style.transform = `scale(${scale})`; brAnimationId = requestAnimationFrame(breatheLoop); }
-  function finishBreathe() { isBreatheActive = false; cancelAnimationFrame(brAnimationId); releaseWakeLock(); if (audioCtx) { const now = audioCtx.currentTime, osc = audioCtx.createOscillator(), gain = audioCtx.createGain(); osc.connect(gain); gain.connect(audioCtx.destination); osc.type = 'sine'; osc.frequency.setValueAtTime(440, now); osc.frequency.setValueAtTime(523.25, now + 1); gain.gain.setValueAtTime(0, now); gain.gain.linearRampToValueAtTime(0.3, now + 0.1); gain.gain.exponentialRampToValueAtTime(0.001, now + 3); osc.start(now); osc.stop(now + 3); } safeDisplay('br-active', 'none'); safeDisplay('br-done', 'block'); const todayStr = toIsoString(new Date()); if (!appData.breatheLogs) appData.breatheLogs = {}; let currentLog = appData.breatheLogs[todayStr]; if (typeof currentLog === 'number') { currentLog = { count: currentLog, minutes: currentLog * 3 }; } else if (!currentLog) { currentLog = { count: 0, minutes: 0 }; } currentLog.count += 1; currentLog.minutes += Math.round(brTotalDuration / 60000); appData.breatheLogs[todayStr] = currentLog; localStorage.setItem('regenAppData_v6', JSON.stringify(appData)); if (isSandbox && sandboxData) sandboxData.breatheLogs = JSON.parse(JSON.stringify(appData.breatheLogs)); updateUI(); if (document.getElementById('diary-container')?.style.display === 'block') renderDiaryList(); }
-  function abortBreathe() { isBreatheActive = false; if (brAnimationId) cancelAnimationFrame(brAnimationId); releaseWakeLock(); safeDisplay('breathe-overlay', 'none'); }
-  function applyPwaUpdate() { if (newWorker) newWorker.postMessage({ action: 'skipWaiting' }); }
-  let newWorker; if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').then(reg => { reg.addEventListener('updatefound', () => { newWorker = reg.installing; newWorker.addEventListener('statechange', () => { if (newWorker.state === 'installed' && navigator.serviceWorker.controller) safeDisplay('update-banner', 'block'); }); }); }).catch(err => console.error('SW Error', err)); let refreshing; navigator.serviceWorker.addEventListener('controllerchange', () => { if (refreshing) return; refreshing = true; window.location.reload(); }); }); }
 </script>
 </body>
 </html>
