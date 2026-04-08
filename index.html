@@ -8,7 +8,7 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
 
-  <title>ReTrack 12.9</title>
+  <title>ReTrack 13.0</title>
   
   <link rel="manifest" href="./manifest.json" />
   <meta name="theme-color" content="#f1c40f" />
@@ -125,7 +125,7 @@
     .ring-target { font-size: 0.8rem; font-weight: 600; color: #7f8c8d; }
 
     /* Boxen im Dashboard */
-    .outlook-box { background: #fff; border: 1px solid #e0e0e0; border-radius: 12px; padding: 15px; margin-bottom: 15px; box-shadow: var(--shadow); transition: border 0.3s; }
+    .outlook-box { background: #fff; border: 1px solid #e0e0e0; border-radius: 12px; padding: 15px; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); transition: border 0.3s; }
     .outlook-title { font-weight: 800; font-size: 0.95rem; color: #2c3e50; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
     .outlook-row { display: flex; justify-content: space-between; font-size: 0.85rem; padding: 10px; border-radius: 8px; margin-bottom: 8px; align-items: center;}
     .outlook-row:last-child { margin-bottom: 0; }
@@ -142,7 +142,7 @@
     .btn-ausrutscher { background: #e74c3c; box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3); }
     .undo-link { color: #7f8c8d; font-size: 0.85rem; text-decoration: underline; cursor: pointer; display: inline-block; margin-top: 10px; }
 
-    /* Modals - Saubere Sicherung per z-index und Klassen */
+    /* Modals - Saubere Sicherung per Klassen */
     #modal-alert, #modal-confirm, #modal-target { z-index: 9999 !important; }
     .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 100; justify-content: center; align-items: center; padding: 20px; }
     .modal-overlay.active { display: flex !important; animation: fadeIn 0.2s; }
@@ -161,7 +161,7 @@
     input[readonly], select:disabled { background-color: #e9ecef; color: #7f8c8d; cursor: not-allowed; font-weight: bold; border: 1px solid #dee2e6; } 
     textarea { resize: vertical; }
 
-    /* Checkbox Styling */
+    /* Checkbox Styling V13.0 */
     .checkbox-wrapper { display: flex; align-items: center; gap: 8px; cursor: pointer; margin-top: 5px; }
     .checkbox-wrapper input[type="checkbox"] { width: 22px; height: 22px; margin: 0; cursor: pointer; accent-color: var(--danger); }
     .checkbox-wrapper span { font-weight: 700; font-size: 0.9rem; color: var(--text-main); }
@@ -318,7 +318,7 @@
 
   <header onclick="openBreatheOverlay()" title="Geheime Atem-Übung öffnen">
     <h1>🧪 ReTrack</h1>
-    <div class="version">Version 12.9 – Core Engine Stability</div>
+    <div class="version">Version 13.0 – Smart Days Edition</div>
   </header>
 
   <div class="tabs">
@@ -360,7 +360,7 @@
                 </div>
             </div>
 
-            <!-- Budget Box -->
+            <!-- Budget Box V13.0 -->
             <div id="dash-budget-box" class="outlook-box" style="display:none; background:#fdfafb; border: 2px dashed #9b59b6; cursor:pointer;" onclick="openTargetModal()" title="Ziel & Budget bearbeiten">
                 <div id="budget-content-active" style="display:none;">
                     <div class="outlook-title" style="justify-content:space-between; color:#8e44ad;">
@@ -375,7 +375,7 @@
                     <div style="font-size:0.8rem; opacity:0.8;">Wann möchtest du regeneriert sein?</div>
                 </div>
             </div>
-
+            
             <!-- Outlook Box -->
             <div id="dash-outlook" class="outlook-box" style="display:none;"></div>
 
@@ -423,7 +423,7 @@
             </div>
         </div>
         <div>
-            <label>Stress (Max)</label>
+            <label>Stress</label>
             <select id="base-s" onchange="saveBase()">
                 <option value="0">Kein</option>
                 <option value="1">Moderat</option>
@@ -431,7 +431,7 @@
             </select>
         </div>
         <div>
-            <label>Alkohol (Max)</label>
+            <label>Alkohol</label>
             <select id="base-a" onchange="saveBase()">
                 <option value="0">Kein</option>
                 <option value="1">Moderat</option>
@@ -439,7 +439,7 @@
             </select>
         </div>
         <div>
-            <label>Masturbation (M)</label>
+            <label>Masturbation</label>
             <select id="base-m" onchange="saveBase()">
                 <option value="0">Kein</option>
                 <option value="1">Moderat</option>
@@ -488,7 +488,7 @@
                 </select>
             </div>
             <div>
-                <label>Masturbation (M)</label>
+                <label>Masturbation</label>
                 <select id="sim-a-m">
                     <option value="0">Kein</option>
                     <option value="1">Moderat</option>
@@ -687,7 +687,7 @@
     </div>
   </div>
 
-  <!-- Pause Modal -->
+  <!-- Pause Modal (Refactored V13.0) -->
   <div id="modal-pause" class="modal-overlay">
     <div class="modal-card"><h3 style="color:var(--btn-calc)">🟢 Pause eintragen</h3>
       <p style="font-size:0.8rem; color:#666; margin-bottom: 15px;">Pausentage mit Stress/Alkohol/M drosseln <strong>nicht</strong> deine Regenerationsdauer, füttern aber die Statistik.</p>
@@ -697,7 +697,7 @@
               <input type="date" id="modal-p-date" readonly>
           </div>
           <div>
-              <label>Stress heute?</label>
+              <label>Stress</label>
               <select id="modal-p-s">
                   <option value="0">Kein</option>
                   <option value="1">Moderat</option>
@@ -705,7 +705,7 @@
               </select>
           </div>
           <div>
-              <label>Alkohol heute?</label>
+              <label>Alkohol</label>
               <select id="modal-p-a">
                   <option value="0">Kein</option>
                   <option value="1">Moderat</option>
@@ -737,11 +737,9 @@
               <textarea id="modal-p-note" rows="2" maxlength="150" placeholder="Was ging dir heute durch den Kopf?"></textarea>
           </div>
       </div>
-      <div class="modal-actions">
-        <div class="modal-actions-row">
-            <button class="btn-tool" onclick="closeModal('modal-pause')">Abbrechen</button>
-            <button class="btn-quick btn-pausiert" onclick="submitPause()">💾 Eintragen</button>
-        </div>
+      <div class="modal-actions-row" style="margin-top:20px;">
+          <button class="btn-tool" onclick="closeModal('modal-pause')">Abbrechen</button>
+          <button class="btn-quick btn-pausiert" onclick="submitPause()">Speichern</button>
       </div>
     </div>
   </div>
@@ -848,27 +846,27 @@
             </div>
         </div>
         <div>
-            <label>Stress (Max)</label>
+            <label>Stress</label>
             <select id="hist-base-s">
-                <option value="0">0</option>
-                <option value="1">1</option>
-                <option value="2">2</option>
+                <option value="0">Kein</option>
+                <option value="1">Moderat</option>
+                <option value="2">Hoch</option>
             </select>
         </div>
         <div>
-            <label>Alkohol (Max)</label>
+            <label>Alkohol</label>
             <select id="hist-base-a">
-                <option value="0">0</option>
-                <option value="1">1</option>
-                <option value="2">2</option>
+                <option value="0">Kein</option>
+                <option value="1">Moderat</option>
+                <option value="2">Hoch</option>
             </select>
         </div>
         <div>
             <label>Masturbation</label>
             <select id="hist-base-m">
-                <option value="0">0</option>
-                <option value="1">1</option>
-                <option value="2">2</option>
+                <option value="0">Kein</option>
+                <option value="1">Moderat</option>
+                <option value="2">Hoch</option>
             </select>
         </div>
       </div>
@@ -940,7 +938,7 @@
       if (e) e[prop] = val; 
   };
 
-  let appData = { version: 12.9, cycles: [], breatheLogs: {} };
+  let appData = { version: 13.0, cycles: [], breatheLogs: {} };
   let isSandbox = false; 
   let sandboxData = null;
 
@@ -993,7 +991,6 @@
       const m = document.getElementById(id);
       if (m) {
           m.classList.remove('active'); 
-          m.style.display = ''; 
       }
   }
 
@@ -1203,11 +1200,11 @@
               let data = JSON.parse(saved); 
               if (data && typeof data === 'object') {
                   if (data.version >= 5) { 
-                      data.version = 12.9; 
+                      data.version = 13.0; 
                       appData = data; 
                   } else if (data.base) { 
                       appData = { 
-                          version: 12.9, 
+                          version: 13.0, 
                           cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }], 
                           breatheLogs: {} 
                       }; 
@@ -1272,7 +1269,7 @@
               const todayStr = toIsoString(new Date());
               const expectedNext = toIsoString(addDays(parseLocal(active.base.end), 1));
               
-              if (todayStr > active.base.end) { 
+              if (todayStr > expectedNext) { 
                   if (!active.logs) active.logs = {}; 
                   if (!active.logs[expectedNext] || active.logs[expectedNext].type !== 'ausrutscher') { 
                       active.base.isOpen = false; 
@@ -1474,9 +1471,9 @@
               </div>
               
               <div class="form-grid" style="margin-top:10px; gap:8px;">
-                  <div><label>S</label><select class="hist-row-s"><option value="0">0</option><option value="1">1</option><option value="2">2</option></select></div>
-                  <div><label>A</label><select class="hist-row-a"><option value="0">0</option><option value="1">1</option><option value="2">2</option></select></div>
-                  <div><label>M</label><select class="hist-row-m"><option value="0">0</option><option value="1">1</option><option value="2">2</option></select></div>
+                  <div><label>Stress</label><select class="hist-row-s"><option value="0">Kein</option><option value="1">Moderat</option><option value="2">Hoch</option></select></div>
+                  <div><label>Alkohol</label><select class="hist-row-a"><option value="0">Kein</option><option value="1">Moderat</option><option value="2">Hoch</option></select></div>
+                  <div><label>Masturbation</label><select class="hist-row-m"><option value="0">Kein</option><option value="1">Moderat</option><option value="2">Hoch</option></select></div>
               </div>
           </div>`; 
       const c = document.getElementById('hist-logs-container'); 
@@ -1767,9 +1764,9 @@
           let endStr = isSandbox ? (activeSimResult && activeSimResult.finalEnd ? toIsoString(activeSimResult.finalEnd) : todayStr) : todayStr;
           
           const moodEmojis = ["", "😞", "🙁", "😐", "🙂", "🤩"]; 
-          const sLevels = ['S:0', 'S:1', 'S:2']; 
-          const aLevels = ['A:0', 'A:1', 'A:2']; 
-          const mLevels = ['M:0', 'M:1', 'M:2'];
+          const sLevels = ['Kein', 'Moderat', 'Hoch']; 
+          const aLevels = ['Kein', 'Moderat', 'Hoch']; 
+          const mLevels = ['Kein', 'Moderat', 'Hoch'];
           let items = [];
 
           while (toIsoString(curr) <= endStr) {
@@ -1831,25 +1828,23 @@
                   let basePenalty = "";
                   
                   if (item.isBase) { 
-                      let isLastBaseDay = item.dStr === active.base.end; 
-                      let isTodayWhenOpen = active.base.isOpen && item.dStr === todayStr; 
-                      if (isLastBaseDay || isTodayWhenOpen) { 
+                      // FIX V13.0: Only show base penalty once (on the closing day)
+                      if (item.dStr === active.base.end) {
                           basePenalty = `<div class="diary-meta" style="color: #8e44ad; font-weight: bold; font-size: 0.75rem;">${activeSimResult ? activeSimResult.basePenaltyStr : ''}</div>`; 
-                      } 
-                  }
-                  
-                  if (item.isBase) { 
-                      let smallText = active.base.isSmall ? ' (Klein)' : '';
-                      badge = `<span class="diary-badge badge-base">⭐ Basis-Phase${smallText}</span>`; 
-                      meta = `M:${active.base.mLevel||0} | Mood: ${moodStr}${breatheStr}`; 
+                      }
+                      
+                      let smallText = active.base.isSmall ? ' (Kleiner Tag)' : ' (Standardtag)';
+                      badge = `<span class="diary-badge badge-base">⭐ Basis-Phase</span>`; 
+                      meta = `S:${sLevels[active.base.sLevel||0]} | A:${aLevels[active.base.aLevel||0]} | M:${mLevels[active.base.mLevel||0]} | Mood: ${moodStr}${breatheStr} <span style="font-weight:bold; color:#f39c12;">${smallText}</span>`; 
                   } else if (!item.isImplicit) { 
                       if (item.log.type === 'ausrutscher') {
-                          let smallText = item.log.isSmall ? ' (Klein)' : '';
-                          badge = `<span class="diary-badge badge-aus">🔴 Rauchen (${item.log.t}d)${smallText}</span>`; 
+                          let smallText = item.log.isSmall ? ' (Kleiner Tag)' : ' (Standardtag)';
+                          badge = `<span class="diary-badge badge-aus">🔴 Rauchen (${item.log.t}d)</span>`; 
+                          meta = `S:${sLevels[item.log.s||0]} | A:${aLevels[item.log.a||0]} | M:${mLevels[item.log.m||0]} | Mood: ${moodStr}${breatheStr} <span style="font-weight:bold; color:#c0392b;">${smallText}</span>`; 
                       } else {
                           badge = `<span class="diary-badge badge-pause">🟢 Pause</span>`; 
+                          meta = `S:${sLevels[item.log.s||0]} | A:${aLevels[item.log.a||0]} | M:${mLevels[item.log.m||0]} | Mood: ${moodStr}${breatheStr}`; 
                       }
-                      meta = `${sLevels[item.log.s||0]} | ${aLevels[item.log.a||0]} | ${mLevels[item.log.m||0]} | Mood: ${moodStr}${breatheStr}`; 
                   } else { 
                       badge = `<span class="diary-badge badge-pause" style="background:#e9ecef; color:#666;">⚪ Pause (Auto)</span>`; 
                       meta = `Kein Eintrag${breatheStr}`; 
@@ -1894,12 +1889,24 @@
           safeSetVal('edit-is-base', isBase ? "1" : "0");
           
           const log = (active.logs || {})[dateStr] || {}; 
-          safeSetVal('edit-day-type', isBase ? 'ausrutscher' : (log.type || 'pause'));
-          safeSetVal('edit-day-t', log.t || 1); 
-          safeProp('edit-day-small', 'checked', log.isSmall || false);
-          safeSetVal('edit-day-s', log.s || 0); 
-          safeSetVal('edit-day-a', log.a || 0); 
-          safeSetVal('edit-day-m', log.m || 0);
+          
+          // V13.0 FIX: Load base values if base day
+          if (isBase) {
+              safeSetVal('edit-day-type', 'ausrutscher');
+              safeSetVal('edit-day-t', active.base.tDays || 1); 
+              safeProp('edit-day-small', 'checked', active.base.isSmall || false);
+              safeSetVal('edit-day-s', active.base.sLevel || 0); 
+              safeSetVal('edit-day-a', active.base.aLevel || 0); 
+              safeSetVal('edit-day-m', active.base.mLevel || 0);
+          } else {
+              safeSetVal('edit-day-type', log.type || 'pause');
+              safeSetVal('edit-day-t', log.t || 1); 
+              safeProp('edit-day-small', 'checked', log.isSmall || false);
+              safeSetVal('edit-day-s', log.s || 0); 
+              safeSetVal('edit-day-a', log.a || 0); 
+              safeSetVal('edit-day-m', log.m || 0);
+          }
+          
           safeSetVal('edit-day-mood', log.mood || 0); 
           safeSetVal('edit-day-note', log.note || "");
           
@@ -1944,7 +1951,7 @@
       if (!active.logs) active.logs = {};
 
       if (isBase) { 
-          const existing = active.logs[dStr] || { type: 'ausrutscher', t:1, isSmall: false, s:0, a:0, m:0 }; 
+          const existing = active.logs[dStr] || { type: 'ausrutscher', t: 1, isSmall: active.base.isSmall, s: active.base.sLevel, a: active.base.aLevel, m: active.base.mLevel }; 
           active.logs[dStr] = { ...existing, mood, note };
       } else {
           const s = parseInt(safeVal('edit-day-s')) || 0; 
@@ -2007,7 +2014,7 @@
       }
   }
 
-  // --- Core Engine V12.9 ---
+  // --- Core Engine V13.0 ---
   function runAllSimulations() {
       try {
           const app = getApp();
@@ -2032,9 +2039,9 @@
           let isBaseSmall = cycle.base.isSmall === true;
           
           let baseVal = isBaseSmall ? (baseT * 2) : (baseT * 3);
+          let expectedBaseDebt = baseVal; // V13.0 Tracking the exact expected base debt for UI calculation
           
           let sAdd = 0, aAdd = 0;
-          
           if (baseT < 4) { 
               sAdd = (cycle.base.sLevel === 1 ? 1 : cycle.base.sLevel === 2 ? 2 : 0); 
               aAdd = (cycle.base.aLevel === 1 ? 1 : cycle.base.aLevel === 2 ? 2 : 0); 
@@ -2045,7 +2052,7 @@
           let comboAdd = (cycle.base.sLevel === 2 && cycle.base.aLevel === 2) ? 1 : 0;
           
           let initialDebtTotal = baseVal + sAdd + aAdd + comboAdd;
-          let smallTxt = isBaseSmall ? " (Klein x2)" : "";
+          let smallTxt = isBaseSmall ? " (Kleiner Tag)" : " (Standardtag)";
           let basePenaltyStr = `Initiale Schuld: ${initialDebtTotal} Tage (Basis: ${baseVal}${smallTxt}, Stress: ${sAdd}, Alk: ${aAdd}, Kombi: ${comboAdd})`;
 
           let debt = initialDebtTotal;
@@ -2116,7 +2123,6 @@
           let cLogs = cycle.logs || {};
           let lastRealDayStr = (cLogs[todayStr] && typeof cLogs[todayStr] === 'object' && cLogs[todayStr].type !== undefined) ? todayStr : yesterdayStr;
 
-          // Scope Isolation variables 
           var dStr, log, isLogged, isFuture, isLogSmall, iBase, iS, iA, iC, pauschale, penalty, canPayout, pStr;
 
           while ((debt > 0 || toIsoString(simDate) <= endSimLimit) && safety < 25000) {
@@ -2134,8 +2140,8 @@
                   totalTDaysEver += log.t;
                   
                   isLogSmall = log.isSmall === true; 
-                  
                   iBase = isLogSmall ? (log.t * 2) : (log.t * 3);
+                  expectedBaseDebt += iBase; 
                   
                   iS = log.t < 4 ? (log.s===1 ? 1 : log.s===2 ? 2 : 0) : Math.ceil(iBase * (log.s===1 ? 0.1 : log.s===2 ? 0.25 : 0));
                   iA = log.t < 4 ? (log.a===1 ? 1 : log.a===2 ? 2 : 0) : Math.ceil(iBase * (log.a===1 ? 0.1 : log.a===2 ? 0.25 : 0));
@@ -2166,7 +2172,7 @@
                   
                   history.logDetails.push({ date: dStr, p: penalty, t: log.t, b: iBase, s: iS, a: iA, f: pauschale });
                   
-                  let smallInfo = isLogSmall ? " (Klein x2)" : " (x3)";
+                  let smallInfo = isLogSmall ? " (Kleiner Tag)" : " (Standardtag)";
                   pStr = `+${penalty} Tage`;
                   history.penaltyDict[dStr] = pauschale > 0 ? pStr + ` (inkl. Setup)${smallInfo}` : pStr + ` (Stottern)${smallInfo}`;
                   
@@ -2246,6 +2252,7 @@
               finalEnd: finalDebtZeroDate || addDays(simDate, -1), 
               totalTDaysEver: totalTDaysEver, 
               totalDebtEver: totalDebtEver, 
+              expectedBaseDebt: expectedBaseDebt, 
               dashState: dashState, 
               nirvanaStreak: history.n.length, 
               initialDebtTotal: initialDebtTotal, 
@@ -2398,7 +2405,6 @@
           safeDisplay('dash-streak', 'none');
       }
 
-      // V12.9 Budget UI Live Updater
       if (!isSandbox && !res.isOpen) {
           safeDisplay('dash-budget-box', 'block');
           
@@ -2503,14 +2509,7 @@
       
       const totalT = res.totalTDaysEver || 0; 
       const totalRegenDebt = res.totalDebtEver || 0; 
-      
-      // V12.9 FIX: Aufschlag-Berechnung 100% synchron mit simulateCycle.
-      let expectedBaseDebt = active.base.isSmall ? (active.base.tDays * 2) : (active.base.tDays * 3);
-      if (res.history && res.history.logDetails) {
-          res.history.logDetails.forEach(l => {
-              expectedBaseDebt += l.b; 
-          });
-      }
+      const expectedBaseDebt = res.expectedBaseDebt || 0;
       const aufschlag = totalRegenDebt - expectedBaseDebt;
       
       let html = `
@@ -2974,15 +2973,15 @@
                   customAlert("Simulation erfolgreich in die Sandbox geladen!");
               } else {
                   if (data.version >= 5) { 
-                      data.version = 12.9; 
+                      data.version = 13.0; 
                       appData = data; 
                   } else if (data.base && !data.cycles) { 
-                      appData = { version: 12.9, cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }], breatheLogs: {} };
+                      appData = { version: 13.0, cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }], breatheLogs: {} };
                   } else if (data.tDays !== undefined && !data.base) {
                       let base = { start: data.startDate, end: data.endDate, tDays: parseInt(data.tDays)||0, sLevel: parseInt(data.stress)||0, aLevel: parseInt(data.alcohol)||0, mLevel: 0, isOpen: false };
                       let logs = {}; 
                       if(data.interruptions) { data.interruptions.forEach(int => { logs[int.start] = { type: 'ausrutscher', t: parseInt(int.t)||1, s: parseInt(int.s)||0, a: parseInt(int.a)||0, m: 0 }; }); }
-                      appData = { version: 12.9, cycles: [{ id: Date.now(), status: 'active', base: base, logs: logs }], breatheLogs: {} };
+                      appData = { version: 13.0, cycles: [{ id: Date.now(), status: 'active', base: base, logs: logs }], breatheLogs: {} };
                   } else { 
                       appData = data; 
                   }
@@ -3036,7 +3035,7 @@
       const aLevels = ['Kein', 'Moderat', 'Hoch'];
       const mLevels = ['Kein', 'Moderat', 'Hoch'];
       
-      let desc = isSandbox ? `ReTrack SIMULATION\n\n` : `ReTrack V12.9\n\n`;
+      let desc = isSandbox ? `ReTrack SIMULATION\n\n` : `ReTrack V13.0\n\n`;
       desc += `--- Basis-Phase ---\n`;
       desc += `Start: ${parseLocal(activeCycle.base.start).toLocaleDateString('de-DE')}\n`;
       desc += `Ende: ${parseLocal(activeCycle.base.end).toLocaleDateString('de-DE')}\n`;
@@ -3138,7 +3137,7 @@
 
               if (isBaseDay) {
                   typeStr = activeCycle.base.isSmall ? "Basis-Phase (Klein)" : "Basis-Phase";
-                  metaStr = `M:${activeCycle.base.mLevel||0} | Mood: ${moodStr}`;
+                  metaStr = `S:${sLevels[activeCycle.base.sLevel||0]} | A:${aLevels[activeCycle.base.aLevel||0]} | M:${mLevels[activeCycle.base.mLevel||0]} | Mood: ${moodStr}`;
               } else {
                   if (log.type === 'ausrutscher') {
                       typeStr = log.isSmall ? `Rauchen (${log.t}d, Klein)` : `Rauchen (${log.t}d)`;
