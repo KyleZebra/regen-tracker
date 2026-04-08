@@ -8,7 +8,7 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
 
-  <title>ReTrack 11.1</title>
+  <title>ReTrack 12.0</title>
   
   <link rel="manifest" href="./manifest.json" />
   <meta name="theme-color" content="#f1c40f" />
@@ -105,7 +105,6 @@
     
     .eta-text { font-size: 1.1rem; font-weight: 700; color: var(--text-main); } 
     .eta-subtext { font-size: 0.85rem; color: var(--text-light); }
-    .target-tracker { margin-top:15px; padding:10px; border-radius:10px; font-weight:bold; font-size:0.9rem; text-align:center; }
 
     /* Ring */
     .ring-wrapper { position: relative; width: 240px; height: 240px; margin: 0 auto 2rem auto; cursor: pointer; transition: transform 0.2s; }
@@ -216,7 +215,6 @@
     .tag.ausrutscher { background-color: #e74c3c; } 
     .tag.nirvana { background-color: #3498db; } 
     .tag.target-flag { background-color: #8e44ad; color: white; border: 1px solid #732d91;}
-    .tag.optimistic-flag { background-color: #f1c40f; color: #2c3e50; border: 1px dashed #e67e22; box-shadow: 0 0 5px rgba(241,196,15,0.4); } 
     
     .legend { display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center; margin-top: 1rem; font-size: 0.8rem; color: #666; }
     .legend span { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 6px; vertical-align: middle; border: 1px solid rgba(0,0,0,0.1); }
@@ -225,7 +223,7 @@
     .legend span.l-bew { background-color: #f39c12; } 
     .legend span.l-reg { background-color: #27ae60; } 
     .legend span.l-nir { background-color: #3498db; }
-    .legend span.l-opt { background-color: #f1c40f; border: 1px dashed #e67e22; }
+    .legend span.l-target { background-color: #8e44ad; border: 1px solid #732d91;}
     
     /* Stats & Archive */
     .setup-overlay { display: none; text-align: center; padding: 2rem; background: #fffcf5; border-radius: 12px; border: 2px dashed #f1c40f; margin-bottom: 1rem;}
@@ -316,7 +314,7 @@
 
   <header onclick="openBreatheOverlay()" title="Geheime Atem-Übung öffnen">
     <h1>🧪 ReTrack</h1>
-    <div class="version">Version 11.1 – Smart Stotter-Engine</div>
+    <div class="version">Version 12.0 – Strategic Budget</div>
   </header>
 
   <div class="tabs">
@@ -358,7 +356,15 @@
                 </div>
             </div>
 
-            <div id="dash-target-tracker" class="target-tracker" style="display:none;"></div>
+            <!-- V12.0: Dynamic Budget Box -->
+            <div id="dash-budget-box" class="outlook-box" style="display:none; background:#fdfafb; border: 2px dashed #9b59b6; cursor:pointer;" onclick="openTargetModal()" title="Ziel & Budget bearbeiten">
+                <div class="outlook-title" style="justify-content:space-between; color:#8e44ad;">
+                    <span>🎯 Dein Ziel: <span id="budget-target-date"></span></span>
+                    <span style="font-size:0.75rem; text-decoration:underline;">Bearbeiten</span>
+                </div>
+                <div style="font-size:1.8rem; font-weight:800; color:#2c3e50; text-align:center; margin:10px 0;" id="budget-amount">--</div>
+                <div style="font-size:0.8rem; text-align:center; color:#7f8c8d; font-weight:bold;" id="budget-subtext">Verfügbare T-Tage (Standard)</div>
+            </div>
             
             <div id="dash-outlook" class="outlook-box" style="display:none;"></div>
 
@@ -419,7 +425,7 @@
                 <div><span class="l-bew"></span>Bewährung (offen)</div>
                 <div><span class="l-reg"></span>Regen. / bestanden</div>
                 <div><span class="l-nir"></span>Nirwana</div>
-                <div><span class="l-opt"></span>Best-Case Ziel</div>
+                <div><span class="l-target"></span>Ziel-Datum</div>
             </div>
             <div class="calendar-wrapper"><div id="calendar"></div></div>
         </div>
@@ -481,7 +487,6 @@
       <button class="btn-tool" style="color:var(--danger); border-color:#fadbd8; width:100%; grid-column: 1 / -1;" onclick="hardReset()">⚠️ Werkseinstellungen (Alles löschen)</button>
     </div>
 
-    <!-- V11.0 Debug Monitor Container (Moved to bottom) -->
     <div id="debug-container" style="margin-top: 2rem;"></div>
   </div>
 
@@ -501,6 +506,25 @@
       <div class="modal-actions-row">
         <button class="btn-tool" onclick="closeModal('modal-confirm')">Abbrechen</button>
         <button class="btn-quick btn-ausrutscher" id="confirm-yes-btn" onclick="executeConfirm()">Bestätigen</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- V12.0: Target Modal -->
+  <div id="modal-target" class="modal-overlay">
+    <div class="modal-card">
+      <h3 style="color:#8e44ad; margin-bottom: 5px;">🎯 Ziel & Budget</h3>
+      <p style="font-size:0.85rem; color:#666; margin-bottom: 20px;">Setze ein Datum, bis wann du spätestens vollständig regeneriert sein möchtest. Die App berechnet live dein verfügbares Puffer-Budget an T-Tagen.</p>
+      <div class="form-grid">
+          <div class="form-group-full">
+              <label>Dein Wunsch-Datum</label>
+              <input type="date" id="target-input-date">
+          </div>
+      </div>
+      <div class="modal-actions-row" style="margin-top: 20px;">
+          <button class="btn-tool" style="border-color:#fadbd8; color:var(--danger); flex: 0.4;" onclick="clearTargetETA()" title="Ziel entfernen">🗑️</button>
+          <button class="btn-tool" onclick="closeModal('modal-target')">Abbrechen</button>
+          <button class="btn-quick" style="background:#8e44ad;" onclick="saveTargetETA()">Speichern</button>
       </div>
     </div>
   </div>
@@ -609,7 +633,7 @@
     </div>
   </div>
   
-  <!-- V11.0: Historical Cycle Modal -->
+  <!-- Historical Cycle Modal -->
   <div id="modal-historical" class="modal-overlay">
     <div class="modal-card">
       <h3 style="color:#8e44ad;">🕰️ Historischen Zyklus nachtragen</h3>
@@ -663,7 +687,7 @@
   </div>
 
 <script>
-  // --- Defensive DOM Helpers (V11.1) ---
+  // --- Defensive DOM Helpers ---
   const safeVal = (id) => { const e = document.getElementById(id); return e ? e.value : null; };
   const safeSetVal = (id, val) => { const e = document.getElementById(id); if(e) e.value = val; };
   const safeText = (id, text) => { const e = document.getElementById(id); if(e) e.textContent = text; };
@@ -671,7 +695,7 @@
   const safeDisplay = (id, display) => { const e = document.getElementById(id); if(e) e.style.display = display; };
   const safeProp = (id, prop, val) => { const e = document.getElementById(id); if(e) e[prop] = val; };
 
-  let appData = { version: 11.1, cycles: [], breatheLogs: {} };
+  let appData = { version: 12.0, cycles: [], breatheLogs: {} };
   let isSandbox = false; 
   let sandboxData = null;
 
@@ -724,6 +748,36 @@
   }
   
   function closeModal(id) { const m = document.getElementById(id); if(m) m.classList.remove('active'); }
+
+  // --- V12.0 Target Modal Functions ---
+  function openTargetModal() {
+      let active = getActiveCycle();
+      if(!active) return;
+      safeSetVal('target-input-date', active.targetETA || "");
+      const m = document.getElementById('modal-target'); if(m) m.classList.add('active');
+  }
+
+  function saveTargetETA() {
+      let active = getActiveCycle();
+      if(!active) return;
+      let d = safeVal('target-input-date');
+      if(!d) return customAlert("Bitte ein gültiges Datum wählen.");
+      
+      // Pessimistic end provides our baseline, target shouldn't logically be before start, but allow any future date
+      if (d < toIsoString(new Date())) return customAlert("Das Ziel muss in der Zukunft liegen.");
+      
+      active.targetETA = d;
+      closeModal('modal-target');
+      saveData();
+  }
+
+  function clearTargetETA() {
+      let active = getActiveCycle();
+      if(!active) return;
+      delete active.targetETA;
+      closeModal('modal-target');
+      saveData();
+  }
 
   window.deleteArchivedCycle = function(id) {
       customConfirm("Möchtest du diesen historischen Zyklus wirklich unwiderruflich löschen?", () => {
@@ -797,11 +851,6 @@
       switchTab('dashboard'); 
   }
 
-  function clearTargetETA() { 
-      const active = getActiveCycle(); 
-      if (active && active.targetETA) { delete active.targetETA; saveData(); customAlert("Zielvorgabe wurde verworfen."); } 
-  }
-  
   function applySandboxGoal() {
       if(!activeSimResult) return; 
       const targetStr = toIsoString(activeSimResult.finalEnd); 
@@ -819,14 +868,14 @@
 
   function loadData() {
       const saved = localStorage.getItem('regenAppData_v6') || localStorage.getItem('regenAppData_v5');
-      let parsedData = { version: 11.1, cycles: [], breatheLogs: {} };
+      let parsedData = { version: 12.0, cycles: [], breatheLogs: {} };
       if (saved) {
           try { 
               let data = JSON.parse(saved); 
               if (data && typeof data === 'object') {
                   if (data.version >= 5) { 
                       parsedData = data; 
-                      parsedData.version = 11.1; 
+                      parsedData.version = 12.0; 
                   } else if (!data.cycles && data.base) { 
                       parsedData.cycles = [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }];
                   } else if (data.tDays !== undefined && !data.base) {
@@ -910,7 +959,7 @@
       if (isSandbox) return customAlert("Im Simulations-Modus kannst du keinen Hard-Reset durchführen.");
       customConfirm("ACHTUNG: Möchtest du wirklich ALLE Daten löschen? (Werkseinstellungen)", () => {
           localStorage.removeItem('regenAppData_v5'); localStorage.removeItem('regenAppData_v6'); localStorage.removeItem('regenAppData_v7');
-          appData = { version: 11.1, cycles: [], breatheLogs: {} }; 
+          appData = { version: 12.0, cycles: [], breatheLogs: {} }; 
           customAlert("Gelöscht.", () => { window.location.href = window.location.href.split('?')[0]; });
       });
   }
@@ -986,7 +1035,7 @@
       }
 
       if (t > 21) {
-          customAlert("Eine initiale Konsumphase von mehr als drei Wochen überlastet die Simulation. Bitte schließe deinen aktuellen Konsum zunächst ab, pausiere diesen dann für drei bis sechs Wochen und logge dann erst wieder frischen Konsum.");
+          customAlert("Eine initiale Konsumphase von mehr als drei Wochen überlastet die Simulation.");
           populateBaseForm();
           return;
       }
@@ -1568,7 +1617,7 @@
       }
   }
 
-  // --- ENGINE V11.1 (Smart Stotter-Engine mit Cluster-Memory) ---
+  // --- ENGINE V12.0 (Clean & Robust) ---
   function runAllSimulations() {
       try {
           globalSimResults = (getApp().cycles || []).map(cycle => simulateCycle(cycle));
@@ -1584,9 +1633,10 @@
 
   function simulateCycle(cycle) {
       try {
-          if (!cycle || !cycle.base || !cycle.base.start || !cycle.base.end) {
-              return { failed: true, cycleId: cycle ? cycle.id : 'unknown', errorName: "DataError", errorMessage: "Zyklus- oder Basisdaten unvollständig." };
-          }
+          if (!cycle) return { failed: true, cycleId: 'unknown', errorName: "DataError", errorMessage: "Zyklus Objekt ist undefined." };
+          if (!cycle.base) return { failed: true, cycleId: cycle.id, errorName: "DataError", errorMessage: "Basis-Datenobjekt (cycle.base) fehlt." };
+          if (!cycle.base.start) return { failed: true, cycleId: cycle.id, errorName: "DataError", errorMessage: "Startdatum fehlt." };
+          if (!cycle.base.end) return { failed: true, cycleId: cycle.id, errorName: "DataError", errorMessage: "Enddatum fehlt." };
 
           const baseT = cycle.base.tDays || 0;
           const baseVal = baseT * 3;
@@ -1608,7 +1658,6 @@
           let totalDebtEver = debt; 
           let totalTDaysEver = baseT;
 
-          // V11.1 FIX: Neue Variablen für das Stotter-Gedächtnis
           let state = 'BEWAEHRUNG'; 
           let currentBlockT = baseT;
           let currentBlockServed = 0;
@@ -1617,7 +1666,6 @@
           let hasPaidPauschaleThisCluster = true; 
           
           let currentBewDays = [];
-          let totalDiscardedBonus = 0;
           
           let pEnd = parseLocal(cycle.base.end);
           if(!pEnd || isNaN(pEnd.getTime())) {
@@ -1698,7 +1746,6 @@
                   var iA = log.t < 4 ? (log.a===1 ? 1 : log.a===2 ? 2 : 0) : Math.ceil(iBase * (log.a===1 ? 0.1 : log.a===2 ? 0.25 : 0));
                   var iC = (log.s===2 && log.a===2) ? 1 : 0;
                   
-                  // V11.1 FIX: Wenn im gleichen Cluster, keine Pauschale, aber Cluster-Verlängerung
                   var pauschale = hasPaidPauschaleThisCluster ? 0 : 1; 
                   
                   var penalty = iBase + iS + iA + iC + pauschale;
@@ -1715,7 +1762,6 @@
                       currentBlockT += log.t;
                   }
                   
-                  // Neue Bewährungs-Formel (Cluster-Schuld minus schon abgesessene Tage im Cluster)
                   bewTimer = (currentBlockT * 3) - currentBlockServed;
                   
                   if (currentBewDays.length > 0) {
@@ -1723,7 +1769,6 @@
                       currentBewDays = [];
                   }
                   
-                  totalDiscardedBonus += withheldBonus; 
                   withheldBonus = 0; 
                   
                   history.logDetails.push({ date: dStr, p: penalty, t: log.t, b: iBase, s: iS, a: iA, f: pauschale });
@@ -1759,7 +1804,6 @@
                                   history.r.push(...currentBewDays);
                               } else {
                                   history.b.push(...currentBewDays);
-                                  totalDiscardedBonus += withheldBonus;
                               }
                               
                               currentBewDays = []; 
@@ -1807,11 +1851,6 @@
           let nirvanaStreak = history.n.length; 
           
           let pessimisticEnd = finalDebtZeroDate || addDays(simDate, -1);
-          let optimisticEndStr = null;
-          if (totalDiscardedBonus > 0) {
-              let optEnd = addDays(pessimisticEnd, -Math.ceil(totalDiscardedBonus));
-              optimisticEndStr = toIsoString(optEnd);
-          }
           
           let mFreeCurrent = 0;
           [...history.b, ...history.r, ...history.n].forEach(d => {
@@ -1825,7 +1864,7 @@
 
           return {
               cycleId: cycle.id, status: cycle.status, isOpen: cycle.base.isOpen, history, 
-              finalEnd: pessimisticEnd, optimisticEndStr, totalTDaysEver, totalDebtEver, 
+              finalEnd: pessimisticEnd, totalTDaysEver, totalDebtEver, 
               dashState, nirvanaStreak, initialDebtTotal, basePenaltyStr, mFreeGoal, mFreeCurrent
           };
       } catch(err) {
@@ -1839,31 +1878,48 @@
       }
   }
 
+  // --- V12.0: Self-Calibrating Budget Loop ---
+  function calculateBudget(targetETAStr) {
+      let active = getActiveCycle();
+      if (!active || !activeSimResult || activeSimResult.failed) return { budget: 0, over: false };
+      
+      let targetDate = parseLocal(targetETAStr);
+      if (!targetDate || isNaN(targetDate.getTime())) return { budget: 0, over: false };
+
+      let currentEnd = activeSimResult.finalEnd;
+      if (currentEnd > targetDate) return { budget: -diffDays(targetDate, currentEnd), over: true }; 
+
+      let budget = 0;
+      let testCycle = JSON.parse(JSON.stringify(active));
+      if (!testCycle.logs) testCycle.logs = {};
+
+      let simDate = new Date();
+      simDate.setDate(simDate.getDate() + 1);
+
+      while (budget < 50) { 
+          while (testCycle.logs[toIsoString(simDate)] !== undefined) {
+              simDate.setDate(simDate.getDate() + 1);
+          }
+          let testDateStr = toIsoString(simDate);
+
+          testCycle.logs[testDateStr] = { type: 'ausrutscher', t: 1, s: 0, a: 0, m: 0, mood: 0, note: "Budget-Test", isSimulated: true };
+
+          let res = simulateCycle(testCycle);
+          if (res && !res.failed && res.finalEnd <= targetDate) {
+              budget++;
+              simDate.setDate(simDate.getDate() + 2); 
+          } else {
+              break; 
+          }
+      }
+      return { budget: budget, over: false };
+  }
+
   function updateUI() { 
       try { renderDashboard(); } catch(e) { console.error('Dashboard Error', e); }
       try { renderHistorie(); } catch(e) { console.error('Historie Error', e); }
       try { renderArchiv(); } catch(e) { console.error('Archiv Error', e); }
       try { renderSandboxManager(); } catch(e) { console.error('Sandbox Error', e); }
-  }
-
-  function triggerBonusConfetti() {
-      if (sessionStorage.getItem('bonusShown_' + toIsoString(new Date()))) return;
-      sessionStorage.setItem('bonusShown_' + toIsoString(new Date()), 'true');
-      
-      const overlay = document.createElement('div');
-      overlay.style.position = 'fixed'; overlay.style.top = '0'; overlay.style.left = '0'; overlay.style.width = '100%'; overlay.style.height = '100%';
-      overlay.style.pointerEvents = 'none'; overlay.style.zIndex = '9999'; overlay.style.display = 'flex';
-      overlay.style.alignItems = 'center'; overlay.style.justifyContent = 'center'; overlay.style.fontSize = '3.5rem';
-      overlay.style.animation = 'bonusFadeOut 3s forwards'; overlay.style.textShadow = '0 10px 30px rgba(0,0,0,0.2)';
-      overlay.innerHTML = '🎉 BONUS! 🎉'; 
-      document.body.appendChild(overlay);
-      
-      if (!document.getElementById('bonus-styles')) {
-          const style = document.createElement('style'); style.id = 'bonus-styles';
-          style.innerHTML = `@keyframes bonusFadeOut { 0% { opacity: 1; transform: scale(0.5); } 15% { transform: scale(1.3); } 80% { opacity: 1; transform: scale(1.3) translateY(-10px); } 100% { opacity: 0; transform: scale(1.5) translateY(-50px); } }`;
-          document.head.appendChild(style);
-      }
-      setTimeout(() => overlay.remove(), 3000);
   }
 
   function renderDashboard() {
@@ -1878,7 +1934,7 @@
           safeText('dash-days-left', "Start ausstehend");
           safeText('dash-target-date', "Ziel: Unbekannt");
           safeDisplay('dash-progress', 'none');
-          safeDisplay('dash-target-tracker', 'none');
+          safeDisplay('dash-budget-box', 'none');
           safeDisplay('dash-outlook', 'none');
           return;
       }
@@ -1987,6 +2043,35 @@
           safeText('dash-sub', "Du regenerierst mit 1,0x Geschwindigkeit."); safeDisplay('dash-streak', 'none');
       }
 
+      // V12.0 Budget Integration
+      if (!isSandbox && activeCycle.targetETA) {
+          safeDisplay('dash-budget-box', 'block');
+          const targetDateObj = parseLocal(activeCycle.targetETA);
+          if (targetDateObj) {
+              safeText('budget-target-date', targetDateObj.toLocaleDateString('de-DE'));
+              let budgetRes = calculateBudget(activeCycle.targetETA);
+              
+              const box = document.getElementById('dash-budget-box');
+              const amt = document.getElementById('budget-amount');
+              const sub = document.getElementById('budget-subtext');
+              
+              if (budgetRes.over) {
+                  if(box) { box.style.borderColor = 'var(--danger)'; box.style.backgroundColor = '#fff5f5'; }
+                  if(amt) { amt.style.color = 'var(--danger)'; amt.textContent = `-${budgetRes.budget}`; }
+                  if(sub) { sub.style.color = 'var(--danger)'; sub.textContent = "Tage im Verzug (Ziel gerissen)"; }
+              } else {
+                  if(box) { box.style.borderColor = '#9b59b6'; box.style.backgroundColor = '#fdfafb'; }
+                  if(amt) { 
+                      amt.style.color = '#2c3e50'; 
+                      amt.textContent = budgetRes.budget >= 50 ? "50+" : budgetRes.budget; 
+                  }
+                  if(sub) { sub.style.color = '#7f8c8d'; sub.textContent = "Verfügbare T-Tage (Standard)"; }
+              }
+          }
+      } else {
+          safeDisplay('dash-budget-box', 'none');
+      }
+
       const todayStr = toIsoString(new Date());
       const isLoggedToday = activeCycle.logs && activeCycle.logs[todayStr] && activeCycle.logs[todayStr].type !== undefined;
 
@@ -2032,21 +2117,6 @@
           safeDisplay('dash-outlook', 'none');
       }
 
-      if (!isSandbox && activeCycle.targetETA) {
-          const targetDateObj = parseLocal(activeCycle.targetETA); 
-          const diff = diffDays(displayETA, targetDateObj);
-          safeDisplay('dash-target-tracker', 'block'); 
-          const closeBtn = `<span style="cursor:pointer; font-size:0.85rem; margin-left:15px; opacity:0.8; text-decoration:underline;" onclick="clearTargetETA()">✖️ Verwerfen</span>`;
-          const tt = document.getElementById('dash-target-tracker');
-          if(tt) {
-              if (diff <= 0) { tt.style.backgroundColor = '#d4edda'; tt.style.color = '#155724'; tt.style.border = '1px solid #c3e6cb'; tt.innerHTML = `🏁 Plan-Ziel (${targetDateObj.toLocaleDateString('de-DE')}): <br>🟢 Du bist voll auf Kurs! ${closeBtn}`; } 
-              else if (diff <= 3) { tt.style.backgroundColor = '#fff3cd'; tt.style.color = '#856404'; tt.style.border = '1px solid #ffeeba'; tt.innerHTML = `🏁 Plan-Ziel (${targetDateObj.toLocaleDateString('de-DE')}): <br>🟡 Kritisch (${Math.abs(diff)} Tage hinter Plan) ${closeBtn}`; } 
-              else { tt.style.backgroundColor = '#f8d7da'; tt.style.color = '#721c24'; tt.style.border = '1px solid #f5c6cb'; tt.innerHTML = `🏁 Plan-Ziel (${targetDateObj.toLocaleDateString('de-DE')}): <br>🔴 Ziel gefährdet (${Math.abs(diff)} Tage hinter Plan) ${closeBtn}`; }
-          }
-      } else { 
-          safeDisplay('dash-target-tracker', 'none'); 
-      }
-
       if (activeCycle.logs && activeCycle.logs[todayStr] && !isSandbox) { 
           safeDisplay('daily-action-area', 'none'); 
           safeDisplay('daily-done-area', 'block');
@@ -2054,8 +2124,6 @@
           safeDisplay('daily-action-area', 'block'); 
           safeDisplay('daily-done-area', 'none'); 
       }
-      
-      if (!isSandbox && ds.gotBonusToday) { triggerBonusConfetti(); }
   }
 
   function renderHistorie() {
@@ -2112,7 +2180,6 @@
       const realEnd = new Date(rawMaxDate.getFullYear(), rawMaxDate.getMonth() + 1, 0);
       const todayStr = new Date().toDateString(); 
       const targetStrCheck = (active && active.targetETA) ? parseLocal(active.targetETA)?.toDateString() : null;
-      const optimisticStrCheck = res.optimisticEndStr ? parseLocal(res.optimisticEndStr)?.toDateString() : null;
 
       let calHtml = "<table><thead><tr><th>Mo</th><th>Di</th><th>Mi</th><th>Do</th><th>Fr</th><th>Sa</th><th>So</th></tr></thead><tbody><tr>";
       let startDay = current.getDay() === 0 ? 6 : current.getDay() - 1;
@@ -2134,10 +2201,6 @@
         if (log && log.note) tagText += " 📝";
         
         if (targetStrCheck && dStr === targetStrCheck) { tagText += " 🏁 Ziel"; tagClass += " target-flag"; }
-        if (optimisticStrCheck && dStr === optimisticStrCheck && dStr !== targetStrCheck) { 
-            tagText += " 🌟 Best-Case"; 
-            tagClass += " optimistic-flag"; 
-        }
 
         calHtml += `<td class="active-month ${isTodayClass}"><span class="date-num">${current.getDate()}.</span>${tagText ? `<span class="tag ${tagClass}">${tagText.trim()}</span>` : ''}</td>`;
         if (current.getDay() === 0 && current < realEnd) calHtml += "</tr><tr>"; 
@@ -2387,7 +2450,6 @@
       }
       safeHTML('trigger-list', triggersHtml);
 
-      // Render Archive Cards
       if (archived.length === 0) { 
           archContainer.insertAdjacentHTML('beforeend', "<p style='color:#7f8c8d; text-align:center;'>Noch keine Zyklen abgeschlossen.</p>"); 
       } else {
@@ -2540,14 +2602,14 @@
                   customAlert("Simulation erfolgreich in die Sandbox geladen!");
               } else {
                   if (data.version >= 5) { 
-                      data.version = 11.1; appData = data; 
+                      data.version = 12.0; appData = data; 
                   } else if (data.base && !data.cycles) { 
-                      appData = { version: 11.1, cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }], breatheLogs: {} };
+                      appData = { version: 12.0, cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }], breatheLogs: {} };
                   } else if (data.tDays !== undefined && !data.base) {
                       let base = { start: data.startDate, end: data.endDate, tDays: parseInt(data.tDays)||0, sLevel: parseInt(data.stress)||0, aLevel: parseInt(data.alcohol)||0, mLevel: 0, isOpen: false };
                       let logs = {}; 
                       if(data.interruptions) { data.interruptions.forEach(int => { logs[int.start] = { type: 'ausrutscher', t: parseInt(int.t)||1, s: parseInt(int.s)||0, a: parseInt(int.a)||0, m: 0 }; }); }
-                      appData = { version: 11.1, cycles: [{ id: Date.now(), status: 'active', base: base, logs: logs }], breatheLogs: {} };
+                      appData = { version: 12.0, cycles: [{ id: Date.now(), status: 'active', base: base, logs: logs }], breatheLogs: {} };
                   } else { 
                       appData = data; 
                   }
@@ -2597,7 +2659,7 @@
       const aLevels = ['Kein', 'Moderat', 'Hoch'];
       const mLevels = ['Kein', 'Moderat', 'Hoch'];
       
-      let desc = isSandbox ? `ReTrack SIMULATION\n\n` : `ReTrack V11.1\n\n`;
+      let desc = isSandbox ? `ReTrack SIMULATION\n\n` : `ReTrack V12.0\n\n`;
       desc += `--- Basis-Phase ---\n`;
       desc += `Start: ${parseLocal(activeCycle.base.start).toLocaleDateString('de-DE')}\n`;
       desc += `Ende: ${parseLocal(activeCycle.base.end).toLocaleDateString('de-DE')}\n`;
@@ -2627,8 +2689,7 @@
       desc += `Zusätzlicher Aufschlag: +${aufschlag} Tage\n`; 
       desc += `Regenerationsschuld gesamt: ${totalRegenDebt} Tage\n`;
       desc += `\nEmpfohlene M-freie Tage: ${res.mFreeGoal}\n`;
-      desc += `Pessimistisches Ziel: ${res.finalEnd.toLocaleDateString('de-DE')}\n`;
-      if(res.optimisticEndStr) desc += `Best-Case Ziel: ${parseLocal(res.optimisticEndStr).toLocaleDateString('de-DE')}\n`;
+      desc += `Ziel: ${res.finalEnd.toLocaleDateString('de-DE')}\n`;
 
       if (activeCycle.monthlyNotes && Object.keys(activeCycle.monthlyNotes).length > 0) {
           desc += `\n--- Monats-Notizen ---\n`;
