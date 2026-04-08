@@ -8,7 +8,7 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
 
-  <title>ReTrack 12.4</title>
+  <title>ReTrack 12.6</title>
   
   <link rel="manifest" href="./manifest.json" />
   <meta name="theme-color" content="#f1c40f" />
@@ -143,7 +143,7 @@
     .undo-link { color: #7f8c8d; font-size: 0.85rem; text-decoration: underline; cursor: pointer; display: inline-block; margin-top: 10px; }
 
     /* Modals - Z-Index Protected */
-    #modal-alert, #modal-confirm { z-index: 9999 !important; }
+    #modal-alert, #modal-confirm, #modal-target { z-index: 9999 !important; }
     .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 100; justify-content: center; align-items: center; padding: 20px; }
     .modal-overlay.active { display: flex; animation: fadeIn 0.2s; }
     .modal-card { background: white; padding: 20px; border-radius: 16px; width: 100%; max-width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto;}
@@ -313,7 +313,7 @@
 
   <header onclick="openBreatheOverlay()" title="Geheime Atem-Übung öffnen">
     <h1>🧪 ReTrack</h1>
-    <div class="version">Version 12.4 – Dynamic Budget Engine</div>
+    <div class="version">Version 12.6 – Stable Budget Edition</div>
   </header>
 
   <div class="tabs">
@@ -355,7 +355,7 @@
                 </div>
             </div>
 
-            <!-- Budget Box V12.4 -->
+            <!-- Budget Box -->
             <div id="dash-budget-box" class="outlook-box" style="display:none; background:#fdfafb; border: 2px dashed #9b59b6; cursor:pointer;" onclick="openTargetModal()" title="Ziel & Budget bearbeiten">
                 <div id="budget-content-active" style="display:none;">
                     <div class="outlook-title" style="justify-content:space-between; color:#8e44ad;">
@@ -370,7 +370,8 @@
                     <div style="font-size:0.8rem; opacity:0.8;">Wann möchtest du regeneriert sein?</div>
                 </div>
             </div>
-            
+
+            <!-- Outlook Box -->
             <div id="dash-outlook" class="outlook-box" style="display:none;"></div>
 
             <div id="daily-action-area">
@@ -383,7 +384,7 @@
             <div id="daily-done-area" style="display:none; text-align: center; padding: 15px; background: #f0fdf4; border-radius: 12px; color: #155724; border: 1px solid #c3e6cb;">
                 <div style="font-weight: 800; font-size: 1.1rem; margin-bottom: 5px;">✅ Eintrag gespeichert!</div>
                 <div style="font-size: 0.9rem; opacity: 0.9;">Die Statistik wurde aktualisiert.</div>
-                <span class="undo-link" onclick="editToday()">Eintrag bearbeiten / löschen</span>
+                <span class="undo-link" onclick="editToday()">Eintrag für heute bearbeiten / löschen</span>
             </div>
         </div>
     </div>
@@ -576,7 +577,7 @@
     </div>
   </div>
 
-  <!-- Target Modal V12.4 -->
+  <!-- Target Modal V12.6 -->
   <div id="modal-target" class="modal-overlay">
     <div class="modal-card">
       <h3 style="color:#8e44ad; margin-bottom: 5px;">🎯 Ziel & Budget</h3>
@@ -872,26 +873,26 @@
   };
   const safeSetVal = (id, val) => { 
       const e = document.getElementById(id); 
-      if(e) e.value = val; 
+      if (e) e.value = val; 
   };
   const safeText = (id, text) => { 
       const e = document.getElementById(id); 
-      if(e) e.textContent = text; 
+      if (e) e.textContent = text; 
   };
   const safeHTML = (id, html) => { 
       const e = document.getElementById(id); 
-      if(e) e.innerHTML = html; 
+      if (e) e.innerHTML = html; 
   };
   const safeDisplay = (id, display) => { 
       const e = document.getElementById(id); 
-      if(e) e.style.display = display; 
+      if (e) e.style.display = display; 
   };
   const safeProp = (id, prop, val) => { 
       const e = document.getElementById(id); 
-      if(e) e[prop] = val; 
+      if (e) e[prop] = val; 
   };
 
-  let appData = { version: 12.4, cycles: [], breatheLogs: {} };
+  let appData = { version: 12.6, cycles: [], breatheLogs: {} };
   let isSandbox = false; 
   let sandboxData = null;
 
@@ -915,7 +916,7 @@
   };
   
   const parseLocal = (dateStr) => { 
-      if(!dateStr || typeof dateStr !== 'string' || dateStr.indexOf('-') === -1) return null; 
+      if (!dateStr || typeof dateStr !== 'string' || dateStr.indexOf('-') === -1) return null; 
       const parts = dateStr.split('-'); 
       return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10)); 
   };
@@ -929,7 +930,7 @@
   };
   
   const addDays = (date, days) => { 
-      if(!date || isNaN(date.getTime())) return new Date(); 
+      if (!date || isNaN(date.getTime())) return new Date(); 
       const r = new Date(date); 
       r.setDate(r.getDate() + days); 
       return r; 
@@ -943,10 +944,10 @@
       safeText('alert-message', msg); 
       safeDisplay('modal-alert', 'flex'); 
       const b = document.getElementById('alert-ok-btn'); 
-      if(b) {
+      if (b) {
           b.onclick = () => { 
               closeModal('modal-alert'); 
-              if(callback) callback(); 
+              if (callback) callback(); 
           }; 
       }
   }
@@ -960,7 +961,7 @@
   
   function executeConfirm() { 
       closeModal('modal-confirm'); 
-      if(pendingConfirmAction) { 
+      if (pendingConfirmAction) { 
           pendingConfirmAction(); 
           pendingConfirmAction = null; 
       } 
@@ -970,20 +971,20 @@
       safeDisplay(id, 'none'); 
   }
 
-  // --- Target/Budget Functions (V12.4) ---
+  // --- Target/Budget Functions (V12.6) ---
   function openTargetModal() { 
       let active = getActiveCycle(); 
-      if(!active) return; 
+      if (!active) return; 
       safeSetVal('target-input-date', active.targetETA || ""); 
       safeDisplay('modal-target', 'flex'); 
   }
   
   function saveTargetETA() { 
       let active = getActiveCycle(); 
-      if(!active) return; 
+      if (!active) return; 
       
       let d = safeVal('target-input-date'); 
-      if(!d) return; 
+      if (!d) return customAlert("Bitte wähle ein Datum aus."); 
       
       active.targetETA = d; 
       closeModal('modal-target'); 
@@ -992,7 +993,7 @@
   
   function clearTargetETA() { 
       let active = getActiveCycle(); 
-      if(active) {
+      if (active) {
           delete active.targetETA; 
       }
       closeModal('modal-target'); 
@@ -1002,10 +1003,14 @@
   // --- Budget Calculation Logic (Isolated Virtual Clone) ---
   function calculateBudget(targetETAStr) {
       let active = getActiveCycle(); 
-      if (!active || !activeSimResult || activeSimResult.failed) return { budget: 0, over: false };
+      if (!active || !activeSimResult || activeSimResult.failed) {
+          return { budget: 0, over: false };
+      }
       
       let targetDate = parseLocal(targetETAStr); 
-      if (!targetDate || isNaN(targetDate.getTime())) return { budget: 0, over: false };
+      if (!targetDate || isNaN(targetDate.getTime())) {
+          return { budget: 0, over: false };
+      }
 
       let currentEnd = new Date(activeSimResult.finalEnd); 
       if (currentEnd > targetDate) {
@@ -1013,22 +1018,25 @@
       }
       
       let budget = 0;
-      let testCycle = JSON.parse(JSON.stringify(active));
-      if (!testCycle.logs) testCycle.logs = {};
-
       let safety = 0;
       let simDate = new Date(); 
       simDate.setDate(simDate.getDate() + 1);
+
+      // Wir erstellen EINE exakte, isolierte Kopie des aktiven Zyklus für alle Tests.
+      let testCycle = JSON.parse(JSON.stringify(active));
+      if (!testCycle.logs) testCycle.logs = {};
 
       while (budget < 50 && safety < 150) { 
           safety++;
           let testDateStr = toIsoString(simDate);
           
+          // Finde den nächsten noch nicht belegten Tag in der Zukunft
           if (testCycle.logs[testDateStr] !== undefined) { 
               simDate.setDate(simDate.getDate() + 1); 
               continue; 
           }
           
+          // Füge einen fiktiven Standard-Ausrutscher hinzu
           testCycle.logs[testDateStr] = { 
               type: 'ausrutscher', 
               t: 1, 
@@ -1044,7 +1052,8 @@
           
           if (res && !res.failed && res.finalEnd <= targetDate) { 
               budget++; 
-              // Skip 4 days forward to ensure the next virtual slip-up is an isolated block (pessimistic)
+              // Setze das Datum 4 Tage in die Zukunft, um zu garantieren, dass der nächste
+              // fiktive Test-Rückfall isoliert gewertet wird (damit die Pauschalstrafe voll greift).
               simDate.setDate(simDate.getDate() + 4); 
           } else {
               break; 
@@ -1090,9 +1099,9 @@
 
   // --- Sandbox ---
   function openSandbox() {
-      if(isSandbox) return; 
+      if (isSandbox) return; 
       const app = getApp(); 
-      if(!app || !app.cycles || app.cycles.length === 0) {
+      if (!app || !app.cycles || app.cycles.length === 0) {
           return customAlert("Du musst erst einen echten Zyklus anlegen, bevor du simulieren kannst.");
       }
       
@@ -1106,7 +1115,7 @@
   }
   
   function resetSandbox() { 
-      if(!isSandbox) return; 
+      if (!isSandbox) return; 
       sandboxData = JSON.parse(JSON.stringify(appData)); 
       clearSandboxForm(); 
       runAllSimulations(); 
@@ -1122,7 +1131,7 @@
   }
   
   function closeSandbox() { 
-      if(!isSandbox) return; 
+      if (!isSandbox) return; 
       isSandbox = false; 
       sandboxData = null; 
       document.body.classList.remove('sandbox-mode'); 
@@ -1141,11 +1150,11 @@
               let data = JSON.parse(saved); 
               if (data && typeof data === 'object') {
                   if (data.version >= 5) { 
-                      data.version = 12.4; 
+                      data.version = 12.6; 
                       appData = data; 
                   } else if (data.base) { 
                       appData = { 
-                          version: 12.4, 
+                          version: 12.6, 
                           cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }], 
                           breatheLogs: {} 
                       }; 
@@ -1154,12 +1163,12 @@
                   if (appData.cycles && Array.isArray(appData.cycles)) {
                       appData.cycles = appData.cycles.filter(c => c && c.base && c.base.start); 
                       appData.cycles.forEach(c => { 
-                          if(c.base.mLevel === undefined) c.base.mLevel = 0; 
-                          if(!c.logs) c.logs = {}; 
+                          if (c.base.mLevel === undefined) c.base.mLevel = 0; 
+                          if (!c.logs) c.logs = {}; 
                           Object.values(c.logs).forEach(l => {
-                              if(l && typeof l === 'object' && l.m === undefined) l.m = 0;
+                              if (l && typeof l === 'object' && l.m === undefined) l.m = 0;
                           }); 
-                          if(!c.monthlyNotes) c.monthlyNotes = {}; 
+                          if (!c.monthlyNotes) c.monthlyNotes = {}; 
                       });
                   }
               }
@@ -1178,17 +1187,19 @@
           if (appData.cycles.length > 0) {
               safeHTML('setup-warning', `
                   <h3>Bereit für einen neuen Zyklus? 🚀</h3>
-                  <p>Dein letzter Zyklus ist abgeschlossen. Die Historie liegt im Archiv.</p>
-                  <div style="display:flex; gap:10px; justify-content:center;">
+                  <p>Dein letzter Zyklus ist abgeschlossen. Du findest deine Historie im Archiv.</p>
+                  <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 15px;">
                       <button class="btn-tool" style="background:var(--header-bg); border:none; color:white;" onclick="switchTab('historie')">✏️ Neuen Zyklus starten</button>
+                      <button class="btn-tool" onclick="document.getElementById('fileInput').click()">📂 Backup importieren</button>
                   </div>
               `);
           } else {
               safeHTML('setup-warning', `
                   <h3>Willkommen bei ReTrack! 👋</h3>
-                  <p>Lege deinen ersten Zyklus an.</p>
-                  <div style="display:flex; gap:10px; justify-content:center;">
+                  <p>Lege deinen ersten Zyklus an oder lade ein bestehendes Backup.</p>
+                  <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 15px;">
                       <button class="btn-tool" style="background:var(--header-bg); border:none; color:white;" onclick="switchTab('historie')">✏️ Ersten Zyklus starten</button>
+                      <button class="btn-tool" onclick="document.getElementById('fileInput').click()">📂 Backup importieren</button>
                   </div>
               `);
           }
@@ -1236,7 +1247,7 @@
   }
   
   function hardReset() { 
-      if(isSandbox) return; 
+      if (isSandbox) return customAlert("Im Simulations-Modus kannst du keinen Hard-Reset durchführen.");
       customConfirm("ACHTUNG: Möchtest du wirklich ALLE Daten unwiderruflich löschen?", () => { 
           localStorage.removeItem('regenAppData_v5'); 
           localStorage.removeItem('regenAppData_v6'); 
@@ -1277,7 +1288,7 @@
   
   function populateBaseForm() {
       const active = getActiveCycle(); 
-      if(!active || !active.base) return;
+      if (!active || !active.base) return;
       
       safeSetVal('base-start', active.base.start || ""); 
       safeSetVal('base-end', active.base.end || ""); 
@@ -1290,7 +1301,7 @@
       
       if (isSandbox) { 
           const rAct = appData.cycles.find(c => c.status === 'active'); 
-          if(active.id === rAct?.id && rAct && activeSimResult && activeSimResult.dashState?.debt > 0) {
+          if (active.id === rAct?.id && rAct && activeSimResult && activeSimResult.dashState?.debt > 0) {
               lock = true; 
           }
       }
@@ -1314,7 +1325,7 @@
       const e = safeVal('base-end');
       const t = parseInt(safeVal('base-t'));
       
-      if(!s || !e || isNaN(t)) { 
+      if (!s || !e || isNaN(t)) { 
           if(force) customAlert("Bitte Start und Ende eintragen."); 
           return; 
       }
@@ -1333,7 +1344,7 @@
           getApp().cycles.push(active); 
       }
       
-      if(!active.base) active.base = {}; 
+      if (!active.base) active.base = {}; 
       active.base.start = s; 
       active.base.end = e; 
       active.base.tDays = t;
@@ -1344,9 +1355,9 @@
           active.base.mLevel = parseInt(safeVal('base-m')) || 0; 
       }
       
-      if(active.base.isOpen === undefined) active.base.isOpen = false;
+      if (active.base.isOpen === undefined) active.base.isOpen = false;
       
-      if(force) saveData();
+      if (force) saveData();
   }
 
   // --- Historical Logging Modals ---
@@ -1372,7 +1383,7 @@
       const s = parseLocal(safeVal('hist-base-start'));
       const e = parseLocal(safeVal('hist-base-end')); 
       
-      if(s && e && !isNaN(s.getTime()) && !isNaN(e.getTime())) {
+      if (s && e && !isNaN(s.getTime()) && !isNaN(e.getTime())) {
           safeSetVal('hist-base-t', Math.max(0, diffDays(s, e)+1)); 
       } else {
           safeSetVal('hist-base-t', ""); 
@@ -1393,7 +1404,7 @@
               </div>
           </div>`; 
       const c = document.getElementById('hist-logs-container'); 
-      if(c) c.insertAdjacentHTML('beforeend', h); 
+      if (c) c.insertAdjacentHTML('beforeend', h); 
   }
   
   function saveHistorical() {
@@ -1404,15 +1415,15 @@
       const aL = parseInt(safeVal('hist-base-a')) || 0;
       const mL = parseInt(safeVal('hist-base-m')) || 0;
       
-      if(!s || !e || isNaN(t)) return customAlert("Basisphase unvollständig."); 
-      if(t < 1 || s > e) return customAlert("Ungültige Basisphase."); 
-      if(t > 21) return customAlert("Basisphase > 21 Tage blockiert."); 
-      if(s >= toIsoString(new Date())) return customAlert("Historische Zyklen müssen in der Vergangenheit liegen.");
+      if (!s || !e || isNaN(t)) return customAlert("Basisphase unvollständig."); 
+      if (t < 1 || s > e) return customAlert("Ungültige Basisphase."); 
+      if (t > 21) return customAlert("Basisphase > 21 Tage blockiert."); 
+      if (s >= toIsoString(new Date())) return customAlert("Historische Zyklen müssen in der Vergangenheit liegen.");
       
       const app = getApp(); 
-      if(!app || !Array.isArray(app.cycles)) return;
+      if (!app || !Array.isArray(app.cycles)) return;
       
-      if(app.cycles.some(c => c.base && c.base.start && c.base.end && s <= c.base.end && e >= c.base.start)) {
+      if (app.cycles.some(c => c.base && c.base.start && c.base.end && s <= c.base.end && e >= c.base.start)) {
           return customAlert("Zeitraum überschneidet sich mit existierendem Zyklus.");
       }
       
@@ -1422,12 +1433,12 @@
       
       document.querySelectorAll('#hist-logs-container > div').forEach(row => {
           let dateEl = row.querySelector('.hist-row-date'); 
-          if(!dateEl) return; 
+          if (!dateEl) return; 
           
           let dStr = dateEl.value;
-          if(dStr) { 
-              if(dStr >= toIsoString(new Date())) rowsValid = false; 
-              if(dStr >= s && dStr <= e) overlapError = true; 
+          if (dStr) { 
+              if (dStr >= toIsoString(new Date())) rowsValid = false; 
+              if (dStr >= s && dStr <= e) overlapError = true; 
               
               logsToSave[dStr] = { 
                   type: 'ausrutscher', 
@@ -1441,8 +1452,8 @@
           }
       });
       
-      if(!rowsValid) return customAlert("Rauchen-Datum darf nicht in der Zukunft liegen."); 
-      if(overlapError) return customAlert("Rauchen darf sich nicht mit Basisphase überschneiden.");
+      if (!rowsValid) return customAlert("Rauchen-Datum darf nicht in der Zukunft liegen."); 
+      if (overlapError) return customAlert("Rauchen darf sich nicht mit Basisphase überschneiden.");
       
       app.cycles.push({ 
           id: Date.now(), 
@@ -1466,7 +1477,7 @@
       safeSetVal('modal-p-mood', 0); 
       safeSetVal('modal-p-note', ""); 
       const m = document.getElementById('modal-pause'); 
-      if(m) m.classList.add('active'); 
+      if (m) m.classList.add('active'); 
   }
   
   function submitPause(isQuick) {
@@ -1478,12 +1489,12 @@
       const note = isQuick ? "" : (safeVal('modal-p-note') || "").trim();
       const todayStr = toIsoString(new Date());
       
-      if(!isSandbox && dStr > todayStr) return customAlert("Keine Logs in Zukunft möglich!");
+      if (!isSandbox && dStr > todayStr) return customAlert("Keine Logs in Zukunft möglich!");
       
       const active = getActiveCycle(); 
-      if(!active) return customAlert("Kein aktiver Zyklus gefunden!");
+      if (!active) return customAlert("Kein aktiver Zyklus gefunden!");
       
-      if(active.base && active.base.isOpen && dStr > active.base.end) {
+      if (active.base && active.base.isOpen && dStr > active.base.end) {
           active.base.isOpen = false;
       }
       
@@ -1507,7 +1518,7 @@
       safeSetVal('modal-a-note', ""); 
       safeSetVal('modal-a-date', isPast ? "" : toIsoString(new Date())); 
       const modal = document.getElementById('modal-ausrutscher'); 
-      if(modal) modal.classList.add('active'); 
+      if (modal) modal.classList.add('active'); 
   }
   
   function submitAusrutscher() {
@@ -1520,12 +1531,12 @@
       const note = (safeVal('modal-a-note') || "").trim();
       const todayStr = toIsoString(new Date());
       
-      if(!dStr) return customAlert("Datum fehlt!"); 
+      if (!dStr) return customAlert("Datum fehlt!"); 
       if (t > 21) return customAlert("Konsumphase > 3 Wochen blockiert."); 
-      if(!isSandbox && dStr > todayStr) return customAlert("Keine Logs in der Zukunft möglich!");
+      if (!isSandbox && dStr > todayStr) return customAlert("Keine Logs in der Zukunft möglich!");
       
       let active = getActiveCycle(); 
-      if(!active) return customAlert("Kein aktiver Zyklus gefunden!");
+      if (!active) return customAlert("Kein aktiver Zyklus gefunden!");
       
       if (activeSimResult && activeSimResult.dashState && activeSimResult.dashState.debt <= 0) {
           if (dStr > toIsoString(activeSimResult.finalEnd)) {
@@ -1541,14 +1552,14 @@
                   newCycle.logs[dStr] = { type: 'ausrutscher', t: t, s: s, a: a, m: m, mood: mood, note: note };
               }
               const app = getApp(); 
-              if(app && Array.isArray(app.cycles)) app.cycles.push(newCycle); 
+              if (app && Array.isArray(app.cycles)) app.cycles.push(newCycle); 
               closeModal('modal-ausrutscher'); 
               saveData(); 
               return;
           }
       }
       
-      if(active.base && active.base.start && dStr >= active.base.start && dStr <= active.base.end) { 
+      if (active.base && active.base.start && dStr >= active.base.start && dStr <= active.base.end) { 
           if (!active.base.isOpen) return customAlert("Datum liegt in bereits geschlossener Basis-Phase."); 
       }
       
@@ -1568,7 +1579,7 @@
           }
       }
       
-      if(!active.logs) active.logs = {}; 
+      if (!active.logs) active.logs = {}; 
       active.logs[dStr] = { type: 'ausrutscher', t: t, s: s, a: a, m: m, mood: mood, note: note }; 
       
       closeModal('modal-ausrutscher'); 
@@ -1583,12 +1594,12 @@
       const m = parseInt(safeVal('sim-a-m')) || 0;
       const todayStr = toIsoString(new Date());
       
-      if(!dStr) return customAlert("Bitte ein Datum wählen."); 
+      if (!dStr) return customAlert("Bitte ein Datum wählen."); 
       if (t > 21) return customAlert("Maximal 21 Tage am Stück."); 
-      if(dStr <= todayStr) return customAlert("Für vergangene Einträge bitte den Heute-Tab nutzen.");
+      if (dStr <= todayStr) return customAlert("Für vergangene Einträge bitte den Heute-Tab nutzen.");
       
       let active = getActiveCycle(); 
-      if(!active) return customAlert("Kein aktiver Zyklus gefunden!");
+      if (!active) return customAlert("Kein aktiver Zyklus gefunden!");
       
       if (activeSimResult && activeSimResult.dashState && activeSimResult.dashState.debt <= 0) {
           if (dStr > toIsoString(activeSimResult.finalEnd)) {
@@ -1608,7 +1619,7 @@
           }
       }
       
-      if(!active.logs) active.logs = {}; 
+      if (!active.logs) active.logs = {}; 
       active.logs[dStr] = { type: 'ausrutscher', t: t, s: s, a: a, m: m, mood: 0, note: "🔮 Zukunft", isSimulated: true }; 
       saveData(); 
       customAlert("Zukunft berechnet! Siehe Kalender.");
@@ -1616,7 +1627,7 @@
 
   function deleteSimulation(dStr) { 
       const active = getActiveCycle(); 
-      if(active && active.logs && active.logs[dStr]) { 
+      if (active && active.logs && active.logs[dStr]) { 
           delete active.logs[dStr]; 
           saveData(); 
       } 
@@ -1671,7 +1682,7 @@
           let currentBewDays = [];
           
           let pEnd = parseLocal(cycle.base.end); 
-          if(!pEnd || isNaN(pEnd.getTime())) {
+          if (!pEnd || isNaN(pEnd.getTime())) {
               return { failed: true, cycleId: cycle.id, errorMessage: `Ungültiges Enddatum` };
           }
           
@@ -1707,11 +1718,11 @@
           
           let cBase = parseLocal(cycle.base.start);
           let endBase = parseLocal(cycle.base.end);
-          if(!cBase || isNaN(cBase.getTime())) {
+          if (!cBase || isNaN(cBase.getTime())) {
               return { failed: true, cycleId: cycle.id, errorMessage: `Ungültiges Startdatum` };
           }
           
-          if(cBase && endBase) { 
+          if (cBase && endBase) { 
               while (cBase <= endBase) { 
                   history.t.push(new Date(cBase)); 
                   cBase.setDate(cBase.getDate() + 1); 
@@ -1725,12 +1736,15 @@
           let cLogs = cycle.logs || {};
           let lastRealDayStr = (cLogs[todayStr] && typeof cLogs[todayStr] === 'object' && cLogs[todayStr].type !== undefined) ? todayStr : yesterdayStr;
 
+          // Scope Isolation variables (wie in 11.1 umgesetzt zur Sicherheit)
+          var dStr, log, isLogged, isFuture, iBase, iS, iA, iC, pauschale, penalty, canPayout, pStr;
+
           while ((debt > 0 || toIsoString(simDate) <= endSimLimit) && safety < 25000) {
               safety++; 
-              let dStr = toIsoString(simDate); 
-              let log = cLogs[dStr];
-              let isFuture = dStr > todayStr;
-              let isLogged = log && typeof log === 'object' && log.type !== undefined;
+              dStr = toIsoString(simDate); 
+              log = cLogs[dStr];
+              isFuture = dStr > todayStr;
+              isLogged = log && typeof log === 'object' && log.type !== undefined;
 
               if (activeAusrutscherDays > 0) {
                   history.a.push(new Date(simDate)); 
@@ -1739,13 +1753,13 @@
                   activeAusrutscherDays = log.t - 1; 
                   totalTDaysEver += log.t;
                   
-                  let iBase = log.t * 3;
-                  let iS = log.t < 4 ? (log.s===1 ? 1 : log.s===2 ? 2 : 0) : Math.ceil(iBase * (log.s===1 ? 0.1 : log.s===2 ? 0.25 : 0));
-                  let iA = log.t < 4 ? (log.a===1 ? 1 : log.a===2 ? 2 : 0) : Math.ceil(iBase * (log.a===1 ? 0.1 : log.a===2 ? 0.25 : 0));
-                  let iC = (log.s===2 && log.a===2) ? 1 : 0;
+                  iBase = log.t * 3;
+                  iS = log.t < 4 ? (log.s===1 ? 1 : log.s===2 ? 2 : 0) : Math.ceil(iBase * (log.s===1 ? 0.1 : log.s===2 ? 0.25 : 0));
+                  iA = log.t < 4 ? (log.a===1 ? 1 : log.a===2 ? 2 : 0) : Math.ceil(iBase * (log.a===1 ? 0.1 : log.a===2 ? 0.25 : 0));
+                  iC = (log.s===2 && log.a===2) ? 1 : 0;
                   
-                  let pauschale = hasPaidPauschaleThisCluster ? 0 : 1; 
-                  let penalty = iBase + iS + iA + iC + pauschale;
+                  pauschale = hasPaidPauschaleThisCluster ? 0 : 1; 
+                  penalty = iBase + iS + iA + iC + pauschale;
                   
                   debt += penalty; 
                   totalDebtEver += penalty; 
@@ -1768,7 +1782,10 @@
                   withheldBonus = 0; 
                   
                   history.logDetails.push({ date: dStr, p: penalty, t: log.t, b: iBase, s: iS, a: iA, f: pauschale });
-                  history.penaltyDict[dStr] = `+${penalty} Tage`;
+                  
+                  pStr = `+${penalty} Tage`;
+                  history.penaltyDict[dStr] = pauschale > 0 ? pStr + ` (inkl. Setup)` : pStr + ` (Stottern)`;
+                  
                   history.a.push(new Date(simDate));
               } else {
                   if (debt > 0) {
@@ -1780,11 +1797,12 @@
                           currentBewDays.push(new Date(simDate));
                           
                           if (bewTimer <= 0) {
-                              let canPayout = !isFuture || isSandbox;
+                              canPayout = !isFuture || isSandbox;
                               if (canPayout) { 
                                   debt -= withheldBonus; 
                                   if (debt < 0) debt = 0; 
                                   if (dStr === todayStr && isLogged) gotBonusForToday = true; 
+                                  if (withheldBonus > 0) history.bonusDict[dStr] = `🎉 Bonus: -${withheldBonus}`;
                                   history.r.push(...currentBewDays); 
                               } else { 
                                   history.b.push(...currentBewDays); 
@@ -1994,7 +2012,7 @@
           safeDisplay('dash-streak', 'none');
       }
 
-      // V12.4 Budget UI Live Updater
+      // V12.6 Budget UI Live Updater
       if (!isSandbox && !res.isOpen) {
           safeDisplay('dash-budget-box', 'block');
           
@@ -2012,20 +2030,20 @@
                   const sub = document.getElementById('budget-subtext');
                   
                   if (bRes.over) {
-                      if(box) { box.style.borderColor = 'var(--danger)'; box.style.backgroundColor = '#fff5f5'; }
-                      if(amt) { amt.style.color = 'var(--danger)'; amt.textContent = `-${Math.abs(bRes.budget)}`; }
-                      if(sub) { sub.style.color = 'var(--danger)'; sub.textContent = "Tage im Verzug (Ziel gerissen)"; }
+                      if (box) { box.style.borderColor = 'var(--danger)'; box.style.backgroundColor = '#fff5f5'; }
+                      if (amt) { amt.style.color = 'var(--danger)'; amt.textContent = `-${Math.abs(bRes.budget)}`; }
+                      if (sub) { sub.style.color = 'var(--danger)'; sub.textContent = "Tage im Verzug (Ziel gerissen)"; }
                   } else {
-                      if(box) { box.style.borderColor = '#9b59b6'; box.style.backgroundColor = '#fdfafb'; }
-                      if(amt) { amt.style.color = '#2c3e50'; amt.textContent = bRes.budget >= 50 ? "50+" : bRes.budget; }
-                      if(sub) { sub.style.color = '#7f8c8d'; sub.textContent = "Verfügbare T-Tage (Standard)"; }
+                      if (box) { box.style.borderColor = '#9b59b6'; box.style.backgroundColor = '#fdfafb'; }
+                      if (amt) { amt.style.color = '#2c3e50'; amt.textContent = bRes.budget >= 50 ? "50+" : bRes.budget; }
+                      if (sub) { sub.style.color = '#7f8c8d'; sub.textContent = "Verfügbare T-Tage (Standard)"; }
                   }
               }
           } else { 
               safeDisplay('budget-content-active', 'none'); 
               safeDisplay('budget-content-empty', 'block'); 
               const box = document.getElementById('dash-budget-box'); 
-              if(box) { 
+              if (box) { 
                   box.style.borderColor = '#9b59b6'; 
                   box.style.backgroundColor = '#fdfafb'; 
               } 
@@ -2210,7 +2228,7 @@
       
       let pastDaysTracked = 0; 
       let pastPauseDays = 0; 
-      let maxNirwana = 0;
+      let maxNirvana = 0;
       let totalAusrutscher = 0; 
       let highStressAusrutscher = 0; 
       let sumAusrutscherDays = 0;
@@ -2266,7 +2284,7 @@
               if (i===0 || diffDays(pastN[i-1], pastN[i]) === 1) {
                   currentStreak++; 
               } else { 
-                  maxNirwana = Math.max(maxNirvana, currentStreak); 
+                  maxNirvana = Math.max(maxNirvana, currentStreak); 
                   currentStreak = 1; 
               } 
           }
@@ -2514,7 +2532,7 @@
               <strong>Gespeicherte Cycle-IDs:</strong><br>
               ${(getApp().cycles || []).map(c=>c.id).join(', ')}<br><br>
               <strong>Erfolgreiche Res-IDs:</strong><br>
-              ${globalSimResults.map(r => r ? (r.failed ? \`[FAILED: \${r.cycleId}]\` : r.cycleId) : '[NULL]').join(', ')}
+              ${globalSimResults.map(r => r ? (r.failed ? '[FAILED: ' + r.cycleId + ']' : r.cycleId) : '[NULL]').join(', ')}
           </div>
       </details>`);
   }
@@ -2558,15 +2576,15 @@
                   customAlert("Simulation erfolgreich in die Sandbox geladen!");
               } else {
                   if (data.version >= 5) { 
-                      data.version = 12.4; 
+                      data.version = 12.6; 
                       appData = data; 
                   } else if (data.base && !data.cycles) { 
-                      appData = { version: 12.4, cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }], breatheLogs: {} };
+                      appData = { version: 12.6, cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }], breatheLogs: {} };
                   } else if (data.tDays !== undefined && !data.base) {
                       let base = { start: data.startDate, end: data.endDate, tDays: parseInt(data.tDays)||0, sLevel: parseInt(data.stress)||0, aLevel: parseInt(data.alcohol)||0, mLevel: 0, isOpen: false };
                       let logs = {}; 
                       if(data.interruptions) { data.interruptions.forEach(int => { logs[int.start] = { type: 'ausrutscher', t: parseInt(int.t)||1, s: parseInt(int.s)||0, a: parseInt(int.a)||0, m: 0 }; }); }
-                      appData = { version: 12.4, cycles: [{ id: Date.now(), status: 'active', base: base, logs: logs }], breatheLogs: {} };
+                      appData = { version: 12.6, cycles: [{ id: Date.now(), status: 'active', base: base, logs: logs }], breatheLogs: {} };
                   } else { 
                       appData = data; 
                   }
@@ -2616,7 +2634,7 @@
       const aLevels = ['Kein', 'Moderat', 'Hoch'];
       const mLevels = ['Kein', 'Moderat', 'Hoch'];
       
-      let desc = isSandbox ? `ReTrack SIMULATION\n\n` : `ReTrack V12.4\n\n`;
+      let desc = isSandbox ? `ReTrack SIMULATION\n\n` : `ReTrack V12.6\n\n`;
       desc += `--- Basis-Phase ---\n`;
       desc += `Start: ${parseLocal(activeCycle.base.start).toLocaleDateString('de-DE')}\n`;
       desc += `Ende: ${parseLocal(activeCycle.base.end).toLocaleDateString('de-DE')}\n`;
