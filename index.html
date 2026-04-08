@@ -8,7 +8,7 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
 
-  <title>ReTrack 12.0</title>
+  <title>ReTrack 12.1</title>
   
   <link rel="manifest" href="./manifest.json" />
   <meta name="theme-color" content="#f1c40f" />
@@ -306,7 +306,6 @@
   <div id="sandbox-banner">
       🧪 SIMULATIONS-MODUS AKTIV
       <div class="sandbox-actions">
-          <button class="btn-sandbox" onclick="applySandboxGoal()">🎯 Als Ziel setzen</button>
           <button class="btn-sandbox" onclick="resetSandbox()">🔄 Labor-Reset</button>
           <button class="btn-sandbox danger" onclick="closeSandbox()">❌ Verlassen</button>
       </div>
@@ -314,7 +313,7 @@
 
   <header onclick="openBreatheOverlay()" title="Geheime Atem-Übung öffnen">
     <h1>🧪 ReTrack</h1>
-    <div class="version">Version 12.0 – Strategic Budget</div>
+    <div class="version">Version 12.1 – Budget Fixes</div>
   </header>
 
   <div class="tabs">
@@ -356,14 +355,20 @@
                 </div>
             </div>
 
-            <!-- V12.0: Dynamic Budget Box -->
+            <!-- V12.1: Dynamic Budget Box -->
             <div id="dash-budget-box" class="outlook-box" style="display:none; background:#fdfafb; border: 2px dashed #9b59b6; cursor:pointer;" onclick="openTargetModal()" title="Ziel & Budget bearbeiten">
-                <div class="outlook-title" style="justify-content:space-between; color:#8e44ad;">
-                    <span>🎯 Dein Ziel: <span id="budget-target-date"></span></span>
-                    <span style="font-size:0.75rem; text-decoration:underline;">Bearbeiten</span>
+                <div id="budget-content-active" style="display:none;">
+                    <div class="outlook-title" style="justify-content:space-between; color:#8e44ad;">
+                        <span>🎯 Dein Ziel: <span id="budget-target-date"></span></span>
+                        <span style="font-size:0.75rem; text-decoration:underline;">Bearbeiten</span>
+                    </div>
+                    <div style="font-size:1.8rem; font-weight:800; color:#2c3e50; text-align:center; margin:10px 0;" id="budget-amount">--</div>
+                    <div style="font-size:0.8rem; text-align:center; color:#7f8c8d; font-weight:bold;" id="budget-subtext">Verfügbare T-Tage (Standard)</div>
                 </div>
-                <div style="font-size:1.8rem; font-weight:800; color:#2c3e50; text-align:center; margin:10px 0;" id="budget-amount">--</div>
-                <div style="font-size:0.8rem; text-align:center; color:#7f8c8d; font-weight:bold;" id="budget-subtext">Verfügbare T-Tage (Standard)</div>
+                <div id="budget-content-empty" style="text-align:center; color:#8e44ad; padding: 10px 0;">
+                    <div style="font-size:1.2rem; margin-bottom:5px;">🎯 Budget-Ziel setzen</div>
+                    <div style="font-size:0.8rem; opacity:0.8;">Wann möchtest du regeneriert sein?</div>
+                </div>
             </div>
             
             <div id="dash-outlook" class="outlook-box" style="display:none;"></div>
@@ -510,7 +515,7 @@
     </div>
   </div>
 
-  <!-- V12.0: Target Modal -->
+  <!-- V12.1: Target Modal -->
   <div id="modal-target" class="modal-overlay">
     <div class="modal-card">
       <h3 style="color:#8e44ad; margin-bottom: 5px;">🎯 Ziel & Budget</h3>
@@ -695,7 +700,7 @@
   const safeDisplay = (id, display) => { const e = document.getElementById(id); if(e) e.style.display = display; };
   const safeProp = (id, prop, val) => { const e = document.getElementById(id); if(e) e[prop] = val; };
 
-  let appData = { version: 12.0, cycles: [], breatheLogs: {} };
+  let appData = { version: 12.1, cycles: [], breatheLogs: {} };
   let isSandbox = false; 
   let sandboxData = null;
 
@@ -749,7 +754,7 @@
   
   function closeModal(id) { const m = document.getElementById(id); if(m) m.classList.remove('active'); }
 
-  // --- V12.0 Target Modal Functions ---
+  // --- V12.1 Target Modal Functions ---
   function openTargetModal() {
       let active = getActiveCycle();
       if(!active) return;
@@ -763,7 +768,6 @@
       let d = safeVal('target-input-date');
       if(!d) return customAlert("Bitte ein gültiges Datum wählen.");
       
-      // Pessimistic end provides our baseline, target shouldn't logically be before start, but allow any future date
       if (d < toIsoString(new Date())) return customAlert("Das Ziel muss in der Zukunft liegen.");
       
       active.targetETA = d;
@@ -851,31 +855,16 @@
       switchTab('dashboard'); 
   }
 
-  function applySandboxGoal() {
-      if(!activeSimResult) return; 
-      const targetStr = toIsoString(activeSimResult.finalEnd); 
-      const app = getApp();
-      const realActive = app && Array.isArray(app.cycles) ? app.cycles.find(c => c.status === 'active') : null;
-      if (realActive) {
-          realActive.targetETA = targetStr;
-          closeSandbox(); 
-          saveData(); 
-          customAlert("Zielvorgabe (" + parseLocal(targetStr)?.toLocaleDateString('de-DE') + ") wurde erfolgreich in deine Realität übertragen!");
-      } else {
-          customAlert("Fehler: Kein aktiver Zyklus zum Speichern des Ziels gefunden.");
-      }
-  }
-
   function loadData() {
       const saved = localStorage.getItem('regenAppData_v6') || localStorage.getItem('regenAppData_v5');
-      let parsedData = { version: 12.0, cycles: [], breatheLogs: {} };
+      let parsedData = { version: 12.1, cycles: [], breatheLogs: {} };
       if (saved) {
           try { 
               let data = JSON.parse(saved); 
               if (data && typeof data === 'object') {
                   if (data.version >= 5) { 
                       parsedData = data; 
-                      parsedData.version = 12.0; 
+                      parsedData.version = 12.1; 
                   } else if (!data.cycles && data.base) { 
                       parsedData.cycles = [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }];
                   } else if (data.tDays !== undefined && !data.base) {
@@ -959,7 +948,7 @@
       if (isSandbox) return customAlert("Im Simulations-Modus kannst du keinen Hard-Reset durchführen.");
       customConfirm("ACHTUNG: Möchtest du wirklich ALLE Daten löschen? (Werkseinstellungen)", () => {
           localStorage.removeItem('regenAppData_v5'); localStorage.removeItem('regenAppData_v6'); localStorage.removeItem('regenAppData_v7');
-          appData = { version: 12.0, cycles: [], breatheLogs: {} }; 
+          appData = { version: 12.1, cycles: [], breatheLogs: {} }; 
           customAlert("Gelöscht.", () => { window.location.href = window.location.href.split('?')[0]; });
       });
   }
@@ -1617,7 +1606,7 @@
       }
   }
 
-  // --- ENGINE V12.0 (Clean & Robust) ---
+  // --- ENGINE V12.1 ---
   function runAllSimulations() {
       try {
           globalSimResults = (getApp().cycles || []).map(cycle => simulateCycle(cycle));
@@ -1878,7 +1867,7 @@
       }
   }
 
-  // --- V12.0: Self-Calibrating Budget Loop ---
+  // --- V12.1: Self-Calibrating Budget Loop ---
   function calculateBudget(targetETAStr) {
       let active = getActiveCycle();
       if (!active || !activeSimResult || activeSimResult.failed) return { budget: 0, over: false };
@@ -1887,7 +1876,7 @@
       if (!targetDate || isNaN(targetDate.getTime())) return { budget: 0, over: false };
 
       let currentEnd = activeSimResult.finalEnd;
-      if (currentEnd > targetDate) return { budget: -diffDays(targetDate, currentEnd), over: true }; 
+      if (currentEnd > targetDate) return { budget: diffDays(targetDate, currentEnd), over: true }; 
 
       let budget = 0;
       let testCycle = JSON.parse(JSON.stringify(active));
@@ -2043,30 +2032,39 @@
           safeText('dash-sub', "Du regenerierst mit 1,0x Geschwindigkeit."); safeDisplay('dash-streak', 'none');
       }
 
-      // V12.0 Budget Integration
-      if (!isSandbox && activeCycle.targetETA) {
+      // V12.1 Budget Integration - Always show box if active cycle exists and not open
+      if (!isSandbox && !res.isOpen) {
           safeDisplay('dash-budget-box', 'block');
-          const targetDateObj = parseLocal(activeCycle.targetETA);
-          if (targetDateObj) {
-              safeText('budget-target-date', targetDateObj.toLocaleDateString('de-DE'));
-              let budgetRes = calculateBudget(activeCycle.targetETA);
-              
-              const box = document.getElementById('dash-budget-box');
-              const amt = document.getElementById('budget-amount');
-              const sub = document.getElementById('budget-subtext');
-              
-              if (budgetRes.over) {
-                  if(box) { box.style.borderColor = 'var(--danger)'; box.style.backgroundColor = '#fff5f5'; }
-                  if(amt) { amt.style.color = 'var(--danger)'; amt.textContent = `-${budgetRes.budget}`; }
-                  if(sub) { sub.style.color = 'var(--danger)'; sub.textContent = "Tage im Verzug (Ziel gerissen)"; }
-              } else {
-                  if(box) { box.style.borderColor = '#9b59b6'; box.style.backgroundColor = '#fdfafb'; }
-                  if(amt) { 
-                      amt.style.color = '#2c3e50'; 
-                      amt.textContent = budgetRes.budget >= 50 ? "50+" : budgetRes.budget; 
+          if (activeCycle.targetETA) {
+              safeDisplay('budget-content-active', 'block');
+              safeDisplay('budget-content-empty', 'none');
+              const targetDateObj = parseLocal(activeCycle.targetETA);
+              if (targetDateObj) {
+                  safeText('budget-target-date', targetDateObj.toLocaleDateString('de-DE'));
+                  let budgetRes = calculateBudget(activeCycle.targetETA);
+                  
+                  const box = document.getElementById('dash-budget-box');
+                  const amt = document.getElementById('budget-amount');
+                  const sub = document.getElementById('budget-subtext');
+                  
+                  if (budgetRes.over) {
+                      if(box) { box.style.borderColor = 'var(--danger)'; box.style.backgroundColor = '#fff5f5'; }
+                      if(amt) { amt.style.color = 'var(--danger)'; amt.textContent = `-${budgetRes.budget}`; }
+                      if(sub) { sub.style.color = 'var(--danger)'; sub.textContent = "Tage im Verzug (Ziel gerissen)"; }
+                  } else {
+                      if(box) { box.style.borderColor = '#9b59b6'; box.style.backgroundColor = '#fdfafb'; }
+                      if(amt) { 
+                          amt.style.color = '#2c3e50'; 
+                          amt.textContent = budgetRes.budget >= 50 ? "50+" : budgetRes.budget; 
+                      }
+                      if(sub) { sub.style.color = '#7f8c8d'; sub.textContent = "Verfügbare T-Tage (Standard)"; }
                   }
-                  if(sub) { sub.style.color = '#7f8c8d'; sub.textContent = "Verfügbare T-Tage (Standard)"; }
               }
+          } else {
+              safeDisplay('budget-content-active', 'none');
+              safeDisplay('budget-content-empty', 'block');
+              const box = document.getElementById('dash-budget-box');
+              if(box) { box.style.borderColor = '#9b59b6'; box.style.backgroundColor = '#fdfafb'; }
           }
       } else {
           safeDisplay('dash-budget-box', 'none');
@@ -2124,6 +2122,8 @@
           safeDisplay('daily-action-area', 'block'); 
           safeDisplay('daily-done-area', 'none'); 
       }
+      
+      if (!isSandbox && ds.gotBonusToday) { triggerBonusConfetti(); }
   }
 
   function renderHistorie() {
@@ -2602,14 +2602,14 @@
                   customAlert("Simulation erfolgreich in die Sandbox geladen!");
               } else {
                   if (data.version >= 5) { 
-                      data.version = 12.0; appData = data; 
+                      data.version = 12.1; appData = data; 
                   } else if (data.base && !data.cycles) { 
-                      appData = { version: 12.0, cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }], breatheLogs: {} };
+                      appData = { version: 12.1, cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }], breatheLogs: {} };
                   } else if (data.tDays !== undefined && !data.base) {
                       let base = { start: data.startDate, end: data.endDate, tDays: parseInt(data.tDays)||0, sLevel: parseInt(data.stress)||0, aLevel: parseInt(data.alcohol)||0, mLevel: 0, isOpen: false };
                       let logs = {}; 
                       if(data.interruptions) { data.interruptions.forEach(int => { logs[int.start] = { type: 'ausrutscher', t: parseInt(int.t)||1, s: parseInt(int.s)||0, a: parseInt(int.a)||0, m: 0 }; }); }
-                      appData = { version: 12.0, cycles: [{ id: Date.now(), status: 'active', base: base, logs: logs }], breatheLogs: {} };
+                      appData = { version: 12.1, cycles: [{ id: Date.now(), status: 'active', base: base, logs: logs }], breatheLogs: {} };
                   } else { 
                       appData = data; 
                   }
@@ -2659,7 +2659,7 @@
       const aLevels = ['Kein', 'Moderat', 'Hoch'];
       const mLevels = ['Kein', 'Moderat', 'Hoch'];
       
-      let desc = isSandbox ? `ReTrack SIMULATION\n\n` : `ReTrack V12.0\n\n`;
+      let desc = isSandbox ? `ReTrack SIMULATION\n\n` : `ReTrack V12.1\n\n`;
       desc += `--- Basis-Phase ---\n`;
       desc += `Start: ${parseLocal(activeCycle.base.start).toLocaleDateString('de-DE')}\n`;
       desc += `Ende: ${parseLocal(activeCycle.base.end).toLocaleDateString('de-DE')}\n`;
