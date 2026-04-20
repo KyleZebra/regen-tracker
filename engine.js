@@ -14,7 +14,20 @@ function calculateBudget(targetETAStr) {
         return { budget: 0, over: false };
     }
 
-    let currentEnd = new Date(activeSimResult.finalEnd);
+    // Budget Schatten-Simulation (Optimistisch)
+    let testCycle = JSON.parse(JSON.stringify(active));
+    if (!testCycle.logs) testCycle.logs = {};
+
+    let todayStrB = toIsoString(new Date());
+    // Wenn heute noch ungeloggt ist, tragen wir heimlich eine Pause ein.
+    // Dadurch sabotiert die "Geisel-Regel" nicht den zukünftigen Puffer.
+    if (!testCycle.logs[todayStrB] || testCycle.logs[todayStrB].type === undefined) {
+        testCycle.logs[todayStrB] = { type: 'pause', s: 0, a: 0, m: 0, note: "Budget-Phantom", isSimulated: true };
+    }
+
+    let resCheck = simulateCycle(testCycle);
+    let currentEnd = resCheck && !resCheck.failed ? new Date(resCheck.finalEnd) : new Date(activeSimResult.finalEnd);
+
     if (currentEnd > targetDate) {
         return { budget: diffDays(targetDate, currentEnd), over: true };
     }
@@ -23,16 +36,6 @@ function calculateBudget(targetETAStr) {
     let safety = 0;
     let simDate = new Date();
     simDate.setDate(simDate.getDate() + 1);
-
-    let testCycle = JSON.parse(JSON.stringify(active));
-    if (!testCycle.logs) testCycle.logs = {};
-
-    // Budget Fix: Wir nehmen für die Zukunftssimulation an, dass heute pausiert wird,
-    // damit die "Geisel-Regel" (fehlender Log heute) nicht den zukünftigen Puffer zerstört.
-    let todayStrB = toIsoString(new Date());
-    if (!testCycle.logs[todayStrB] || testCycle.logs[todayStrB].type === undefined) {
-        testCycle.logs[todayStrB] = { type: 'pause', s: 0, a: 0, m: 0, note: "Budget-Auto", isSimulated: true };
-    }
 
     while (budget < 50 && safety < 150) {
         safety++;
@@ -52,14 +55,14 @@ function calculateBudget(targetETAStr) {
             mood: 0,
             note: "Budget-Test",
             isSimulated: true,
-            isSmall: false // Immer Standard-Strafe für pessimistisches Budget
+            isSmall: false 
         };
 
         let res = simulateCycle(testCycle);
 
         if (res && !res.failed && res.finalEnd <= targetDate) {
             budget++;
-            simDate.setDate(simDate.getDate() + 4);
+            simDate.setDate(simDate.getDate() + 4); // Effizienz-Sprung
         } else {
             break;
         }
@@ -174,11 +177,10 @@ function simulateCycle(cycle) {
         let dashState = null;
         let finalDebtZeroDate = null;
         let gotBonusForToday = false;
-        let missedTodayBonus = false; // V14.0 Strict Hostage Rule Flag
         let cLogs = cycle.logs || {};
         let lastRealDayStr = (cLogs[todayStr] && typeof cLogs[todayStr] === 'object' && cLogs[todayStr].type !== undefined && !cLogs[todayStr].isSimulated) ? todayStr : yesterdayStr;
 
-        let dStr, log, isLogged, isFuture, isPast, isToday, isLogSmall, iBase, iS, iA, iC, pauschale, penalty, canPayout, pStr;
+        let dStr, log, isLogged, isFuture, isPast, isToday, isLogSmall, iBase, iS, iA, iC, pauschale, penalty, canPayout, pStr, isPhantom;
 
         while ((debt > 0 || toIsoString(simDate) <= endSimLimit) && safety < 25000) {
             safety++;
@@ -188,6 +190,7 @@ function simulateCycle(cycle) {
             isPast = dStr < todayStr;
             isToday = dStr === todayStr;
             isLogged = log && typeof log === 'object' && log.type !== undefined;
+            isPhantom = log && log.isSimulated === true;
 
             if (activeAusrutscherDays > 0) {
                 history.a.push(new Date(simDate));
@@ -227,11 +230,12 @@ function simulateCycle(cycle) {
                 }
                 withheldBonus = 0;
 
-                history.logDetails.push({ date: dStr, p: penalty, t: log.t, b: iBase, s: iS, a: iA, f: pauschale });
-
-                let smallInfo = isLogSmall ? " (Kleiner Tag)" : " (Standardtag)";
-                pStr = `+${penalty} Tage`;
-                history.penaltyDict[dStr] = pauschale > 0 ? pStr + ` (inkl. Setup)${smallInfo}` : pStr + ` (Stottern)${smallInfo}`;
+                if (!isPhantom) {
+                    history.logDetails.push({ date: dStr, p: penalty, t: log.t, b: iBase, s: iS, a: iA, f: pauschale });
+                    let smallInfo = isLogSmall ? " (Kleiner Tag)" : " (Standardtag)";
+                    pStr = `+${penalty} Tage`;
+                    history.penaltyDict[dStr] = pauschale > 0 ? pStr + ` (inkl. Setup)${smallInfo}` : pStr + ` (Stottern)${smallInfo}`;
+                }
 
                 history.a.push(new Date(simDate));
             } else {
@@ -244,41 +248,39 @@ function simulateCycle(cycle) {
                         currentBewDays.push(new Date(simDate));
 
                         if (bewTimer <= 0) {
-                            // V14.0 Strict Hostage Rule: Einfrieren, wenn heute ungeloggt
-                            if (isToday && !isLogged && !isSandbox && (!log || !log.isSimulated)) {
-                                missedTodayBonus = true;
-                                history.bonusDict[dStr] = `🎁 Bonus bereit (Log fehlt!)`;
-                            }
+                            // Die saubere Logik: Darf der Bonus ausgezahlt werden?
+                            canPayout = isPast || (isToday && isLogged) || isFuture || isSandbox || isPhantom;
 
-                            canPayout = isPast || (isToday && isLogged) || (isFuture && !missedTodayBonus) || isSandbox;
+                            // Strikte Geisel-Regel: HEUTE ungeloggt -> Kein Bonus für die Dashboard-Simulation
+                            if (isToday && !isLogged && !isSandbox && !isPhantom) {
+                                canPayout = false;
+                                history.bonusDict[dStr] = `🎁 Bonus bereit (Log heute fehlt!)`;
+                            }
 
                             if (canPayout) {
                                 debt -= withheldBonus;
                                 if (debt < 0) debt = 0;
 
-                                if (isToday && isLogged && (!log || !log.isSimulated)) {
+                                if (isToday && isLogged && !isPhantom) {
                                     gotBonusForToday = true;
                                 }
 
-                                if (withheldBonus > 0) {
-                                    if (!(isToday && !isLogged && !isSandbox)) {
-                                        history.bonusDict[dStr] = `🎉 Bonus: -${withheldBonus}`;
-                                    }
+                                if (withheldBonus > 0 && !isPhantom) {
+                                    history.bonusDict[dStr] = `🎉 Bonus: -${withheldBonus}`;
                                 }
-
-                                history.r.push(...currentBewDays);
-                                currentBewDays = [];
-                                withheldBonus = 0;
-                                state = 'REGEN';
-                                hasPaidPauschaleThisCluster = false;
-                                currentBlockTargetBew = 0;
-                                currentBlockServed = 0;
-                            } else {
-                                history.b.push(...currentBewDays);
-                                currentBewDays = [];
                             }
+
+                            // V14.0 FIX: IMMER in die Tiefe Regeneration wechseln, egal ob Bonus ausgezahlt oder verwehrt!
+                            history.r.push(...currentBewDays);
+                            currentBewDays = [];
+                            withheldBonus = 0;
+                            state = 'REGEN';
+                            hasPaidPauschaleThisCluster = false;
+                            currentBlockTargetBew = 0;
+                            currentBlockServed = 0;
                         }
                     } else {
+                        // Tiefe Regeneration (1.0x Speed)
                         debt -= 1.0;
                         if (debt < 0) debt = 0;
                         history.r.push(new Date(simDate));
@@ -298,6 +300,7 @@ function simulateCycle(cycle) {
                 dashState = { debt, totalDebtEver, state, bewTimer, gotBonusToday: (isToday) ? gotBonusForToday : false, pendingBonus: false };
             }
 
+            // UI-Trigger für das Dashboard
             if (isToday && !isLogged && cycle.status === 'active') {
                 if (state === 'BEWAEHRUNG' && bewTimer <= 0) {
                     if (dashState) {
