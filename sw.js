@@ -3,7 +3,7 @@
 // ==========================================
 
 // Ändere diese Versionsnummer bei JEDEM Update der App!
-const CACHE_NAME = 'retrack-cache-v13.13';
+const CACHE_NAME = 'retrack-cache-v14.0';
 
 // Alle Dateien, die für den Offline-Betrieb benötigt werden
 const urlsToCache = [

@@ -29,7 +29,7 @@ const safeProp = (id, prop, val) => {
 };
 
 // --- Global State ---
-let appData = { version: 13.1, cycles: [], breatheLogs: {} };
+let appData = { version: 14.0, cycles: [], breatheLogs: {} };
 let isSandbox = false; 
 let sandboxData = null;
 
@@ -87,11 +87,11 @@ function loadData() {
             let data = JSON.parse(saved); 
             if (data && typeof data === 'object') {
                 if (data.version >= 5) { 
-                    data.version = 13.1; 
+                    data.version = 14.0; 
                     appData = data; 
                 } else if (data.base) { 
                     appData = { 
-                        version: 13.1, 
+                        version: 14.0, 
                         cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }], 
                         breatheLogs: {} 
                     }; 
@@ -156,7 +156,7 @@ function loadData() {
             const todayStr = toIsoString(new Date());
             const expectedNext = toIsoString(addDays(parseLocal(active.base.end), 1));
             
-            // V13.1 FIX: Close only if today is STRICTLY GREATER than the expected next day.
+            // V14.0 FIX: Close only if today is STRICTLY GREATER than the expected next day.
             if (todayStr > expectedNext) { 
                 if (!active.logs) active.logs = {}; 
                 if (!active.logs[expectedNext] || active.logs[expectedNext].type !== 'ausrutscher') { 
