@@ -8,7 +8,7 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
 
-  <title>ReTrack 13.0</title>
+  <title>ReTrack 13.1</title>
   
   <link rel="manifest" href="./manifest.json" />
   <meta name="theme-color" content="#f1c40f" />
@@ -161,7 +161,7 @@
     input[readonly], select:disabled { background-color: #e9ecef; color: #7f8c8d; cursor: not-allowed; font-weight: bold; border: 1px solid #dee2e6; } 
     textarea { resize: vertical; }
 
-    /* Checkbox Styling V13.0 */
+    /* Checkbox Styling */
     .checkbox-wrapper { display: flex; align-items: center; gap: 8px; cursor: pointer; margin-top: 5px; }
     .checkbox-wrapper input[type="checkbox"] { width: 22px; height: 22px; margin: 0; cursor: pointer; accent-color: var(--danger); }
     .checkbox-wrapper span { font-weight: 700; font-size: 0.9rem; color: var(--text-main); }
@@ -220,6 +220,7 @@
     .tag.ausrutscher { background-color: #e74c3c; } 
     .tag.nirvana { background-color: #3498db; } 
     .tag.target-flag { background-color: #8e44ad; color: white; border: 1px solid #732d91;}
+    .tag.bonus-drop { background-color: #2ecc71; color: white; border: 1px dashed #fff; box-shadow: 0 0 4px rgba(46, 204, 113, 0.5); }
     
     .legend { display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center; margin-top: 1rem; font-size: 0.8rem; color: #666; }
     .legend span { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 6px; vertical-align: middle; border: 1px solid rgba(0,0,0,0.1); }
@@ -229,6 +230,7 @@
     .legend span.l-reg { background-color: #27ae60; } 
     .legend span.l-nir { background-color: #3498db; }
     .legend span.l-target { background-color: #8e44ad; border: 1px solid #732d91;}
+    .legend span.l-bonus { background-color: #2ecc71; border: 1px dashed #fff; }
     
     /* Stats & Archive */
     .setup-overlay { display: none; text-align: center; padding: 2rem; background: #fffcf5; border-radius: 12px; border: 2px dashed #f1c40f; margin-bottom: 1rem;}
@@ -299,7 +301,6 @@
 </head>
 <body>
 
-  <!-- PWA UPDATE BANNER -->
   <div id="update-banner">
       🚀 Eine neue App-Version ist verfügbar!
       <div class="sandbox-actions">
@@ -307,7 +308,6 @@
       </div>
   </div>
 
-  <!-- SANDBOX BANNER -->
   <div id="sandbox-banner">
       🧪 SIMULATIONS-MODUS AKTIV
       <div class="sandbox-actions">
@@ -318,7 +318,7 @@
 
   <header onclick="openBreatheOverlay()" title="Geheime Atem-Übung öffnen">
     <h1>🧪 ReTrack</h1>
-    <div class="version">Version 13.0 – Smart Days Edition</div>
+    <div class="version">Version 13.1 – Clean Architecture</div>
   </header>
 
   <div class="tabs">
@@ -329,7 +329,6 @@
 
   <input type="file" id="fileInput" accept=".json" onchange="importData(this)">
 
-  <!-- ================= TAB 1: DASHBOARD ================= -->
   <div id="tab-dashboard" class="tab-content active">
     
     <div id="setup-warning" class="setup-overlay"></div>
@@ -345,7 +344,6 @@
                 <div id="dash-sub" class="eta-subtext"></div>
             </div>
 
-            <!-- Ring -->
             <div class="ring-wrapper" onclick="openSandbox()" title="Geheimes Labor öffnen">
                 <svg viewBox="0 0 36 36" class="circular-chart">
                     <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
@@ -360,7 +358,6 @@
                 </div>
             </div>
 
-            <!-- Budget Box V13.0 -->
             <div id="dash-budget-box" class="outlook-box" style="display:none; background:#fdfafb; border: 2px dashed #9b59b6; cursor:pointer;" onclick="openTargetModal()" title="Ziel & Budget bearbeiten">
                 <div id="budget-content-active" style="display:none;">
                     <div class="outlook-title" style="justify-content:space-between; color:#8e44ad;">
@@ -376,7 +373,6 @@
                 </div>
             </div>
             
-            <!-- Outlook Box -->
             <div id="dash-outlook" class="outlook-box" style="display:none;"></div>
 
             <div id="daily-action-area">
@@ -395,7 +391,6 @@
     </div>
   </div>
 
-  <!-- ================= TAB 2: AKTUELLER ZYKLUS ================= -->
   <div id="tab-historie" class="tab-content">
     <div class="card" id="base-form-card">
       <h3>📊 Start des aktuellen Zyklus</h3>
@@ -423,7 +418,7 @@
             </div>
         </div>
         <div>
-            <label>Stress</label>
+            <label>Stress (Max)</label>
             <select id="base-s" onchange="saveBase()">
                 <option value="0">Kein</option>
                 <option value="1">Moderat</option>
@@ -431,7 +426,7 @@
             </select>
         </div>
         <div>
-            <label>Alkohol</label>
+            <label>Alkohol (Max)</label>
             <select id="base-a" onchange="saveBase()">
                 <option value="0">Kein</option>
                 <option value="1">Moderat</option>
@@ -439,7 +434,7 @@
             </select>
         </div>
         <div>
-            <label>Masturbation</label>
+            <label>Masturbation (M)</label>
             <select id="base-m" onchange="saveBase()">
                 <option value="0">Kein</option>
                 <option value="1">Moderat</option>
@@ -450,7 +445,6 @@
       <button class="btn-tool" style="width:100%; margin-top: 15px; background: var(--header-bg); border: none; color: white;" onclick="saveBase(true)">💾 Speichern & Neu berechnen</button>
     </div>
 
-    <!-- ZUKUNFTS-SIMULATOR -->
     <div class="card" id="sandbox-planner-card">
         <h3 style="color:#9b59b6; border-bottom-color:#e8daef;">🔮 Zukunfts-Simulator</h3>
         <p style="font-size:0.8rem; color:#666; margin-top:-10px;">Plane fiktives Rauchen für das laufende Jahr, um die Auswirkungen zu testen.</p>
@@ -488,7 +482,7 @@
                 </select>
             </div>
             <div>
-                <label>Masturbation</label>
+                <label>Masturbation (M)</label>
                 <select id="sim-a-m">
                     <option value="0">Kein</option>
                     <option value="1">Moderat</option>
@@ -511,6 +505,7 @@
                 <div><span class="l-reg"></span>Regen. / bestanden</div>
                 <div><span class="l-nir"></span>Nirwana</div>
                 <div><span class="l-target"></span>Ziel-Datum</div>
+                <div><span class="l-bonus"></span>Bonus Drop</div>
             </div>
             <div class="calendar-wrapper">
                 <div id="calendar"></div>
@@ -532,7 +527,6 @@
     </div>
   </div>
 
-  <!-- ================= TAB 3: ARCHIV & STATS ================= -->
   <div id="tab-archiv" class="tab-content">
     <button class="btn-tool" style="width:100%; margin-bottom: 1.5rem; background: #8e44ad; color: white; border: none;" onclick="openHistoricalModal()">🕰️ Historischen Zyklus nachtragen</button>
 
@@ -568,7 +562,6 @@
 
     <h3 style="margin-left:5px; color:#7f8c8d;">Abgeschlossene Zyklen</h3>
     <div id="archive-container"></div>
-    
     <div id="archive-months-container"></div>
     
     <div class="tool-grid" style="margin-top:2rem;">
@@ -578,7 +571,6 @@
     <div id="debug-container" style="margin-top: 2rem;"></div>
   </div>
 
-  <!-- ================= CUSTOM MODALS ================= -->
   <div id="modal-alert" class="modal-overlay">
     <div class="modal-card" style="text-align:center;">
       <h3>ℹ️ Hinweis</h3>
@@ -598,7 +590,6 @@
     </div>
   </div>
 
-  <!-- Target Modal -->
   <div id="modal-target" class="modal-overlay">
     <div class="modal-card">
       <h3 style="color:#8e44ad; margin-bottom: 5px;">🎯 Ziel & Budget</h3>
@@ -617,7 +608,6 @@
     </div>
   </div>
 
-  <!-- Ausrutscher Modal -->
   <div id="modal-ausrutscher" class="modal-overlay">
     <div class="modal-card"><h3 style="color:var(--danger)">🔴 Rauchen loggen</h3>
       <div class="form-grid">
@@ -687,7 +677,6 @@
     </div>
   </div>
 
-  <!-- Pause Modal (Refactored V13.0) -->
   <div id="modal-pause" class="modal-overlay">
     <div class="modal-card"><h3 style="color:var(--btn-calc)">🟢 Pause eintragen</h3>
       <p style="font-size:0.8rem; color:#666; margin-bottom: 15px;">Pausentage mit Stress/Alkohol/M drosseln <strong>nicht</strong> deine Regenerationsdauer, füttern aber die Statistik.</p>
@@ -744,7 +733,6 @@
     </div>
   </div>
 
-  <!-- Edit Modal -->
   <div id="modal-edit-day" class="modal-overlay">
     <div class="modal-card"><h3 id="edit-day-title">✏️ Tag bearbeiten</h3>
       <input type="hidden" id="edit-day-date">
@@ -820,7 +808,6 @@
     </div>
   </div>
   
-  <!-- Historical Cycle Modal -->
   <div id="modal-historical" class="modal-overlay">
     <div class="modal-card">
       <h3 style="color:#8e44ad;">🕰️ Historischen Zyklus nachtragen</h3>
@@ -846,27 +833,27 @@
             </div>
         </div>
         <div>
-            <label>Stress</label>
+            <label>Stress (Max)</label>
             <select id="hist-base-s">
-                <option value="0">Kein</option>
-                <option value="1">Moderat</option>
-                <option value="2">Hoch</option>
+                <option value="0">0</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
             </select>
         </div>
         <div>
-            <label>Alkohol</label>
+            <label>Alkohol (Max)</label>
             <select id="hist-base-a">
-                <option value="0">Kein</option>
-                <option value="1">Moderat</option>
-                <option value="2">Hoch</option>
+                <option value="0">0</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
             </select>
         </div>
         <div>
             <label>Masturbation</label>
             <select id="hist-base-m">
-                <option value="0">Kein</option>
-                <option value="1">Moderat</option>
-                <option value="2">Hoch</option>
+                <option value="0">0</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
             </select>
         </div>
       </div>
@@ -884,7 +871,6 @@
     </div>
   </div>
 
-  <!-- Breathe Overlay -->
   <div id="breathe-overlay" class="br-overlay">
       <button class="br-close-btn" onclick="abortBreathe()">❌ Beenden</button>
       <div id="br-setup" class="br-setup-card">
@@ -910,7 +896,6 @@
           <button class="br-start-btn" onclick="abortBreathe()">Zurück zur App</button>
       </div>
   </div>
-
 <script>
   // --- Defensive DOM Helpers ---
   const safeVal = (id) => { 
@@ -938,7 +923,7 @@
       if (e) e[prop] = val; 
   };
 
-  let appData = { version: 13.0, cycles: [], breatheLogs: {} };
+  let appData = { version: 13.1, cycles: [], breatheLogs: {} };
   let isSandbox = false; 
   let sandboxData = null;
 
@@ -986,7 +971,7 @@
       return Math.round((d2 - d1) / (24 * 60 * 60 * 1000));
   };
 
-  // --- Modal Logic ---
+  // --- Modal Logic (Strict classList) ---
   function closeModal(id) { 
       const m = document.getElementById(id);
       if (m) {
@@ -1200,11 +1185,11 @@
               let data = JSON.parse(saved); 
               if (data && typeof data === 'object') {
                   if (data.version >= 5) { 
-                      data.version = 13.0; 
+                      data.version = 13.1; 
                       appData = data; 
                   } else if (data.base) { 
                       appData = { 
-                          version: 13.0, 
+                          version: 13.1, 
                           cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }], 
                           breatheLogs: {} 
                       }; 
@@ -1269,6 +1254,7 @@
               const todayStr = toIsoString(new Date());
               const expectedNext = toIsoString(addDays(parseLocal(active.base.end), 1));
               
+              // V13.1 FIX: Close only if today is STRICTLY GREATER than the expected next day.
               if (todayStr > expectedNext) { 
                   if (!active.logs) active.logs = {}; 
                   if (!active.logs[expectedNext] || active.logs[expectedNext].type !== 'ausrutscher') { 
@@ -1828,11 +1814,14 @@
                   let basePenalty = "";
                   
                   if (item.isBase) { 
-                      // FIX V13.0: Only show base penalty once (on the closing day)
-                      if (item.dStr === active.base.end) {
+                      let isLastBaseDay = item.dStr === active.base.end; 
+                      let isTodayWhenOpen = active.base.isOpen && item.dStr === todayStr; 
+                      if (isLastBaseDay || isTodayWhenOpen) { 
                           basePenalty = `<div class="diary-meta" style="color: #8e44ad; font-weight: bold; font-size: 0.75rem;">${activeSimResult ? activeSimResult.basePenaltyStr : ''}</div>`; 
-                      }
-                      
+                      } 
+                  }
+                  
+                  if (item.isBase) { 
                       let smallText = active.base.isSmall ? ' (Kleiner Tag)' : ' (Standardtag)';
                       badge = `<span class="diary-badge badge-base">⭐ Basis-Phase</span>`; 
                       meta = `S:${sLevels[active.base.sLevel||0]} | A:${aLevels[active.base.aLevel||0]} | M:${mLevels[active.base.mLevel||0]} | Mood: ${moodStr}${breatheStr} <span style="font-weight:bold; color:#f39c12;">${smallText}</span>`; 
@@ -1890,7 +1879,6 @@
           
           const log = (active.logs || {})[dateStr] || {}; 
           
-          // V13.0 FIX: Load base values if base day
           if (isBase) {
               safeSetVal('edit-day-type', 'ausrutscher');
               safeSetVal('edit-day-t', active.base.tDays || 1); 
@@ -2014,7 +2002,7 @@
       }
   }
 
-  // --- Core Engine V13.0 ---
+  // --- Core Engine V13.1 ---
   function runAllSimulations() {
       try {
           const app = getApp();
@@ -2039,7 +2027,7 @@
           let isBaseSmall = cycle.base.isSmall === true;
           
           let baseVal = isBaseSmall ? (baseT * 2) : (baseT * 3);
-          let expectedBaseDebt = baseVal; // V13.0 Tracking the exact expected base debt for UI calculation
+          let expectedBaseDebt = baseVal; 
           
           let sAdd = 0, aAdd = 0;
           if (baseT < 4) { 
@@ -2123,7 +2111,7 @@
           let cLogs = cycle.logs || {};
           let lastRealDayStr = (cLogs[todayStr] && typeof cLogs[todayStr] === 'object' && cLogs[todayStr].type !== undefined) ? todayStr : yesterdayStr;
 
-          var dStr, log, isLogged, isFuture, isLogSmall, iBase, iS, iA, iC, pauschale, penalty, canPayout, pStr;
+          let dStr, log, isLogged, isFuture, isLogSmall, iBase, iS, iA, iC, pauschale, penalty, canPayout, pStr;
 
           while ((debt > 0 || toIsoString(simDate) <= endSimLimit) && safety < 25000) {
               safety++; 
@@ -2582,12 +2570,18 @@
         }
         
         if (log && log.note) {
-            tagText += " 📝";
+            tagText += (tagText ? " " : "") + "📝";
         }
         
         if (targetStrCheck && dStr === targetStrCheck) { 
-            tagText += " 🏁 Ziel"; 
+            tagText += (tagText ? " " : "") + "🏁 Ziel"; 
             tagClass += " target-flag"; 
+        }
+
+        // V13.1 Kalender-Bonus Rendering
+        if (res.history.bonusDict && res.history.bonusDict[isoDStr]) {
+            tagText += (tagText ? " " : "") + "🎁 Bonus";
+            tagClass += " bonus-drop";
         }
 
         calHtml += `<td class="active-month ${isTodayClass}"><span class="date-num">${current.getDate()}.</span>${tagText ? `<span class="tag ${tagClass}">${tagText.trim()}</span>` : ''}</td>`;
@@ -2608,7 +2602,6 @@
       safeHTML("calendar", calHtml);
   }
 
-  // --- Weitere Rendering Funktionen ---
   function renderArchiv() {
       const archContainer = document.getElementById('archive-container'); 
       if(!archContainer) return;
@@ -2915,7 +2908,6 @@
       }
       safeHTML('archive-months-container', archMonthsHtml);
 
-      // SAUBERER RÖNTGENBLICK OHNE TEMPLATE-LITERAL CONFLICTS
       let debugIds = (getApp().cycles || []).map(c=>c.id).join(', ');
       let debugRes = globalSimResults.map(r => r ? (r.failed ? '[FAILED: ' + r.cycleId + ']' : r.cycleId) : '[NULL]').join(', ');
       
@@ -2973,15 +2965,15 @@
                   customAlert("Simulation erfolgreich in die Sandbox geladen!");
               } else {
                   if (data.version >= 5) { 
-                      data.version = 13.0; 
+                      data.version = 13.1; 
                       appData = data; 
                   } else if (data.base && !data.cycles) { 
-                      appData = { version: 13.0, cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }], breatheLogs: {} };
+                      appData = { version: 13.1, cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }], breatheLogs: {} };
                   } else if (data.tDays !== undefined && !data.base) {
                       let base = { start: data.startDate, end: data.endDate, tDays: parseInt(data.tDays)||0, sLevel: parseInt(data.stress)||0, aLevel: parseInt(data.alcohol)||0, mLevel: 0, isOpen: false };
                       let logs = {}; 
                       if(data.interruptions) { data.interruptions.forEach(int => { logs[int.start] = { type: 'ausrutscher', t: parseInt(int.t)||1, s: parseInt(int.s)||0, a: parseInt(int.a)||0, m: 0 }; }); }
-                      appData = { version: 13.0, cycles: [{ id: Date.now(), status: 'active', base: base, logs: logs }], breatheLogs: {} };
+                      appData = { version: 13.1, cycles: [{ id: Date.now(), status: 'active', base: base, logs: logs }], breatheLogs: {} };
                   } else { 
                       appData = data; 
                   }
@@ -3035,11 +3027,11 @@
       const aLevels = ['Kein', 'Moderat', 'Hoch'];
       const mLevels = ['Kein', 'Moderat', 'Hoch'];
       
-      let desc = isSandbox ? `ReTrack SIMULATION\n\n` : `ReTrack V13.0\n\n`;
+      let desc = isSandbox ? `ReTrack SIMULATION\n\n` : `ReTrack V13.1\n\n`;
       desc += `--- Basis-Phase ---\n`;
       desc += `Start: ${parseLocal(activeCycle.base.start).toLocaleDateString('de-DE')}\n`;
       desc += `Ende: ${parseLocal(activeCycle.base.end).toLocaleDateString('de-DE')}\n`;
-      desc += `Dauer: ${activeCycle.base.tDays}d ${activeCycle.base.isSmall ? '(Kleiner Tag x2)' : ''}\n`;
+      desc += `Dauer: ${activeCycle.base.tDays}d ${activeCycle.base.isSmall ? '(Kleiner Tag)' : ''}\n`;
       desc += `Stress (Max): ${sLevels[activeCycle.base.sLevel]}\n`;
       desc += `Alkohol (Max): ${aLevels[activeCycle.base.aLevel]}\n`;
       desc += `Masturbation (M): ${mLevels[activeCycle.base.mLevel || 0]}\n`;
@@ -3051,19 +3043,14 @@
           sortedLogs.forEach(l => {
               let origLog = (activeCycle.logs || {})[l.date] || {};
               let detailStr = res.history.penaltyDict[l.date] || `Strafe: +${l.p} Tage`;
-              desc += `[${parseLocal(l.date).toLocaleDateString('de-DE')}] Dauer: ${l.t}d | S: ${sLevels[l.s]} | A: ${aLevels[l.a]} | M: ${mLevels[origLog.m || 0]} -> ${detailStr}\n`;
+              let smallTxt = origLog.isSmall ? ' (Kleiner Tag)' : '';
+              desc += `[${parseLocal(l.date).toLocaleDateString('de-DE')}] Dauer: ${l.t}d${smallTxt} | S: ${sLevels[l.s]} | A: ${aLevels[l.a]} | M: ${mLevels[origLog.m || 0]} -> ${detailStr}\n`;
           });
       }
 
       const totalT = res.totalTDaysEver; 
       const totalRegenDebt = res.totalDebtEver; 
-      
-      let expectedBaseDebtICS = activeCycle.base.isSmall ? (activeCycle.base.tDays * 2) : (activeCycle.base.tDays * 3);
-      if (res.history && res.history.logDetails) {
-          res.history.logDetails.forEach(l => {
-              expectedBaseDebtICS += l.b;
-          });
-      }
+      const expectedBaseDebtICS = res.expectedBaseDebt || 0;
       const aufschlag = totalRegenDebt - expectedBaseDebtICS;
       
       desc += `\n--- Gesamtbilanz ---\n`;
@@ -3413,5 +3400,5 @@
       });
   }
 </script>
-</body>
+  </body>
 </html>
