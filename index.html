@@ -897,7 +897,7 @@
       </div>
   </div>
 <script>
-  // --- Defensive DOM Helpers ---
+// --- Defensive DOM Helpers ---
   const safeVal = (id) => { 
       const e = document.getElementById(id); 
       return e ? e.value : null; 
@@ -970,6 +970,36 @@
   const diffDays = (d1, d2) => {
       return Math.round((d2 - d1) / (24 * 60 * 60 * 1000));
   };
+
+  // --- Native Konfetti Animation ---
+  function triggerBonusConfetti() {
+      const colors = ['#f1c40f', '#2ecc71', '#3498db', '#e74c3c', '#9b59b6'];
+      for (let i = 0; i < 100; i++) {
+          let conf = document.createElement('div');
+          conf.style.position = 'fixed';
+          conf.style.width = '10px';
+          conf.style.height = '10px';
+          conf.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+          conf.style.top = '-10px';
+          conf.style.left = Math.random() * 100 + 'vw';
+          conf.style.opacity = Math.random();
+          conf.style.transform = `rotate(${Math.random() * 360}deg)`;
+          conf.style.zIndex = '99999';
+          conf.style.pointerEvents = 'none';
+          document.body.appendChild(conf);
+
+          let fallDuration = Math.random() * 3000 + 2000;
+          conf.animate([
+              { transform: `translate3d(0,0,0) rotate(0deg)`, opacity: 1 },
+              { transform: `translate3d(${Math.random()*200 - 100}px, 100vh, 0) rotate(${Math.random()*720}deg)`, opacity: 0 }
+          ], {
+              duration: fallDuration,
+              easing: 'cubic-bezier(.37,0,.63,1)'
+          });
+
+          setTimeout(() => conf.remove(), fallDuration);
+      }
+  }
 
   // --- Modal Logic (Strict classList) ---
   function closeModal(id) { 
@@ -1254,7 +1284,6 @@
               const todayStr = toIsoString(new Date());
               const expectedNext = toIsoString(addDays(parseLocal(active.base.end), 1));
               
-              // V13.1 FIX: Close only if today is STRICTLY GREATER than the expected next day.
               if (todayStr > expectedNext) { 
                   if (!active.logs) active.logs = {}; 
                   if (!active.logs[expectedNext] || active.logs[expectedNext].type !== 'ausrutscher') { 
@@ -2111,6 +2140,7 @@
           let cLogs = cycle.logs || {};
           let lastRealDayStr = (cLogs[todayStr] && typeof cLogs[todayStr] === 'object' && cLogs[todayStr].type !== undefined) ? todayStr : yesterdayStr;
 
+          // Scope Isolation
           let dStr, log, isLogged, isFuture, isLogSmall, iBase, iS, iA, iC, pauschale, penalty, canPayout, pStr;
 
           while ((debt > 0 || toIsoString(simDate) <= endSimLimit) && safety < 25000) {
@@ -2118,6 +2148,8 @@
               dStr = toIsoString(simDate); 
               log = cLogs[dStr];
               isFuture = dStr > todayStr;
+              let isPast = dStr < todayStr;
+              let isToday = dStr === todayStr;
               isLogged = log && typeof log === 'object' && log.type !== undefined;
 
               if (activeAusrutscherDays > 0) {
@@ -2175,22 +2207,25 @@
                           currentBewDays.push(new Date(simDate));
                           
                           if (bewTimer <= 0) {
-                              canPayout = !isFuture || isSandbox;
+                              // V13.1 ESCROW LOGIC
+                              canPayout = isPast || (isToday && isLogged) || isSandbox;
+                              
                               if (canPayout) { 
                                   debt -= withheldBonus; 
                                   if (debt < 0) debt = 0; 
-                                  if (dStr === todayStr && isLogged) gotBonusForToday = true; 
+                                  if (isToday && isLogged) gotBonusForToday = true; 
                                   if (withheldBonus > 0) history.bonusDict[dStr] = `🎉 Bonus: -${withheldBonus}`;
                                   history.r.push(...currentBewDays); 
+                                  currentBewDays = []; 
+                                  withheldBonus = 0; 
+                                  state = 'REGEN'; 
+                                  hasPaidPauschaleThisCluster = false; 
+                                  currentBlockTargetBew = 0; 
+                                  currentBlockServed = 0;
                               } else { 
                                   history.b.push(...currentBewDays); 
+                                  currentBewDays = [];
                               }
-                              currentBewDays = []; 
-                              withheldBonus = 0; 
-                              state = 'REGEN'; 
-                              hasPaidPauschaleThisCluster = false; 
-                              currentBlockTargetBew = 0; 
-                              currentBlockServed = 0;
                           }
                       } else { 
                           debt -= 1.0; 
@@ -2209,7 +2244,16 @@
               }
               
               if (dStr === lastRealDayStr && cycle.status === 'active') {
-                  dashState = { debt, totalDebtEver, state, bewTimer, gotBonusToday: (dStr === todayStr) ? gotBonusForToday : false };
+                  dashState = { debt, totalDebtEver, state, bewTimer, gotBonusToday: (isToday) ? gotBonusForToday : false, pendingBonus: false };
+              }
+              
+              // V13.1 Treuhand-Bonus Flagging für das Dashboard
+              if (dStr === todayStr && !isLogged && cycle.status === 'active') {
+                  if (state === 'BEWAEHRUNG' && bewTimer <= 0) {
+                      if (dashState) {
+                          dashState.pendingBonus = true;
+                      }
+                  }
               }
               
               simDate.setDate(simDate.getDate() + 1);
@@ -2221,7 +2265,7 @@
           
           if (!dashState && cycle.status === 'active') {
               let initialBewTimer = isBaseSmall ? (baseT * 2) : (baseT * 3);
-              dashState = { debt: initialDebtTotal, totalDebtEver: initialDebtTotal, state: 'BEWAEHRUNG', bewTimer: initialBewTimer, gotBonusToday: false };
+              dashState = { debt: initialDebtTotal, totalDebtEver: initialDebtTotal, state: 'BEWAEHRUNG', bewTimer: initialBewTimer, gotBonusToday: false, pendingBonus: false };
           }
           
           let mFreeCurrent = 0;
@@ -2373,6 +2417,16 @@
               sb.classList.add('nirvana'); 
               sb.textContent = `💎 ${res.nirvanaStreak} Tage Clean-Streak`; 
           }
+      } else if (ds.pendingBonus) {
+          // V13.1 Escrow UI State
+          safeProp('dash-status-badge', 'className', 'status-badge status-bewaehrung'); 
+          safeText('dash-status-badge', "🎁 Bonus bereit!");
+          if(ring) ring.classList.add('bewaehrung'); 
+          safeText('dash-ring-label', "BEWÄHRUNG");
+          safeText('dash-days-left', `Schulden: ${fDebt} Tage`); 
+          safeText('dash-target-date', `Ziel: ${res.finalEnd.toLocaleDateString('de-DE')}`);
+          safeText('dash-sub', "Logge den heutigen Tag als Pause, um die Belohnung einzulösen!"); 
+          safeDisplay('dash-streak', 'none');
       } else if (ds.state === 'BEWAEHRUNG') {
           safeProp('dash-status-badge', 'className', 'status-badge status-bewaehrung'); 
           safeText('dash-status-badge', "Bewährungsphase");
@@ -2480,6 +2534,7 @@
           safeDisplay('daily-done-area', 'none'); 
       }
       
+      // V13.1 Confetti fires ONLY after the day is explicitly logged and payout granted!
       if (!isSandbox && ds.gotBonusToday) {
           triggerBonusConfetti();
       }
