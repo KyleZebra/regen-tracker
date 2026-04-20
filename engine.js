@@ -177,8 +177,11 @@ function simulateCycle(cycle) {
         let dashState = null;
         let finalDebtZeroDate = null;
         let gotBonusForToday = false;
+        let todayBonusPending = false; 
         let cLogs = cycle.logs || {};
-        let lastRealDayStr = (cLogs[todayStr] && typeof cLogs[todayStr] === 'object' && cLogs[todayStr].type !== undefined && !cLogs[todayStr].isSimulated) ? todayStr : yesterdayStr;
+        
+        // V14.0 FIX: Wir beziehen simulierte Logs in den Dashboard-Snapshot mit ein (für die korrekte Vorschau!)
+        let lastRealDayStr = (cLogs[todayStr] && typeof cLogs[todayStr] === 'object' && cLogs[todayStr].type !== undefined) ? todayStr : yesterdayStr;
 
         let dStr, log, isLogged, isFuture, isPast, isToday, isLogSmall, iBase, iS, iA, iC, pauschale, penalty, canPayout, pStr, isPhantom;
 
@@ -248,13 +251,13 @@ function simulateCycle(cycle) {
                         currentBewDays.push(new Date(simDate));
 
                         if (bewTimer <= 0) {
-                            // Die saubere Logik: Darf der Bonus ausgezahlt werden?
                             canPayout = isPast || (isToday && isLogged) || isFuture || isSandbox || isPhantom;
 
-                            // Strikte Geisel-Regel: HEUTE ungeloggt -> Kein Bonus für die Dashboard-Simulation
+                            // Strikte Geisel-Regel für das Dashboard
                             if (isToday && !isLogged && !isSandbox && !isPhantom) {
                                 canPayout = false;
                                 history.bonusDict[dStr] = `🎁 Bonus bereit (Log heute fehlt!)`;
+                                todayBonusPending = true;
                             }
 
                             if (canPayout) {
@@ -268,10 +271,15 @@ function simulateCycle(cycle) {
                                 if (withheldBonus > 0 && !isPhantom) {
                                     history.bonusDict[dStr] = `🎉 Bonus: -${withheldBonus}`;
                                 }
+                                
+                                // V14.0 FIX: Optische Einlösung (Grün)
+                                history.r.push(...currentBewDays);
+                            } else {
+                                // V14.0 FIX: Optische Geiselhaft (Orange bleibt erhalten)
+                                history.b.push(...currentBewDays);
                             }
 
-                            // V14.0 FIX: IMMER in die Tiefe Regeneration wechseln, egal ob Bonus ausgezahlt oder verwehrt!
-                            history.r.push(...currentBewDays);
+                            // V14.0 FIX: Die Mathematik geht IMMER in Tiefe Regeneration über!
                             currentBewDays = [];
                             withheldBonus = 0;
                             state = 'REGEN';
@@ -280,7 +288,6 @@ function simulateCycle(cycle) {
                             currentBlockServed = 0;
                         }
                     } else {
-                        // Tiefe Regeneration (1.0x Speed)
                         debt -= 1.0;
                         if (debt < 0) debt = 0;
                         history.r.push(new Date(simDate));
@@ -300,12 +307,10 @@ function simulateCycle(cycle) {
                 dashState = { debt, totalDebtEver, state, bewTimer, gotBonusToday: (isToday) ? gotBonusForToday : false, pendingBonus: false };
             }
 
-            // UI-Trigger für das Dashboard
+            // UI-Trigger für das Dashboard: Pendenter Bonus
             if (isToday && !isLogged && cycle.status === 'active') {
-                if (state === 'BEWAEHRUNG' && bewTimer <= 0) {
-                    if (dashState) {
-                        dashState.pendingBonus = true;
-                    }
+                if (todayBonusPending && dashState) {
+                    dashState.pendingBonus = true;
                 }
             }
 

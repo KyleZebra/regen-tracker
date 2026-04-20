@@ -3,7 +3,7 @@
 // ==========================================
 
 // Ändere diese Versionsnummer bei JEDEM Update der App!
-const CACHE_NAME = 'retrack-cache-v14.12345';
+const CACHE_NAME = 'retrack-cache-v14.14';
 
 const urlsToCache = [
 './',
