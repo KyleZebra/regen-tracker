@@ -137,13 +137,14 @@ function simulateCycle(cycle) {
             if (nxStart && !isNaN(nxStart.getTime())) {
                 endSimLimit = toIsoString(addDays(nxStart, -1)); 
             }
-        }
-        
-        if (isSandbox && !nextCycle) { 
+        } else {
+            // V14.0 FIX: Der Ereignishorizont. Erlaube Zukunft, wenn simulierte Logs (Budget-Rechner) da sind.
             let logsStr = Object.keys(cycle.logs || {}).sort(); 
             if (logsStr.length > 0 && logsStr[logsStr.length - 1] > endSimLimit) {
                 let maxSim = logsStr[logsStr.length - 1];
-                endSimLimit = maxSim;
+                if (isSandbox || (cycle.logs[maxSim] && cycle.logs[maxSim].isSimulated)) {
+                    endSimLimit = maxSim;
+                }
             }
         }
 
@@ -170,7 +171,6 @@ function simulateCycle(cycle) {
         let cLogs = cycle.logs || {};
         let lastRealDayStr = (cLogs[todayStr] && typeof cLogs[todayStr] === 'object' && cLogs[todayStr].type !== undefined) ? todayStr : yesterdayStr;
 
-        // Scope Isolation 
         let dStr, log, isLogged, isFuture, isPast, isToday, isLogSmall, iBase, iS, iA, iC, pauschale, penalty, canPayout, pStr;
 
         while ((debt > 0 || toIsoString(simDate) <= endSimLimit) && safety < 25000) {
@@ -237,8 +237,8 @@ function simulateCycle(cycle) {
                         currentBewDays.push(new Date(simDate));
                         
                         if (bewTimer <= 0) {
-                            // ESCROW LOGIC V13.1
-                            canPayout = isPast || (isToday && isLogged) || isSandbox;
+                            // V14.0 ESCROW LOGIC FIX: Erlaube isFuture für den Budget-Rechner!
+                            canPayout = isPast || (isToday && isLogged) || isFuture || isSandbox;
                             
                             if (canPayout) { 
                                 debt -= withheldBonus; 
@@ -249,7 +249,6 @@ function simulateCycle(cycle) {
                                 }
                                 
                                 if (withheldBonus > 0) {
-                                    // UX-TREUHAND: Verstecke das Kalender-Icon (🎁), wenn heute noch nicht geloggt wurde.
                                     if (!(isToday && !isLogged && !isSandbox)) {
                                         history.bonusDict[dStr] = `🎉 Bonus: -${withheldBonus}`;
                                     }
@@ -277,7 +276,7 @@ function simulateCycle(cycle) {
                         finalDebtZeroDate = new Date(simDate);
                     }
                 } else { 
-                    if (isPast || isToday || isSandbox) {
+                    if (isPast || isToday || isSandbox || isFuture) {
                         history.n.push(new Date(simDate)); 
                     }
                 }
@@ -287,7 +286,6 @@ function simulateCycle(cycle) {
                 dashState = { debt, totalDebtEver, state, bewTimer, gotBonusToday: (isToday) ? gotBonusForToday : false, pendingBonus: false };
             }
 
-            // V13.1 Treuhand-Bonus Flagging für das Dashboard
             if (isToday && !isLogged && cycle.status === 'active') {
                 if (state === 'BEWAEHRUNG' && bewTimer <= 0) {
                     if (dashState) {
