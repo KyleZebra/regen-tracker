@@ -916,6 +916,8 @@ function renderArchiv() {
                 textsHtml += `<div style="margin-top:10px; font-size:0.85rem;"><strong>🌿 DTX-Gedanken:</strong><br><div style="color:#555; font-style:italic; padding-left:10px; border-left:2px solid #27ae60; margin-top:5px;">${data.dtx.join('<hr style="margin:8px 0; border:0; border-top:1px dashed #eee;">')}</div></div>`;
             }
             
+            // NEU: Die umgedrehte Mathematik (100 - X) für die Füllung der Balken
+            // T-Tage ist jetzt Grün (#27ae60), je mehr cleane Tage, desto voller.
             archMonthsHtml += `
             <div class="archive-card" style="border-left-color: #8e44ad; background: #fff;">
                 <div class="archive-header" style="border-bottom:none; margin-bottom:0;">
@@ -924,15 +926,21 @@ function renderArchiv() {
                 <div class="archive-stats" style="grid-template-columns: 1fr 1fr 1fr; background:#fdfafb; padding:10px; border-radius:8px; margin-top:10px;">
                     <div>
                         <strong style="color:var(--danger);">🔴 ${data.tDays}</strong> T-Tage
-                        <div style="height:4px; background:#eee; border-radius:2px; margin-top:4px;"><div style="width:${Math.min(100, (data.tDays / daysInMonth) * 100)}%; height:100%; background:var(--danger); border-radius:2px;"></div></div>
+                        <div style="height:4px; background:#eee; border-radius:2px; margin-top:4px;" title="Clean-Quote">
+                            <div style="width:${Math.max(0, 100 - (data.tDays / daysInMonth) * 100)}%; height:100%; background:#27ae60; border-radius:2px;"></div>
+                        </div>
                     </div>
                     <div>
                         <strong>🍷 ${data.aDays}</strong> Alk.-Tage
-                        <div style="height:4px; background:#eee; border-radius:2px; margin-top:4px;"><div style="width:${Math.min(100, (data.aDays / daysInMonth) * 100)}%; height:100%; background:#8e44ad; border-radius:2px;"></div></div>
+                        <div style="height:4px; background:#eee; border-radius:2px; margin-top:4px;" title="Alkfrei-Quote">
+                            <div style="width:${Math.max(0, 100 - (data.aDays / daysInMonth) * 100)}%; height:100%; background:#8e44ad; border-radius:2px;"></div>
+                        </div>
                     </div>
                     <div>
                         <strong>✊ ${data.mDays}</strong> M-Tage
-                        <div style="height:4px; background:#eee; border-radius:2px; margin-top:4px;"><div style="width:${Math.min(100, (data.mDays / daysInMonth) * 100)}%; height:100%; background:#f39c12; border-radius:2px;"></div></div>
+                        <div style="height:4px; background:#eee; border-radius:2px; margin-top:4px;" title="M-frei-Quote">
+                            <div style="width:${Math.max(0, 100 - (data.mDays / daysInMonth) * 100)}%; height:100%; background:#f39c12; border-radius:2px;"></div>
+                        </div>
                     </div>
                 </div>
                 ${textsHtml}

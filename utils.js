@@ -474,10 +474,8 @@ function abortBreathe() {
 // --- SW UPDATE LOGIC ---
 let newWorker; 
 
-// Die Funktion, die beim Klick auf das Banner aufgerufen wird
 function applyPwaUpdate() { 
     if (newWorker) {
-        // Das "Passwort" muss exakt mit der sw.js übereinstimmen!
         newWorker.postMessage({ type: 'SKIP_WAITING' }); 
     }
 }
@@ -485,10 +483,19 @@ function applyPwaUpdate() {
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js').then(reg => {
+            
+            // NEU: Abfangen eines bereits wartenden Service Workers (Geister-Worker)
+            if (reg.waiting) {
+                newWorker = reg.waiting;
+                if (typeof safeDisplay === 'function') {
+                    safeDisplay('update-banner', 'block');
+                }
+            }
+
+            // Normaler Ablauf für Updates, die WÄHREND der Nutzung gefunden werden
             reg.addEventListener('updatefound', () => { 
                 newWorker = reg.installing; 
                 newWorker.addEventListener('statechange', () => { 
-                    // Wenn installiert UND es ist ein Update (nicht die allererste Installation)
                     if (newWorker.state === 'installed' && navigator.serviceWorker.controller) { 
                         if (typeof safeDisplay === 'function') {
                             safeDisplay('update-banner', 'block'); 

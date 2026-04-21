@@ -3,7 +3,7 @@
 // ==========================================
 
 // Ändere diese Versionsnummer bei JEDEM Update der App!
-const CACHE_NAME = 'retrack-cache-v14.16';
+const CACHE_NAME = 'retrack-cache-v14.17';
 
 const urlsToCache = [
 './',
@@ -16,6 +16,7 @@ const urlsToCache = [
 './utils.js',
 './manifest.json',
 './icon-192x192.png'
+'./icon-512x512.png'
 ];
 
 self.addEventListener('install', event => {
