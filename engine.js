@@ -14,14 +14,9 @@ function calculateBudget(targetETAStr) {
         return { budget: 0, over: false };
     }
 
-    // Budget Simulation - Jetzt STRENG (ohne Phantom-Log für heute!)
-    // Wir klonen den Zyklus nur für die Zukunftssimulation.
+    // Budget Simulation - STRENG (ohne Phantom-Log für heute!)
     let testCycle = JSON.parse(JSON.stringify(active));
     if (!testCycle.logs) testCycle.logs = {};
-
-    // V14.0 REFIX: Wir haben den Phantom-Log (Pause-Simulation für heute) entfernt.
-    // Wenn heute noch ungeloggt ist, rechnet das Budget nun mit der "Geisel-Regel".
-    // Das Budget bleibt also streng, bis du deine Pause wirklich eingetragen hast.
 
     let resCheck = simulateCycle(testCycle);
     let currentEnd = resCheck && !resCheck.failed ? new Date(resCheck.finalEnd) : new Date(activeSimResult.finalEnd);
@@ -60,7 +55,7 @@ function calculateBudget(targetETAStr) {
 
         if (res && !res.failed && res.finalEnd <= targetDate) {
             budget++;
-            simDate.setDate(simDate.getDate() + 4); // Effizienz-Sprung für die Berechnung
+            simDate.setDate(simDate.getDate() + 4); 
         } else {
             break;
         }
@@ -250,7 +245,7 @@ function simulateCycle(cycle) {
                         if (bewTimer <= 0) {
                             canPayout = isPast || (isToday && isLogged) || isFuture || isSandbox || isPhantom;
 
-                            // Die Strikte Geisel-Regel: Heute ungeloggt -> Kein Bonus!
+                            // Die Strikte Geisel-Regel
                             if (isToday && !isLogged && !isSandbox && !isPhantom) {
                                 canPayout = false;
                                 history.bonusDict[dStr] = `🎁 Bonus bereit (Log heute fehlt!)`;
@@ -268,7 +263,12 @@ function simulateCycle(cycle) {
                                 if (withheldBonus > 0 && !isPhantom) {
                                     history.bonusDict[dStr] = `🎉 Bonus: -${withheldBonus}`;
                                 }
+                            }
                                 
+                            // OPTISCHE TRENNUNG: Tage in der Zukunft bleiben strikt orange!
+                            // Nur wenn die Auszahlung genehmigt ist UND das Ereignis in der echten 
+                            // Gegenwart/Vergangenheit liegt, wird es grün.
+                            if (canPayout && !isFuture) {
                                 history.r.push(...currentBewDays);
                             } else {
                                 history.b.push(...currentBewDays);
@@ -276,7 +276,7 @@ function simulateCycle(cycle) {
 
                             currentBewDays = [];
                             withheldBonus = 0;
-                            state = 'REGEN'; // Die Mathematik wechselt trotzdem auf 1.0x
+                            state = 'REGEN';
                             hasPaidPauschaleThisCluster = false;
                             currentBlockTargetBew = 0;
                             currentBlockServed = 0;
