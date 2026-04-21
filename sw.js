@@ -3,7 +3,7 @@
 // ==========================================
 
 // Ändere diese Versionsnummer bei JEDEM Update der App!
-const CACHE_NAME = 'retrack-cache-v14.27';
+const CACHE_NAME = 'retrack-cache-v14.28';
 
 const urlsToCache = [
 './',
@@ -19,11 +19,13 @@ const urlsToCache = [
 './icon-512x512.png'
 ];
 
+// BEIM INSTALL-EVENT: Automatisch warten überspringen
 self.addEventListener('install', event => {
-event.waitUntil(
-caches.open(CACHE_NAME)
-.then(cache => cache.addAll(urlsToCache))
-);
+    self.skipWaiting(); // NEU: Installiert das Update sofort im Hintergrund
+    event.waitUntil(
+        caches.open(CACHE_NAME)
+        .then(cache => cache.addAll(urlsToCache))
+    );
 });
 
 self.addEventListener('activate', event => {
@@ -62,11 +64,4 @@ return response;
 return caches.match(event.request);
 })
 );
-});
-
-self.addEventListener('message', event => {
-    // Geändert von 'action' auf 'type' und 'SKIP_WAITING'
-    if (event.data && event.data.type === 'SKIP_WAITING') {
-        self.skipWaiting();
-    }
 });

@@ -472,53 +472,10 @@ function abortBreathe() {
 }
 
 // --- SW UPDATE LOGIC ---
-let newWorker; 
-
-function applyPwaUpdate() { 
-    if (newWorker) {
-        // 1. Schickt den Befehl zum Neustart an den Service Worker
-        newWorker.postMessage({ type: 'SKIP_WAITING' }); 
-        
-        // 2. NEU: Versteckt den Banner sofort!
-        if (typeof safeDisplay === 'function') {
-            safeDisplay('update-banner', 'none');
-        } else {
-            let banner = document.getElementById('update-banner');
-            if (banner) banner.style.display = 'none';
-        }
-    }
-}
-
+// Einfache Registrierung ohne Banner-Logik
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js').then(reg => {
-            
-            // NEU: Abfangen eines bereits wartenden Service Workers (Geister-Worker)
-            if (reg.waiting) {
-                newWorker = reg.waiting;
-                if (typeof safeDisplay === 'function') {
-                    safeDisplay('update-banner', 'block');
-                }
-            }
-
-            // Normaler Ablauf für Updates, die WÄHREND der Nutzung gefunden werden
-            reg.addEventListener('updatefound', () => { 
-                newWorker = reg.installing; 
-                newWorker.addEventListener('statechange', () => { 
-                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) { 
-                        if (typeof safeDisplay === 'function') {
-                            safeDisplay('update-banner', 'block'); 
-                        }
-                    } 
-                }); 
-            });
-        }).catch(err => console.error('Service Worker Fehler', err));
-        
-        let refreshing = false; 
-        navigator.serviceWorker.addEventListener('controllerchange', () => { 
-            if (refreshing) return; 
-            refreshing = true; 
-            window.location.reload(); 
-        });
+        navigator.serviceWorker.register('./sw.js')
+        .catch(err => console.error('Service Worker Fehler:', err));
     });
 }
