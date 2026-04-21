@@ -2,29 +2,37 @@
 // sw.js - Service Worker & Offline Cache
 // ==========================================
 
-// Ändere diese Versionsnummer bei JEDEM Update der App!
-const CACHE_NAME = 'retrack-cache-v14.28';
+const CACHE_NAME = 'retrack-cache-v14.29';
 
 const urlsToCache = [
-'./',
-'./index.html',
-'./style.css',
-'./data.js',
-'./engine.js',
-'./ui.js',
-'./modals.js',
-'./utils.js',
-'./manifest.json',
-'./icon-192x192.png',
-'./icon-512x512.png'
+    './',
+    './index.html',
+    './style.css',
+    './data.js',
+    './engine.js',
+    './ui.js',
+    './modals.js',
+    './utils.js',
+    './manifest.json',
+    './icon-192x192.png',
+    './icon-512x512.png'
 ];
 
-// BEIM INSTALL-EVENT: Automatisch warten überspringen
 self.addEventListener('install', event => {
-    self.skipWaiting(); // NEU: Installiert das Update sofort im Hintergrund
+    self.skipWaiting(); 
     event.waitUntil(
-        caches.open(CACHE_NAME)
-        .then(cache => cache.addAll(urlsToCache))
+        caches.open(CACHE_NAME).then(cache => {
+            // NEU: Zwingt den Browser, absolut frische Dateien vom Server zu holen 
+            // und ignoriert den veralteten HTTP-Zwischenspeicher!
+            return Promise.all(urlsToCache.map(url => {
+                return fetch(new Request(url, { cache: 'reload' }))
+                    .then(response => {
+                        if (response.ok) {
+                            return cache.put(url, response);
+                        }
+                    });
+            }));
+        })
     );
 });
 
@@ -39,29 +47,16 @@ self.addEventListener('activate', event => {
                     }
                 })
             );
-        })
+        }).then(() => self.clients.claim())
     );
-    
-    // NEU: Der Worker ist nicht mehr höflich, sondern übernimmt SOFORT 
-    // die Kontrolle über deinen aktuell geöffneten Tab!
-    return self.clients.claim(); 
 });
 
+// NEU: "Cache-First" Strategie. Super schnell, offline-sicher 
+// und immer exakt synchron mit dem Cache-Namen!
 self.addEventListener('fetch', event => {
-event.respondWith(
-fetch(event.request)
-.then(response => {
-if (!response || response.status !== 200 || response.type !== 'basic') {
-return response;
-}
-const responseToCache = response.clone();
-caches.open(CACHE_NAME).then(cache => {
-cache.put(event.request, responseToCache);
-});
-return response;
-})
-.catch(() => {
-return caches.match(event.request);
-})
-);
+    event.respondWith(
+        caches.match(event.request).then(cachedResponse => {
+            return cachedResponse || fetch(event.request);
+        })
+    );
 });
