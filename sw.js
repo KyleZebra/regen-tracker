@@ -3,7 +3,7 @@
 // ==========================================
 
 // Ändere diese Versionsnummer bei JEDEM Update der App!
-const CACHE_NAME = 'retrack-cache-v14.26';
+const CACHE_NAME = 'retrack-cache-v14.27';
 
 const urlsToCache = [
 './',
@@ -65,7 +65,8 @@ return caches.match(event.request);
 });
 
 self.addEventListener('message', event => {
-if (event.data && event.data.action === 'skipWaiting') {
-self.skipWaiting();
-}
+    // Geändert von 'action' auf 'type' und 'SKIP_WAITING'
+    if (event.data && event.data.type === 'SKIP_WAITING') {
+        self.skipWaiting();
+    }
 });
