@@ -10,7 +10,7 @@ function exportData() {
     const blob = new Blob([JSON.stringify(exportObj, null, 2)], {type: "application/json"});
     const link = document.createElement('a'); 
     link.href = URL.createObjectURL(blob); 
-    link.download = isSandbox ? "lifetracker_simulation.json" : "lifetracker_backup.json"; 
+    link.download = isSandbox ? `retrack_sim_${APP_VERSION}.json` : `retrack_backup_${APP_VERSION}.json`; 
     link.click();
 }
 
@@ -112,7 +112,7 @@ function downloadICS() {
     const aLevels = ['Kein', 'Moderat', 'Hoch'];
     const mLevels = ['Kein', 'Moderat', 'Hoch'];
     
-    let desc = isSandbox ? `ReTrack SIMULATION\n\n` : `ReTrack V13.1\n\n`;
+    let desc = isSandbox ? `ReTrack SIMULATION\n\n` : `ReTrack V${APP_VERSION}\n\n`;
     desc += `--- Basis-Phase ---\n`;
     desc += `Start: ${parseLocal(activeCycle.base.start).toLocaleDateString('de-DE')}\n`;
     desc += `Ende: ${parseLocal(activeCycle.base.end).toLocaleDateString('de-DE')}\n`;
@@ -186,7 +186,7 @@ function exportDiaryTxt() {
         return;
     }
 
-    let txt = isSandbox ? `ReTrack SIMULATION TAGEBUCH\n\n` : `ReTrack TAGEBUCH\n\n`;
+    let txt = isSandbox ? `ReTrack SIMULATION TAGEBUCH (V${APP_VERSION})\n\n` : `ReTrack TAGEBUCH (V${APP_VERSION})\n\n`;
 
     let curr = parseLocal(activeCycle.base.start);
     const todayStr = toIsoString(new Date());

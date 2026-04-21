@@ -2,6 +2,8 @@
 // data.js - State Management & Core Helpers
 // ==========================================
 
+const APP_VERSION = '14.25';
+
 // --- Defensive DOM Helpers ---
 const safeVal = (id) => { 
     const e = document.getElementById(id); 
@@ -29,7 +31,7 @@ const safeProp = (id, prop, val) => {
 };
 
 // --- Global State ---
-let appData = { version: 14.0, cycles: [], breatheLogs: {} };
+let appData = { version: APP_VERSION, cycles: [], breatheLogs: {} };
 let isSandbox = false; 
 let sandboxData = null;
 
@@ -86,10 +88,10 @@ function loadData() {
         try { 
             let data = JSON.parse(saved); 
             if (data && typeof data === 'object') {
-                if (data.version >= 5) { 
-                    data.version = 14.0; 
-                    appData = data; 
-                } else if (data.base) { 
+                if (data.version) {
+					appData = data;
+					appData.version = APP_VERSION; // Stellt sicher, dass die geladenen Daten immer die aktuelle Version anzeigen
+					} else if (data.base) { 
                     appData = { 
                         version: 14.0, 
                         cycles: [{ id: Date.now(), status: 'active', base: data.base, logs: data.logs || {} }], 

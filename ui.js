@@ -149,7 +149,8 @@ function saveMonthlyNotes(mKey, btn) {
 
 // --- Main Update Entry ---
 function updateUI() {
-    const active = getActiveCycle();
+    safeText('app-version-display', APP_VERSION); // Schreibt die Version ins HTML-Span
+	const active = getActiveCycle();
     safeDisplay('dashboard-main', active ? 'block' : 'none');
     safeDisplay('setup-warning', active ? 'none' : 'block');
     
