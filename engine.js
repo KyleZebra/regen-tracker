@@ -14,16 +14,14 @@ function calculateBudget(targetETAStr) {
         return { budget: 0, over: false };
     }
 
-    // Budget Schatten-Simulation (Optimistisch)
+    // Budget Simulation - Jetzt STRENG (ohne Phantom-Log für heute!)
+    // Wir klonen den Zyklus nur für die Zukunftssimulation.
     let testCycle = JSON.parse(JSON.stringify(active));
     if (!testCycle.logs) testCycle.logs = {};
 
-    let todayStrB = toIsoString(new Date());
-    // Wenn heute noch ungeloggt ist, tragen wir heimlich eine Pause ein.
-    // Dadurch sabotiert die "Geisel-Regel" nicht den zukünftigen Puffer.
-    if (!testCycle.logs[todayStrB] || testCycle.logs[todayStrB].type === undefined) {
-        testCycle.logs[todayStrB] = { type: 'pause', s: 0, a: 0, m: 0, note: "Budget-Phantom", isSimulated: true };
-    }
+    // V14.0 REFIX: Wir haben den Phantom-Log (Pause-Simulation für heute) entfernt.
+    // Wenn heute noch ungeloggt ist, rechnet das Budget nun mit der "Geisel-Regel".
+    // Das Budget bleibt also streng, bis du deine Pause wirklich eingetragen hast.
 
     let resCheck = simulateCycle(testCycle);
     let currentEnd = resCheck && !resCheck.failed ? new Date(resCheck.finalEnd) : new Date(activeSimResult.finalEnd);
@@ -62,7 +60,7 @@ function calculateBudget(targetETAStr) {
 
         if (res && !res.failed && res.finalEnd <= targetDate) {
             budget++;
-            simDate.setDate(simDate.getDate() + 4); // Effizienz-Sprung
+            simDate.setDate(simDate.getDate() + 4); // Effizienz-Sprung für die Berechnung
         } else {
             break;
         }
@@ -180,7 +178,6 @@ function simulateCycle(cycle) {
         let todayBonusPending = false; 
         let cLogs = cycle.logs || {};
         
-        // V14.0 FIX: Wir beziehen simulierte Logs in den Dashboard-Snapshot mit ein (für die korrekte Vorschau!)
         let lastRealDayStr = (cLogs[todayStr] && typeof cLogs[todayStr] === 'object' && cLogs[todayStr].type !== undefined) ? todayStr : yesterdayStr;
 
         let dStr, log, isLogged, isFuture, isPast, isToday, isLogSmall, iBase, iS, iA, iC, pauschale, penalty, canPayout, pStr, isPhantom;
@@ -253,7 +250,7 @@ function simulateCycle(cycle) {
                         if (bewTimer <= 0) {
                             canPayout = isPast || (isToday && isLogged) || isFuture || isSandbox || isPhantom;
 
-                            // Strikte Geisel-Regel für das Dashboard
+                            // Die Strikte Geisel-Regel: Heute ungeloggt -> Kein Bonus!
                             if (isToday && !isLogged && !isSandbox && !isPhantom) {
                                 canPayout = false;
                                 history.bonusDict[dStr] = `🎁 Bonus bereit (Log heute fehlt!)`;
@@ -272,17 +269,14 @@ function simulateCycle(cycle) {
                                     history.bonusDict[dStr] = `🎉 Bonus: -${withheldBonus}`;
                                 }
                                 
-                                // V14.0 FIX: Optische Einlösung (Grün)
                                 history.r.push(...currentBewDays);
                             } else {
-                                // V14.0 FIX: Optische Geiselhaft (Orange bleibt erhalten)
                                 history.b.push(...currentBewDays);
                             }
 
-                            // V14.0 FIX: Die Mathematik geht IMMER in Tiefe Regeneration über!
                             currentBewDays = [];
                             withheldBonus = 0;
-                            state = 'REGEN';
+                            state = 'REGEN'; // Die Mathematik wechselt trotzdem auf 1.0x
                             hasPaidPauschaleThisCluster = false;
                             currentBlockTargetBew = 0;
                             currentBlockServed = 0;
@@ -307,7 +301,6 @@ function simulateCycle(cycle) {
                 dashState = { debt, totalDebtEver, state, bewTimer, gotBonusToday: (isToday) ? gotBonusForToday : false, pendingBonus: false };
             }
 
-            // UI-Trigger für das Dashboard: Pendenter Bonus
             if (isToday && !isLogged && cycle.status === 'active') {
                 if (todayBonusPending && dashState) {
                     dashState.pendingBonus = true;
