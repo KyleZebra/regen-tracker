@@ -3,7 +3,7 @@
 // ==========================================
 
 // Ändere diese Versionsnummer bei JEDEM Update der App!
-const CACHE_NAME = 'retrack-cache-v14.17';
+const CACHE_NAME = 'retrack-cache-v14.174';
 
 const urlsToCache = [
 './',
@@ -27,18 +27,22 @@ caches.open(CACHE_NAME)
 });
 
 self.addEventListener('activate', event => {
-const cacheWhitelist = [CACHE_NAME];
-event.waitUntil(
-caches.keys().then(cacheNames => {
-return Promise.all(
-cacheNames.map(cacheName => {
-if (cacheWhitelist.indexOf(cacheName) === -1) {
-return caches.delete(cacheName);
-}
-})
-);
-})
-);
+    const cacheWhitelist = [CACHE_NAME];
+    event.waitUntil(
+        caches.keys().then(cacheNames => {
+            return Promise.all(
+                cacheNames.map(cacheName => {
+                    if (cacheWhitelist.indexOf(cacheName) === -1) {
+                        return caches.delete(cacheName);
+                    }
+                })
+            );
+        })
+    );
+    
+    // NEU: Der Worker ist nicht mehr höflich, sondern übernimmt SOFORT 
+    // die Kontrolle über deinen aktuell geöffneten Tab!
+    return self.clients.claim(); 
 });
 
 self.addEventListener('fetch', event => {

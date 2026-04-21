@@ -476,7 +476,16 @@ let newWorker;
 
 function applyPwaUpdate() { 
     if (newWorker) {
+        // 1. Schickt den Befehl zum Neustart an den Service Worker
         newWorker.postMessage({ type: 'SKIP_WAITING' }); 
+        
+        // 2. NEU: Versteckt den Banner sofort!
+        if (typeof safeDisplay === 'function') {
+            safeDisplay('update-banner', 'none');
+        } else {
+            let banner = document.getElementById('update-banner');
+            if (banner) banner.style.display = 'none';
+        }
     }
 }
 
