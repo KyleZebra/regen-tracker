@@ -3,7 +3,7 @@
 // ==========================================
 
 // Ändere diese Versionsnummer bei JEDEM Update der App!
-const CACHE_NAME = 'retrack-cache-v14.23';
+const CACHE_NAME = 'retrack-cache-v14.26';
 
 const urlsToCache = [
 './',
@@ -15,7 +15,7 @@ const urlsToCache = [
 './modals.js',
 './utils.js',
 './manifest.json',
-'./icon-192x192.png'
+'./icon-192x192.png',
 './icon-512x512.png'
 ];
 
