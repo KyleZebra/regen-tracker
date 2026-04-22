@@ -171,6 +171,7 @@ function simulateCycle(cycle) {
         let finalDebtZeroDate = null;
         let gotBonusForToday = false;
         let todayBonusPending = false; 
+        let todayNirvanaPending = false; // NEU: Flag für das ausstehende Nirwana
         let cLogs = cycle.logs || {};
         
         let lastRealDayStr = (cLogs[todayStr] && typeof cLogs[todayStr] === 'object' && cLogs[todayStr].type !== undefined) ? todayStr : yesterdayStr;
@@ -290,9 +291,13 @@ function simulateCycle(cycle) {
                     if (debt <= 0 && !finalDebtZeroDate) {
                         finalDebtZeroDate = new Date(simDate);
                     }
-                } else {
-                    if (isPast || isToday || isSandbox || isFuture) {
+               } else {
+                    if (isPast || (isToday && isLogged) || isSandbox || isFuture || isPhantom) {
                         history.n.push(new Date(simDate));
+                    } else if (isToday && !isLogged) {
+                        // NEU: Optische Schranke. Heute bleibt grün, bis geloggt wird!
+                        history.r.push(new Date(simDate));
+                        todayNirvanaPending = true;
                     }
                 }
             }
@@ -304,6 +309,9 @@ function simulateCycle(cycle) {
             if (isToday && !isLogged && cycle.status === 'active') {
                 if (todayBonusPending && dashState) {
                     dashState.pendingBonus = true;
+                }
+                if (todayNirvanaPending && dashState) {
+                    dashState.pendingNirvana = true; // NEU: Signal ans Dashboard
                 }
             }
 

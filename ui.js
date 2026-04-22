@@ -223,6 +223,24 @@ function renderDashboard() {
         safeText('dash-target-date', "Pausiere zum Start");
         safeText('dash-sub', "Die initiale T-Phase wächst, bis du pausierst."); 
         safeDisplay('dash-streak', 'none');
+    } else if (displayDebt <= 0 && ds.pendingNirvana) {
+        safeProp('dash-status-badge', 'className', 'status-badge status-regen'); 
+        safeText('dash-status-badge', "Nirwana ausstehend");
+        if(ring) { 
+            ring.classList.remove('bewaehrung', 'nirvana');
+            ring.classList.add('regen'); 
+            ring.setAttribute('stroke-dasharray', `100, 100`); 
+        }
+        if(pTxt) {
+            pTxt.classList.remove('nirvana');
+            pTxt.textContent = '100%';
+        }
+        safeText('dash-percent', "100%"); 
+        safeText('dash-ring-label', "REGENERATION");
+        safeText('dash-days-left', `Schulden: 0 Tage`); 
+        safeText('dash-target-date', `Ziel erreicht!`);
+        safeText('dash-sub', "Logge den heutigen Tag als Pause, um deine Nirwana-Streak fortzusetzen!"); 
+        safeDisplay('dash-streak', 'none');
     } else if (displayDebt <= 0) {
         let miles = [7, 14, 21, 30, 60, 90, 180, 365, 730, 9999];
         let nextM = miles.find(m => res.nirvanaStreak < m) || 9999;
