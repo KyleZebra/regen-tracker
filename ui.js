@@ -394,6 +394,22 @@ function renderDashboard() {
         } else {
             safeDisplay('dash-outlook', 'none');
         }
+        
+    // --- NEU: Der statische Ausblick für das Nirwana ---
+    } else if (!isSandbox && !isLoggedToday && !res.isOpen && displayDebt <= 0) {
+        safeHTML('dash-outlook', `
+            <div class="outlook-title">📊 Tagesausblick für heute</div>
+            <div class="outlook-row good">
+                <span class="outlook-label">🟢 Bei Pause:</span>
+                <span class="outlook-value">Dein Nirwana-Streak wächst weiter!</span>
+            </div>
+            <div class="outlook-row bad">
+                <span class="outlook-label">🔴 Bei Rauchen:</span>
+                <span class="outlook-value">Startet neuen Zyklus (Min. 3 Tage Schuld)</span>
+            </div>
+        `);
+        safeDisplay('dash-outlook', 'block');
+        
     } else {
         safeDisplay('dash-outlook', 'none');
     }
@@ -984,4 +1000,28 @@ function renderArchiv() {
             ${debugRes}
         </div>
     </details>`);
+}
+// --- Gamification & Effekte ---
+function triggerBonusConfetti() {
+    const todayStr = toIsoString(new Date());
+    const key = 'bonusShown_' + todayStr;
+    
+    // Prüfen, ob das Konfetti heute schon gefeuert wurde
+    if (sessionStorage.getItem(key)) return;
+    
+    // Wenn die Bibliothek geladen ist, feuern!
+    if (typeof confetti === 'function') {
+        confetti({
+            particleCount: 150,      // Anzahl der Schnipsel
+            spread: 100,             // Streuung
+            origin: { y: 0.6 },      // Startpunkt (etwas unterhalb der Mitte)
+            colors: ['#2ecc71', '#f1c40f', '#3498db', '#e74c3c'], 
+            zIndex: 9999             // Über allen anderen Elementen
+        });
+        
+        // Im Zwischenspeicher merken, dass wir heute schon gefeiert haben
+        sessionStorage.setItem(key, 'true');
+    } else {
+        console.warn("Konfetti-Bibliothek konnte nicht geladen werden.");
+    }
 }
