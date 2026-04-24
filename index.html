@@ -248,8 +248,14 @@
         <p style="font-size: 0.8rem; color: #7f8c8d; text-align: center; margin-top: -10px; margin-bottom: 15px;">Auswertungen basieren nur auf Tagen in der Vergangenheit.</p>
         <div class="stat-grid">
             <div class="stat-box"><div class="stat-val blue" id="stat-clean-quote">0%</div><div class="stat-label">Clean-Quote (All-Time)</div></div>
-            <div class="stat-box"><div class="stat-val blue" id="stat-clean-30">0%</div><div class="stat-label">30-Tage Quote</div></div>
-            <div class="stat-box"><div class="stat-val gold" id="stat-clean-ratio">1:0</div><div class="stat-label">Clean-Ratio</div></div>
+            <div class="stat-box" onclick="cycleCleanWindow()" style="cursor:pointer;">
+                <div class="stat-val blue" id="stat-clean-30">0%</div>
+                <div class="stat-label" id="label-clean-window">30-Tage Quote</div>
+            </div>
+            <div class="stat-box" onclick="cycleRatioWindow()" style="cursor:pointer;">
+                <div class="stat-val gold" id="stat-clean-ratio">1:0</div>
+                <div class="stat-label" id="label-ratio-window">Clean-Ratio</div>
+            </div>
             <div class="stat-box"><div class="stat-val gold" id="stat-triple-clean">0</div><div class="stat-label">Triple-Clean Tage</div></div>
             <div class="stat-box"><div class="stat-val" id="stat-total-days">0</div><div class="stat-label">Tage Getrackt</div></div>
             <div class="stat-box"><div class="stat-val" id="stat-max-nirvana">0</div><div class="stat-label">Max Nirwana-Streak</div></div>

@@ -683,8 +683,11 @@ function renderArchiv() {
     let pastDaysTracked = 0; 
     let pastPauseDays = 0;
     let tripleCleanDays = 0; // NEU
-    let trackedLast30 = 0;   // NEU
-    let pauseLast30 = 0;     // NEU
+    let trackedInCleanWindow = 0; 
+    let pauseInCleanWindow = 0;
+    let trackedInRatioWindow = 0;
+    let pauseInRatioWindow = 0;
+    let consumptionInRatioWindow = 0;
     let totalConsumptionDays = 0; // NEU 
     let maxNirvana = 0;
     let totalAusrutscher = 0; 
@@ -724,12 +727,31 @@ function renderArchiv() {
             if(currentAlc > 0) archiveMonths[mKey].aDays++;
             if(currentM > 0) archiveMonths[mKey].mDays++;
 
-            // --- NEU: Triple Clean & 30 Tage Logik ---
-            const thirtyDaysAgo = toIsoString(addDays(new Date(), -30));
-            if (dStr >= thirtyDaysAgo) {
-                trackedLast30++;
-                if (!isConsumption) pauseLast30++;
+            // --- Dynamische Fenster-Logik ---
+            const cleanDateLimit = toIsoString(addDays(new Date(), -currentCleanWindow));
+            if (dStr >= cleanDateLimit) {
+                trackedInCleanWindow++;
+                if (!isConsumption) pauseInCleanWindow++;
             }
+
+            if (currentRatioWindow === 0) {
+                // All-Time Ratio Logik (wie bisher)
+                if (!isConsumption) pauseInRatioWindow++;
+                if (isConsumption) consumptionInRatioWindow++;
+            } else {
+                // Fenster-Ratio Logik (z.B. letzte 60 Tage)
+                const ratioDateLimit = toIsoString(addDays(new Date(), -currentRatioWindow));
+                if (dStr >= ratioDateLimit) {
+                    if (!isConsumption) pauseInRatioWindow++;
+                    if (isConsumption) consumptionInRatioWindow++;
+                }
+            }
+            
+            // Triple Clean bleibt All-Time
+            let isBase = (cycle.base?.start && dStr >= cycle.base.start && dStr <= cycle.base.end);
+            let log = (cycle.logs || {})[dStr] || {};
+            let currentAlc = (isBase ? (cycle.base.aLevel||0) : (log.a || 0));
+            let currentM = (isBase ? (cycle.base.mLevel||0) : (log.m || 0));
 
             if (!isConsumption && currentAlc === 0 && currentM === 0) {
                 tripleCleanDays++;
@@ -810,20 +832,24 @@ function renderArchiv() {
     });
 
     const cleanQuote = pastDaysTracked > 0 ? Math.round((pastPauseDays / pastDaysTracked) * 100) : 0;
-    const cleanQuote30 = trackedLast30 > 0 ? Math.round((pauseLast30 / trackedLast30) * 100) : 0; // NEU
-    const ratio = totalConsumptionDays > 0 ? Math.round(pastPauseDays / totalConsumptionDays) : pastPauseDays; // NEU
+    const cleanQuoteVal = trackedInCleanWindow > 0 ? Math.round((pauseInCleanWindow / trackedInCleanWindow) * 100) : 0;
+    const ratioVal = consumptionInRatioWindow > 0 ? Math.round(pauseInRatioWindow / consumptionInRatioWindow) : pauseInRatioWindow
     const avgAus = totalAusrutscher > 0 ? (sumAusrutscherDays / totalAusrutscher).toFixed(1) : 0;
     let avgNirvana = cyclesWithNirvana > 0 ? Math.round(totalNirvanaDays / cyclesWithNirvana) : 0;
 
     safeText('stat-clean-quote', cleanQuote + '%');
-    safeText('stat-clean-30', cleanQuote30 + '%'); // NEU
-    safeText('stat-clean-ratio', `1:${ratio}`);    // NEU
+    safeText('stat-clean-30', cleanQuoteVal + '%'); 
+    safeText('stat-clean-ratio', `1:${ratioVal}`);
     safeText('stat-triple-clean', tripleCleanDays); // NEU 
     safeText('stat-max-nirvana', maxNirvana); 
     safeText('stat-total-days', pastDaysTracked); 
     safeText('stat-avg-ausrutscher', avgAus);
     safeText('stat-avg-nirvana', avgNirvana);
     safeText('stat-total-milestones', totalMilestones);
+
+    // Beschriftungen (Labels) dynamisch anpassen
+    safeText('label-clean-window', `${currentCleanWindow}-Tage Quote`);
+    safeText('label-ratio-window', currentRatioWindow === 0 ? "Clean-Ratio (All)" : `Clean-Ratio (${currentRatioWindow}d)`);
 
     let totalBreatheSessions = 0;
     let totalBreatheMinutes = 0;
@@ -1050,4 +1076,18 @@ function triggerBonusConfetti() {
     } else {
         console.warn("Konfetti-Bibliothek konnte nicht geladen werden.");
     }
+}
+// --- Statistik-Interaktion ---
+function cycleCleanWindow() {
+    // Wechselt: 30 -> 60 -> 90 -> 30
+    currentCleanWindow = (currentCleanWindow === 90) ? 30 : currentCleanWindow + 30;
+    renderArchiv();
+}
+
+function cycleRatioWindow() {
+    // Wechselt: 0 (All) -> 30 -> 60 -> 90 -> 0
+    if (currentRatioWindow === 0) currentRatioWindow = 30;
+    else if (currentRatioWindow === 90) currentRatioWindow = 0;
+    else currentRatioWindow += 30;
+    renderArchiv();
 }

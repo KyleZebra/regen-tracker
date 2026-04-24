@@ -2,7 +2,7 @@
 // data.js - State Management & Core Helpers
 // ==========================================
 
-const APP_VERSION = '15.4 (StatMaster)';
+const APP_VERSION = '15.5 (StatMaster)';
 
 // --- Defensive DOM Helpers ---
 const safeVal = (id) => { 
@@ -38,6 +38,9 @@ let sandboxData = null;
 let globalSimResults = []; 
 let activeSimResult = null; 
 let lastRenderDateStr = null;
+
+let currentCleanWindow = 30;  // Startwert für die Quote
+let currentRatioWindow = 0;   // 0 bedeutet "All-Time" für die Ratio
 
 // --- State Getters ---
 const getApp = () => {
