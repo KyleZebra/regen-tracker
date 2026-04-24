@@ -242,7 +242,7 @@ function renderDashboard() {
         safeText('dash-sub', "Logge den heutigen Tag als Pause, um deine Nirwana-Streak fortzusetzen!"); 
         safeDisplay('dash-streak', 'none');
     } else if (displayDebt <= 0) {
-        let miles = [7, 14, 21, 30, 60, 90, 180, 365, 730, 9999];
+        let miles = [7, 14, 21, 28, 30, 60, 90, 180, 365, 730, 9999];
         let nextM = miles.find(m => res.nirvanaStreak < m) || 9999;
         let prevM = [...miles].reverse().find(m => res.nirvanaStreak >= m) || 0;
         let nirvanaProgress = nextM !== 9999 ? ((res.nirvanaStreak - prevM) / (nextM - prevM)) * 100 : 100;
@@ -681,7 +681,11 @@ function renderArchiv() {
     const isPast = d => toIsoString(d) < todayStr;
     
     let pastDaysTracked = 0; 
-    let pastPauseDays = 0; 
+    let pastPauseDays = 0;
+    let tripleCleanDays = 0; // NEU
+    let trackedLast30 = 0;   // NEU
+    let pauseLast30 = 0;     // NEU
+    let totalConsumptionDays = 0; // NEU 
     let maxNirvana = 0;
     let totalAusrutscher = 0; 
     let highStressAusrutscher = 0; 
@@ -705,15 +709,32 @@ function renderArchiv() {
             let mKey = dStr.substring(0, 7); 
             if(!archiveMonths[mKey]) archiveMonths[mKey] = { tDays:0, aDays:0, mDays:0, erk:[], dtx:[] };
             
-            if(res.history.t.some(d => toIsoString(d)===dStr) || res.history.a.some(d => toIsoString(d)===dStr)) {
+            let isConsumption = res.history.t.some(d => toIsoString(d)===dStr) || res.history.a.some(d => toIsoString(d)===dStr);
+            if(isConsumption) {
                 archiveMonths[mKey].tDays++;
+                totalConsumptionDays++;
             }
             
             let isBase = (cycle.base?.start && dStr >= cycle.base.start && dStr <= cycle.base.end);
             let log = (cycle.logs || {})[dStr] || {};
             
-            if((isBase ? (cycle.base.aLevel||0) : (log.a || 0)) > 0) archiveMonths[mKey].aDays++;
-            if((isBase ? (cycle.base.mLevel||0) : (log.m || 0)) > 0) archiveMonths[mKey].mDays++;
+            let currentAlc = (isBase ? (cycle.base.aLevel||0) : (log.a || 0));
+            let currentM = (isBase ? (cycle.base.mLevel||0) : (log.m || 0));
+            
+            if(currentAlc > 0) archiveMonths[mKey].aDays++;
+            if(currentM > 0) archiveMonths[mKey].mDays++;
+
+            // --- NEU: Triple Clean & 30 Tage Logik ---
+            const thirtyDaysAgo = toIsoString(addDays(new Date(), -30));
+            if (dStr >= thirtyDaysAgo) {
+                trackedLast30++;
+                if (!isConsumption) pauseLast30++;
+            }
+
+            if (!isConsumption && currentAlc === 0 && currentM === 0) {
+                tripleCleanDays++;
+            }
+            // -----------------------------------------
         });
 
         if(cycle.monthlyNotes) {
@@ -789,10 +810,15 @@ function renderArchiv() {
     });
 
     const cleanQuote = pastDaysTracked > 0 ? Math.round((pastPauseDays / pastDaysTracked) * 100) : 0;
+    const cleanQuote30 = trackedLast30 > 0 ? Math.round((pauseLast30 / trackedLast30) * 100) : 0; // NEU
+    const ratio = totalConsumptionDays > 0 ? Math.round(pastPauseDays / totalConsumptionDays) : pastPauseDays; // NEU
     const avgAus = totalAusrutscher > 0 ? (sumAusrutscherDays / totalAusrutscher).toFixed(1) : 0;
     let avgNirvana = cyclesWithNirvana > 0 ? Math.round(totalNirvanaDays / cyclesWithNirvana) : 0;
 
-    safeText('stat-clean-quote', cleanQuote + '%'); 
+    safeText('stat-clean-quote', cleanQuote + '%');
+    safeText('stat-clean-30', cleanQuote30 + '%'); // NEU
+    safeText('stat-clean-ratio', `1:${ratio}`);    // NEU
+    safeText('stat-triple-clean', tripleCleanDays); // NEU 
     safeText('stat-max-nirvana', maxNirvana); 
     safeText('stat-total-days', pastDaysTracked); 
     safeText('stat-avg-ausrutscher', avgAus);
