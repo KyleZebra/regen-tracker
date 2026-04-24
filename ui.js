@@ -747,16 +747,10 @@ function renderArchiv() {
                 }
             }
             
-            // Triple Clean bleibt All-Time
-            let isBase = (cycle.base?.start && dStr >= cycle.base.start && dStr <= cycle.base.end);
-            let log = (cycle.logs || {})[dStr] || {};
-            let currentAlc = (isBase ? (cycle.base.aLevel||0) : (log.a || 0));
-            let currentM = (isBase ? (cycle.base.mLevel||0) : (log.m || 0));
-
+            // Triple Clean (Nutzt die bereits oben definierten Variablen!)
             if (!isConsumption && currentAlc === 0 && currentM === 0) {
                 tripleCleanDays++;
             }
-            // -----------------------------------------
         });
 
         if(cycle.monthlyNotes) {
@@ -833,7 +827,7 @@ function renderArchiv() {
 
     const cleanQuote = pastDaysTracked > 0 ? Math.round((pastPauseDays / pastDaysTracked) * 100) : 0;
     const cleanQuoteVal = trackedInCleanWindow > 0 ? Math.round((pauseInCleanWindow / trackedInCleanWindow) * 100) : 0;
-    const ratioVal = consumptionInRatioWindow > 0 ? Math.round(pauseInRatioWindow / consumptionInRatioWindow) : pauseInRatioWindow
+    const ratioVal = consumptionInRatioWindow > 0 ? Math.round(pauseInRatioWindow / consumptionInRatioWindow) : pauseInRatioWindow;
     const avgAus = totalAusrutscher > 0 ? (sumAusrutscherDays / totalAusrutscher).toFixed(1) : 0;
     let avgNirvana = cyclesWithNirvana > 0 ? Math.round(totalNirvanaDays / cyclesWithNirvana) : 0;
 
