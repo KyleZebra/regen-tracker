@@ -2,7 +2,7 @@
 // data.js - State Management & Core Helpers
 // ==========================================
 
-const APP_VERSION = '15.7 (BudgetFix)';
+const APP_VERSION = '16 (Regen-o-Meter)';
 
 // --- Defensive DOM Helpers ---
 const safeVal = (id) => { 

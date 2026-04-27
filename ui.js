@@ -451,19 +451,72 @@ function renderHistorie() {
         <div class="stat-box" style="padding: 10px;"><div class="stat-val blue" style="font-size: 1.4rem; color: var(--nirvana-blue);">${totalRegenDebt}</div><div class="stat-label" style="font-size: 0.65rem;">Gesamtschuld</div></div>
     </div>`;
     
-    if (res.mFreeGoal > 0 && !res.isOpen) {
-        let mProgress = Math.min(100, (res.mFreeCurrent / res.mFreeGoal) * 100);
+    // --- NEU: Schatten-Rechner für das Regen-o-Meter ---
+    if (!res.isOpen && active && active.base && active.base.end) {
+        let regenM = 0;
+        let regenA = 0;
+        
+        // 1. Startwerte anhand der Basisphase ermitteln
+        let baseEnd = parseLocal(active.base.end);
+        let baseStart = parseLocal(active.base.start);
+        let baseDays = diffDays(baseStart, baseEnd) + 1;
+        
+        regenM = baseDays * 2; 
+        
+        let baseAlk = active.base.aLevel || 0;
+        if (baseAlk === 1) regenA = 2; // Moderat
+        else if (baseAlk === 2) regenA = 3; // Hoch
+        
+        // 2. Kalender vom Tag nach der Basisphase bis heute durchblättern
+        let simDate = addDays(baseEnd, 1);
+        let todayDate = new Date();
+        todayDate.setHours(0,0,0,0);
+        
+        while (simDate <= todayDate) {
+            let dStr = toIsoString(simDate);
+            
+            // Täglicher Abbau (Becher leert sich)
+            if (regenM > 0) regenM--;
+            if (regenA > 0) regenA--;
+            
+            // Heutigen Log auf Strafen prüfen (Becher füllt sich)
+            let log = (active.logs || {})[dStr];
+            if (log && log.type !== undefined && !log.isSimulated) {
+                // Der +1 Trick ist hier bereits eingerechnet!
+                if (log.m === 1) regenM += 2;
+                else if (log.m === 2) regenM += 3;
+                
+                if (log.a === 1) regenA += 3;
+                else if (log.a === 2) regenA += 4;
+            }
+            
+            simDate = addDays(simDate, 1);
+        }
+
+        // 3. Regen-o-Meter HTML anfügen (Ersetzt die alte Anzeige)
+        let colorM = regenM === 0 ? '#155724' : '#721c24';
+        let colorA = regenA === 0 ? '#155724' : '#721c24';
+        let bgM = regenM === 0 ? '#d4edda' : '#fadbd8';
+        let bgA = regenA === 0 ? '#d4edda' : '#fadbd8';
+        let borderM = regenM === 0 ? '#c3e6cb' : '#f5c6cb';
+        let borderA = regenA === 0 ? '#c3e6cb' : '#f5c6cb';
+
         html += `
-        <div style="margin-top: 15px; padding: 15px; background: #fdfafb; border: 1px solid #e8daef; border-radius: 12px; text-align: center;">
-            <div style="font-weight: 800; color: #8e44ad; margin-bottom: 5px;">M-freie Regeneration</div>
-            <div style="background: #eee; height: 12px; border-radius: 6px; overflow: hidden; margin-bottom: 5px;">
-                <div style="background: #9b59b6; width: ${mProgress}%; height: 100%; transition: width 0.5s ease;"></div>
+        <div style="margin-top: 15px; padding: 15px; background: #fff; border: 1px solid #e0e0e0; border-radius: 12px; box-shadow: var(--shadow);">
+            <div style="font-weight: 800; font-size: 1.1rem; color: #2c3e50; margin-bottom: 5px; text-align: center;">💧 Regen-o-Meter</div>
+            <div style="font-size: 0.8rem; color: #7f8c8d; text-align: center; margin-bottom: 15px;">Kurzzeit-Regeneration (Empfohlene Pause)</div>
+            <div class="stat-grid" style="margin-bottom: 0;">
+                <div class="stat-box" style="background: ${bgM}; border-color: ${borderM}; padding: 10px;">
+                    <div class="stat-val" style="color: ${colorM}; font-size: 1.4rem;">${regenM} <span style="font-size:0.8rem;">${regenM === 1 ? 'Tag' : 'Tage'}</span></div>
+                    <div class="stat-label" style="color: ${colorM}; font-size: 0.7rem;">Dopamin (M)</div>
+                </div>
+                <div class="stat-box" style="background: ${bgA}; border-color: ${borderA}; padding: 10px;">
+                    <div class="stat-val" style="color: ${colorA}; font-size: 1.4rem;">${regenA} <span style="font-size:0.8rem;">${regenA === 1 ? 'Tag' : 'Tage'}</span></div>
+                    <div class="stat-label" style="color: ${colorA}; font-size: 0.7rem;">Detox (Alk)</div>
+                </div>
             </div>
-            <div style="font-size: 0.85rem; font-weight: bold; color: #555;">${res.mFreeCurrent} von ${res.mFreeGoal} Tagen erreicht ${res.mFreeCurrent >= res.mFreeGoal ? '✅' : ''}</div>
         </div>
         `;
-    } else if (!res.isOpen) {
-        html += `<div style="margin-top:10px; padding:10px; background:#e8f6f3; border-radius:8px; color:#16a085; font-weight:bold; text-align:center;">Empfohlene M-freie Tage: ${res.mFreeGoal || 0}</div>`;
     }
     
     safeHTML('bilanz-container', html);
