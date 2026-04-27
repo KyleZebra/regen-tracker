@@ -210,6 +210,8 @@ function simulateCycle(cycle) {
                 totalDebtEver += penalty;
                 state = 'BEWAEHRUNG';
 
+                finalDebtZeroDate = null; // NEU: Reset des Ziel-Datums bei neuen Schulden
+
                 if (!hasPaidPauschaleThisCluster) {
                     currentBlockTargetBew = isLogSmall ? (log.t * 2) : (log.t * 3);
                     currentBlockServed = 0;
