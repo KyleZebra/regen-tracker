@@ -110,7 +110,7 @@ function downloadICS() {
     
     const sLevels = ['Kein', 'Moderat', 'Hoch']; 
     const aLevels = ['Kein', 'Moderat', 'Hoch'];
-    const mLevels = ['Kein', 'Moderat', 'Hoch'];
+    const mLevels = ['Kein', 'Moderat', 'Hoch', 'Einmal'];
     
     let desc = isSandbox ? `ReTrack SIMULATION\n\n` : `ReTrack V${APP_VERSION}\n\n`;
     desc += `--- Basis-Phase ---\n`;
@@ -194,7 +194,7 @@ function exportDiaryTxt() {
 
     const sLevels = ['S:0', 'S:1', 'S:2'];
     const aLevels = ['A:0', 'A:1', 'A:2'];
-    const mLevels = ['M:0', 'M:1', 'M:2'];
+    const mLevels = ['M:0', 'M:1', 'M:2', 'M:Einmal'];
     const moodEmojis = ["➖", "😞", "🙁", "😐", "🙂", "🤩"];
 
     while (toIsoString(curr) <= endStr) {

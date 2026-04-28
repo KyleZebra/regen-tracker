@@ -182,7 +182,7 @@ function addHistLogRow() {
             <div class="form-grid" style="margin-top:10px; gap:8px;">
                 <div><label>Stress</label><select class="hist-row-s"><option value="0">Kein</option><option value="1">Moderat</option><option value="2">Hoch</option></select></div>
                 <div><label>Alkohol</label><select class="hist-row-a"><option value="0">Kein</option><option value="1">Moderat</option><option value="2">Hoch</option></select></div>
-                <div><label>Masturbation</label><select class="hist-row-m"><option value="0">Kein</option><option value="1">Moderat</option><option value="2">Hoch</option></select></div>
+                <div><label>Masturbation</label><select class="hist-row-m"><option value="0">Kein</option><option value="3">Einmal</option><option value="1">Moderat</option><option value="2">Hoch</option></select></div>
             </div>
         </div>`; 
     const c = document.getElementById('hist-logs-container'); 
