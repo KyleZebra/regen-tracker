@@ -95,6 +95,7 @@ h3 { margin-top: 0; font-size: 1.1rem; border-bottom: 2px solid #fcf3cf; padding
 .circle.regen { stroke: #27ae60; } 
 .circle.bewaehrung { stroke: #f39c12; } 
 .circle.nirvana { stroke: var(--nirvana-blue); }
+.circle.open { stroke: var(--danger); }
 
 .ring-content { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; width: 80%; display: flex; flex-direction: column; justify-content: center; align-items: center; pointer-events: none; }
 .ring-percent { font-size: 2.8rem; font-weight: 800; color: #2c3e50; line-height: 1; margin-bottom: 2px; } 

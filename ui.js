@@ -191,7 +191,7 @@ function renderDashboard() {
     const ring = document.getElementById('dash-ring'); 
     if(ring) { 
         ring.setAttribute('stroke-dasharray', `${progress}, 100`); 
-        ring.classList.remove('regen', 'bewaehrung', 'nirvana'); 
+        ring.classList.remove('regen', 'bewaehrung', 'nirvana', 'open'); 
     }
     
     const pTxt = document.getElementById('dash-percent'); 
@@ -216,12 +216,15 @@ function renderDashboard() {
     if (res.isOpen) {
         safeProp('dash-status-badge', 'className', 'status-badge status-open'); 
         safeText('dash-status-badge', "Konsumphase Aktiv");
-        if(ring) ring.setAttribute('stroke-dasharray', `0, 100`); 
-        safeText('dash-percent', "!"); 
-        safeText('dash-ring-label', "OFFEN");
-        safeText('dash-days-left', `Dauer: ${res.history.t.length}d`); 
-        safeText('dash-target-date', "Pausiere zum Start");
-        safeText('dash-sub', "Die initiale T-Phase wächst, bis du pausierst."); 
+        if(ring) {
+            ring.classList.add('open');
+            ring.setAttribute('stroke-dasharray', `100, 100`); 
+        }
+        safeText('dash-percent', res.history.t.length); 
+        safeText('dash-ring-label', "TAG");
+        safeText('dash-days-left', "Initiale Phase"); 
+        safeText('dash-target-date', "Wartet auf Pause...");
+        safeText('dash-sub', "Jeder Tag erhöht deine Basis-Schuld."); 
         safeDisplay('dash-streak', 'none');
     } else if (displayDebt <= 0) {
         let isNirvanaEstablished = res.nirvanaStreak > 0;
@@ -454,6 +457,42 @@ function renderDashboard() {
         `);
         safeDisplay('dash-outlook', 'block');
         
+    // --- NEU: Dynamischer Ausblick für die offene Initialphase ---
+    } else if (!isSandbox && !isLoggedToday && res.isOpen && typeof simulateCycle === 'function') {
+        
+        // Klon A: Du pausierst heute -> Phase wird geschlossen
+        let cloneA = JSON.parse(JSON.stringify(activeCycle));
+        if(!cloneA.logs) cloneA.logs = {};
+        cloneA.logs[todayStr] = { type: 'pause', s:0, a:0, m:0, mood:0, note:'Phantom', isSimulated: true };
+        cloneA.base.isOpen = false; 
+        let resA = simulateCycle(cloneA);
+
+        // Klon B: Du rauchst heute -> Phase wird um 1 Tag verlängert
+        let cloneB = JSON.parse(JSON.stringify(activeCycle));
+        cloneB.base.end = todayStr;
+        cloneB.base.tDays += 1;
+        let resB = simulateCycle(cloneB);
+
+        if (resA && !resA.failed && resB && !resB.failed && resA.dashState) {
+            let dA = Math.round(resA.dashState.debt * 10) / 10;
+            let strA = Number.isInteger(dA) ? dA : dA.toFixed(1).replace('.', ',');
+
+            safeHTML('dash-outlook', `
+                <div class="outlook-title">📊 Tagesausblick für heute</div>
+                <div class="outlook-row good">
+                    <span class="outlook-label">🟢 Bei Pause:</span>
+                    <span class="outlook-value">Phase beendet! Start-Schuld: ${strA} Tage</span>
+                </div>
+                <div class="outlook-row bad">
+                    <span class="outlook-label">🔴 Bei Rauchen:</span>
+                    <span class="outlook-value">Phase verlängert sich auf Tag ${resB.history.t.length}</span>
+                </div>
+            `);
+            safeDisplay('dash-outlook', 'block');
+        } else {
+            safeDisplay('dash-outlook', 'none');
+        }
+
     } else {
         safeDisplay('dash-outlook', 'none');
     }
