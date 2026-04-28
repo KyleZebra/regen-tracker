@@ -613,7 +613,11 @@ function renderHistorie() {
             let dStr = toIsoString(simDate);
             
             // Täglicher Abbau (Becher leert sich)
-            if (regenM > 0) regenM--;
+            let mDecayed = false;
+            if (regenM > 0) { 
+                regenM--; 
+                mDecayed = true; 
+            }
             if (regenA > 0) regenA--;
             
             // Heutigen Log auf Strafen prüfen (Becher füllt sich)
@@ -622,6 +626,7 @@ function renderHistorie() {
                 // Der +1 Trick ist hier bereits eingerechnet!
                 if (log.m === 1) regenM += 2;
                 else if (log.m === 2) regenM += 3;
+                else if (log.m === 3 && mDecayed) regenM += 1; // NEU: Der Gefrier-Effekt
                 
                 if (log.a === 1) regenA += 3;
                 else if (log.a === 2) regenA += 4;
@@ -748,7 +753,7 @@ function renderDiaryList() {
         const moodEmojis = ["", "😞", "🙁", "😐", "🙂", "🤩"]; 
         const sLevels = ['Kein', 'Moderat', 'Hoch']; 
         const aLevels = ['Kein', 'Moderat', 'Hoch']; 
-        const mLevels = ['Kein', 'Moderat', 'Hoch'];
+        const mLevels = ['Kein', 'Moderat', 'Hoch', 'Einmal'];
         let items = [];
 
         while (toIsoString(curr) <= endStr) {
