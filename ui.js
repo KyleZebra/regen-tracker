@@ -23,6 +23,45 @@ function switchTab(tabId) {
     updateUI();
 }
 
+function renderMemoryEcho() {
+    const app = getApp();
+    if (!app || !app.cycles) return;
+
+    let candidates = [];
+    app.cycles.forEach(c => {
+        if (c.logs) {
+            Object.entries(c.logs).forEach(([date, log]) => {
+                if (log.note && log.note.trim().length > 0) {
+                    candidates.push({ 
+                        date: date, 
+                        note: log.note, 
+                        type: log.type 
+                    });
+                }
+            });
+        }
+    });
+
+    if (candidates.length === 0) {
+        safeDisplay('dash-echo', 'none');
+        return;
+    }
+
+    const seed = new Date().toDateString();
+    let hash = 0;
+    for (let i = 0; i < seed.length; i++) {
+        hash = ((hash << 5) - hash) + seed.charCodeAt(i);
+        hash |= 0;
+    }
+    const index = Math.abs(hash) % candidates.length;
+    const echo = candidates[index];
+
+    const dObj = parseLocal(echo.date);
+    safeText('echo-date', dObj ? dObj.toLocaleDateString('de-DE', { day: '2-digit', month: 'long', year: 'numeric' }) : echo.date);
+    safeText('echo-text', `"${echo.note}"`);
+    safeDisplay('dash-echo', 'block');
+}
+
 function toggleDiary() { 
     try {
         const d = document.getElementById('diary-container'); 
@@ -178,6 +217,7 @@ function renderDashboard() {
         safeDisplay('dash-progress', 'none');
         safeDisplay('dash-budget-box', 'none');
         safeDisplay('dash-outlook', 'none');
+        safeDisplay('dash-echo', 'none'); // FIX
         return;
     }
     
@@ -191,13 +231,13 @@ function renderDashboard() {
     const ring = document.getElementById('dash-ring'); 
     if(ring) { 
         ring.setAttribute('stroke-dasharray', `${progress}, 100`); 
-        ring.classList.remove('regen', 'bewaehrung', 'nirvana', 'open'); 
+        ring.classList.remove('regen', 'bewaehrung', 'nirvana', 'nirvana-deep', 'nirvana-gold', 'nirvana-obsidian', 'open'); 
     }
     
     const pTxt = document.getElementById('dash-percent'); 
     if(pTxt) { 
         pTxt.textContent = Math.round(progress) + '%'; 
-        pTxt.classList.remove('nirvana'); 
+        pTxt.classList.remove(nirvanaClass); 
     }
     
     safeProp('dash-streak', 'className', 'streak-badge');
@@ -212,6 +252,9 @@ function renderDashboard() {
     }
 
     let fDebt = Number.isInteger(Math.round(displayDebt * 10) / 10) ? Math.round(displayDebt * 10) / 10 : (Math.round(displayDebt * 10) / 10).toFixed(1).replace('.', ',');
+
+    // --- FIX: Reset des Echos (wird nur im etablierten Nirwana wieder aktiviert) ---
+    safeDisplay('dash-echo', 'none');
 
     if (res.isOpen) {
         safeProp('dash-status-badge', 'className', 'status-badge status-open'); 
@@ -265,8 +308,18 @@ function renderDashboard() {
 
         } else {
             // Phase 3 & 4: Etabliertes Nirwana (Ab Tag X+1 abends und alle Folgetage)
-            let miles = [7, 14, 21, 28, 30, 60, 90, 180, 365, 730, 9999];
+            // Engmaschiges Netz nach Nutzerwunsch
+            let miles = [7, 14, 21, 28, 30, 35, 42, 49, 56, 60, 63, 70, 77, 84, 90, 120, 150, 180, 210, 240, 270, 300, 330, 365, 730, 1095, 1460, 1825, 9999];
             let nextM = miles.find(m => res.nirvanaStreak < m) || 9999;
+            
+            // --- NEU: Farbevolution Logik ---
+            let nirvanaClass = 'nirvana';
+            if (res.nirvanaStreak >= 365) nirvanaClass = 'nirvana-obsidian';
+            else if (res.nirvanaStreak >= 90) nirvanaClass = 'nirvana-gold';
+            else if (res.nirvanaStreak >= 30) nirvanaClass = 'nirvana-deep';
+            
+            // --- NEU: Erinnerungsecho aufrufen ---
+            renderMemoryEcho();
             let prevM = [...miles].reverse().find(m => res.nirvanaStreak >= m) || 0;
             let nirvanaProgress = nextM !== 9999 ? ((res.nirvanaStreak - prevM) / (nextM - prevM)) * 100 : 100;
             
@@ -297,10 +350,10 @@ function renderDashboard() {
                 safeProp('dash-status-badge', 'className', 'status-badge status-done'); 
                 safeText('dash-status-badge', "Logge deinen Tag");
                 if(ring) { 
-                    ring.classList.add('nirvana'); 
+                    ring.classList.add(nirvanaClass); 
                     ring.setAttribute('stroke-dasharray', `${nirvanaProgress}, 100`); 
                 }
-                if(pTxt) pTxt.classList.add('nirvana'); 
+                if(pTxt) pTxt.classList.add(nirvanaClass); 
                 safeText('dash-percent', Math.round(nirvanaProgress) + '%'); 
                 safeText('dash-ring-label', "ZUM ZIEL");
                 safeText('dash-days-left', `Nächstes Ziel: ${nextM} Tage`); 
@@ -317,7 +370,7 @@ function renderDashboard() {
                 safeProp('dash-status-badge', 'className', 'status-badge status-done'); 
                 safeText('dash-status-badge', "Nirwana Level-Up");
                 if(ring) { 
-                    ring.classList.add('nirvana'); 
+                    ring.classList.add(nirvanaClass); 
                     ring.setAttribute('stroke-dasharray', `${nirvanaProgress}, 100`); 
                 }
                 if(pTxt) pTxt.classList.add('nirvana'); 
@@ -835,7 +888,8 @@ function renderArchiv() {
     let highStressResilienceCount = 0; 
     let archiveMonths = {}; 
     let allPastAusrutscherDates = [];
-    const milestonesArr = [7, 14, 21, 30, 60, 90, 180, 365, 730];
+    // Engmaschiges Meilenstein-Raster (Wochen, Monate, Jahre)
+    const milestonesArr = [7, 14, 21, 28, 30, 35, 42, 49, 56, 60, 63, 70, 77, 84, 90, 120, 150, 180, 210, 240, 270, 300, 330, 365, 730, 1095, 1460, 1825];
 
     (getApp().cycles || []).forEach((cycle) => {
         const res = globalSimResults.find(r => r && r.cycleId === cycle.id); 

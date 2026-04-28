@@ -95,11 +95,17 @@ h3 { margin-top: 0; font-size: 1.1rem; border-bottom: 2px solid #fcf3cf; padding
 .circle.regen { stroke: #27ae60; } 
 .circle.bewaehrung { stroke: #f39c12; } 
 .circle.nirvana { stroke: var(--nirvana-blue); }
+.circle.nirvana-deep { stroke: #8e44ad; }
+.circle.nirvana-gold { stroke: #f1c40f; }
+.circle.nirvana-obsidian { stroke: #2c3e50; }
 .circle.open { stroke: var(--danger); }
 
 .ring-content { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; width: 80%; display: flex; flex-direction: column; justify-content: center; align-items: center; pointer-events: none; }
 .ring-percent { font-size: 2.8rem; font-weight: 800; color: #2c3e50; line-height: 1; margin-bottom: 2px; } 
 .ring-percent.nirvana { color: var(--nirvana-blue); font-size: 2.2rem; }
+.ring-percent.nirvana-deep { color: #8e44ad; font-size: 2.2rem; }
+.ring-percent.nirvana-gold { color: #f1c40f; font-size: 2.2rem; text-shadow: 0 0 10px rgba(241,196,15,0.3); }
+.ring-percent.nirvana-obsidian { color: #2c3e50; font-size: 2.2rem; text-shadow: 0 2px 4px rgba(0,0,0,0.2); }
 .ring-label { font-size: 0.7rem; font-weight: 800; color: #95a5a6; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 12px; }
 .ring-progress { font-size: 0.85rem; font-weight: 700; color: var(--text-main); margin-bottom: 8px; background: #e8f6f3; border: 1px solid #16a085; display: inline-block; padding: 3px 10px; border-radius: 12px; }
 .ring-days { font-size: 1rem; font-weight: 700; color: #2c3e50; background: #fdfdfd; padding: 2px 8px; border-radius: 6px; border: 1px solid #eee; margin-bottom: 4px;}
