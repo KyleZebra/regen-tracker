@@ -223,69 +223,113 @@ function renderDashboard() {
         safeText('dash-target-date', "Pausiere zum Start");
         safeText('dash-sub', "Die initiale T-Phase wächst, bis du pausierst."); 
         safeDisplay('dash-streak', 'none');
-    } else if (displayDebt <= 0 && ds.pendingNirvana) {
-        safeProp('dash-status-badge', 'className', 'status-badge status-regen'); 
-        safeText('dash-status-badge', "Nirwana ausstehend");
-        if(ring) { 
-            ring.classList.remove('bewaehrung', 'nirvana');
-            ring.classList.add('regen'); 
-            ring.setAttribute('stroke-dasharray', `100, 100`); 
-        }
-        if(pTxt) {
-            pTxt.classList.remove('nirvana');
-            pTxt.textContent = '100%';
-        }
-        safeText('dash-percent', "100%"); 
-        safeText('dash-ring-label', "REGENERATION");
-        safeText('dash-days-left', `Schulden: 0 Tage`); 
-        safeText('dash-target-date', `Ziel erreicht!`);
-        safeText('dash-sub', "Logge den heutigen Tag als Pause, um deine Nirwana-Streak fortzusetzen!"); 
-        safeDisplay('dash-streak', 'none');
     } else if (displayDebt <= 0) {
-        let miles = [7, 14, 21, 28, 30, 60, 90, 180, 365, 730, 9999];
-        let nextM = miles.find(m => res.nirvanaStreak < m) || 9999;
-        let prevM = [...miles].reverse().find(m => res.nirvanaStreak >= m) || 0;
-        let nirvanaProgress = nextM !== 9999 ? ((res.nirvanaStreak - prevM) / (nextM - prevM)) * 100 : 100;
+        let isNirvanaEstablished = res.nirvanaStreak > 0;
         
-        let s = res.nirvanaStreak;
-        let mStr = "";
-        if (s >= 30) { 
-            let mo = Math.floor(s/30); 
-            let w = Math.floor((s%30)/7); 
-            let d = (s%30)%7; 
-            let p = []; 
-            p.push(`${mo} Monat${mo!==1?'e':''}`); 
-            if(w>0) p.push(`${w} Woche${w!==1?'n':''}`); 
-            if(d>0) p.push(`${d} Tag${d!==1?'e':''}`); 
-            mStr = p.join(', '); 
-        } else if (s >= 7) { 
-            let w = Math.floor(s/7); 
-            let d = s%7; 
-            let p = []; 
-            p.push(`${w} Woche${w!==1?'n':''}`); 
-            if(d>0) p.push(`${d} Tag${d!==1?'e':''}`); 
-            mStr = p.join(', '); 
-        } else { 
-            mStr = `${s} Tag${s!==1?'e':''}`; 
-        }
-        
-        safeProp('dash-status-badge', 'className', 'status-badge status-done'); 
-        safeText('dash-status-badge', "Nirwana Level-Up");
-        if(ring) { 
-            ring.classList.add('nirvana'); 
-            ring.setAttribute('stroke-dasharray', `${nirvanaProgress}, 100`); 
-        }
-        if(pTxt) pTxt.classList.add('nirvana'); 
-        safeText('dash-percent', Math.round(nirvanaProgress) + '%'); 
-        safeText('dash-ring-label', "ZUM ZIEL");
-        safeText('dash-days-left', `Nächstes Ziel: ${nextM} Tage`); 
-        safeText('dash-target-date', `Bisher: ${mStr}`);
-        safeText('dash-sub', isSandbox ? "Du bist in der Simulation clean." : "Regeneration abgeschlossen.");
-        safeDisplay('dash-streak', 'inline-block'); 
-        const sb = document.getElementById('dash-streak'); 
-        if(sb) { 
-            sb.classList.add('nirvana'); 
-            sb.textContent = `💎 ${res.nirvanaStreak} Tage Clean-Streak`; 
+        if (!isNirvanaEstablished && !ds.pendingNirvana) {
+            // Phase 1: Tag X (Abend) - Schulden getilgt, Nirwana startet morgen
+            safeProp('dash-status-badge', 'className', 'status-badge status-regen'); 
+            safeText('dash-status-badge', "Regeneration 100%");
+            if(ring) { 
+                ring.classList.remove('bewaehrung', 'nirvana');
+                ring.classList.add('regen'); 
+                ring.setAttribute('stroke-dasharray', `100, 100`); 
+            }
+            if(pTxt) { pTxt.classList.remove('nirvana'); pTxt.textContent = '100%'; }
+            safeText('dash-percent', "100%"); 
+            safeText('dash-ring-label', "ABGESCHLOSSEN");
+            safeText('dash-days-left', `Schulden: 0 Tage`); 
+            safeText('dash-target-date', `Ziel erreicht!`);
+            safeText('dash-sub', "Fantastisch! Ab morgen beginnst du mit deiner blauen Nirwana-Streak."); 
+            safeDisplay('dash-streak', 'none');
+
+        } else if (!isNirvanaEstablished && ds.pendingNirvana) {
+            // Phase 2: Tag X+1 (Morgen) - Erster echter Tag auf 0, wartet aufs Loggen
+            safeProp('dash-status-badge', 'className', 'status-badge status-regen'); 
+            safeText('dash-status-badge', "Nirwana bereit");
+            if(ring) { 
+                ring.classList.remove('bewaehrung', 'nirvana');
+                ring.classList.add('regen'); 
+                ring.setAttribute('stroke-dasharray', `100, 100`); 
+            }
+            if(pTxt) { pTxt.classList.remove('nirvana'); pTxt.textContent = '100%'; }
+            safeText('dash-percent', "100%"); 
+            safeText('dash-ring-label', "STARTBEREIT");
+            safeText('dash-days-left', `Schulden: 0 Tage`); 
+            safeText('dash-target-date', `Ziel erreicht!`);
+            safeText('dash-sub', "Logge den heutigen Tag, um das blaue Nirwana feierlich zu betreten!"); 
+            safeDisplay('dash-streak', 'none');
+
+        } else {
+            // Phase 3 & 4: Etabliertes Nirwana (Ab Tag X+1 abends und alle Folgetage)
+            let miles = [7, 14, 21, 28, 30, 60, 90, 180, 365, 730, 9999];
+            let nextM = miles.find(m => res.nirvanaStreak < m) || 9999;
+            let prevM = [...miles].reverse().find(m => res.nirvanaStreak >= m) || 0;
+            let nirvanaProgress = nextM !== 9999 ? ((res.nirvanaStreak - prevM) / (nextM - prevM)) * 100 : 100;
+            
+            let s = res.nirvanaStreak;
+            let mStr = "";
+            if (s >= 30) { 
+                let mo = Math.floor(s/30); 
+                let w = Math.floor((s%30)/7); 
+                let d = (s%30)%7; 
+                let p = []; 
+                p.push(`${mo} Monat${mo!==1?'e':''}`); 
+                if(w>0) p.push(`${w} Woche${w!==1?'n':''}`); 
+                if(d>0) p.push(`${d} Tag${d!==1?'e':''}`); 
+                mStr = p.join(', '); 
+            } else if (s >= 7) { 
+                let w = Math.floor(s/7); 
+                let d = s%7; 
+                let p = []; 
+                p.push(`${w} Woche${w!==1?'n':''}`); 
+                if(d>0) p.push(`${d} Tag${d!==1?'e':''}`); 
+                mStr = p.join(', '); 
+            } else { 
+                mStr = `${s} Tag${s!==1?'e':''}`; 
+            }
+            
+            if (ds.pendingNirvana) {
+                // Phase 4: Morgen im Nirwana (Wartet auf Log)
+                safeProp('dash-status-badge', 'className', 'status-badge status-done'); 
+                safeText('dash-status-badge', "Logge deinen Tag");
+                if(ring) { 
+                    ring.classList.add('nirvana'); 
+                    ring.setAttribute('stroke-dasharray', `${nirvanaProgress}, 100`); 
+                }
+                if(pTxt) pTxt.classList.add('nirvana'); 
+                safeText('dash-percent', Math.round(nirvanaProgress) + '%'); 
+                safeText('dash-ring-label', "ZUM ZIEL");
+                safeText('dash-days-left', `Nächstes Ziel: ${nextM} Tage`); 
+                safeText('dash-target-date', `Bisher: ${mStr}`);
+                safeText('dash-sub', "Bestätige den heutigen Tag als clean, um deine Streak zu erhöhen!"); 
+                safeDisplay('dash-streak', 'inline-block'); 
+                const sb = document.getElementById('dash-streak'); 
+                if(sb) { 
+                    sb.classList.add('nirvana'); 
+                    sb.textContent = `💎 ${res.nirvanaStreak} Tage Clean-Streak`; 
+                }
+            } else {
+                // Phase 3: Abend im Nirwana (Geloggt)
+                safeProp('dash-status-badge', 'className', 'status-badge status-done'); 
+                safeText('dash-status-badge', "Nirwana Level-Up");
+                if(ring) { 
+                    ring.classList.add('nirvana'); 
+                    ring.setAttribute('stroke-dasharray', `${nirvanaProgress}, 100`); 
+                }
+                if(pTxt) pTxt.classList.add('nirvana'); 
+                safeText('dash-percent', Math.round(nirvanaProgress) + '%'); 
+                safeText('dash-ring-label', "ZUM ZIEL");
+                safeText('dash-days-left', `Nächstes Ziel: ${nextM} Tage`); 
+                safeText('dash-target-date', `Bisher: ${mStr}`);
+                safeText('dash-sub', isSandbox ? "Du bist in der Simulation clean." : "Regeneration abgeschlossen.");
+                safeDisplay('dash-streak', 'inline-block'); 
+                const sb = document.getElementById('dash-streak'); 
+                if(sb) { 
+                    sb.classList.add('nirvana'); 
+                    sb.textContent = `💎 ${res.nirvanaStreak} Tage Clean-Streak`; 
+                }
+            }
         }
     } else if (ds.pendingBonus) {
         safeProp('dash-status-badge', 'className', 'status-badge status-bewaehrung'); 
