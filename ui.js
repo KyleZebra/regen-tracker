@@ -237,7 +237,8 @@ function renderDashboard() {
     const pTxt = document.getElementById('dash-percent'); 
     if(pTxt) { 
         pTxt.textContent = Math.round(progress) + '%'; 
-        pTxt.classList.remove(nirvanaClass); 
+        // FIX: Wir löschen alle spezifischen Klassen hart, da die Variable hier noch nicht existiert
+        pTxt.classList.remove('nirvana', 'nirvana-deep', 'nirvana-gold', 'nirvana-obsidian'); 
     }
     
     safeProp('dash-streak', 'className', 'streak-badge');
@@ -373,7 +374,7 @@ function renderDashboard() {
                     ring.classList.add(nirvanaClass); 
                     ring.setAttribute('stroke-dasharray', `${nirvanaProgress}, 100`); 
                 }
-                if(pTxt) pTxt.classList.add('nirvana'); 
+                if(pTxt) pTxt.classList.add('nirvanaClass'); 
                 safeText('dash-percent', Math.round(nirvanaProgress) + '%'); 
                 safeText('dash-ring-label', "ZUM ZIEL");
                 safeText('dash-days-left', `Nächstes Ziel: ${nextM} Tage`); 
