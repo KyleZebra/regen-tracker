@@ -910,7 +910,6 @@ function renderArchiv() {
             let isConsumption = res.history.t.some(d => toIsoString(d)===dStr) || res.history.a.some(d => toIsoString(d)===dStr);
             if(isConsumption) {
                 archiveMonths[mKey].tDays++;
-                totalConsumptionDays++;
             }
             
             let isBase = (cycle.base?.start && dStr >= cycle.base.start && dStr <= cycle.base.end);
@@ -959,7 +958,6 @@ function renderArchiv() {
         const pastN = res.history.n.filter(isPast);
         
         pastDaysTracked += (pastT.length + pastA.length + pastB.length + pastR.length + pastN.length); 
-        pastPauseDays += (pastB.length + pastR.length + pastN.length);
 
         let currentStreak = 0; 
         for (let i=0; i<pastN.length; i++) { 

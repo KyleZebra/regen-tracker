@@ -2,7 +2,7 @@
 // data.js - State Management & Core Helpers
 // ==========================================
 
-const APP_VERSION = '17.2 (NewStat)';
+const APP_VERSION = '17.3 (NewStat)';
 
 // --- Defensive DOM Helpers ---
 const safeVal = (id) => { 
