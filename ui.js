@@ -876,14 +876,6 @@ function renderArchiv() {
     const isPast = d => toIsoString(d) < todayStr;
     
     let pastDaysTracked = 0; 
-    let pastPauseDays = 0;
-    let tripleCleanDays = 0; // NEU
-    let trackedInCleanWindow = 0; 
-    let pauseInCleanWindow = 0;
-    let trackedInRatioWindow = 0;
-    let pauseInRatioWindow = 0;
-    let consumptionInRatioWindow = 0;
-    let totalConsumptionDays = 0; // NEU 
     let maxNirvana = 0;
     let totalAusrutscher = 0; 
     let highStressAusrutscher = 0; 
@@ -894,6 +886,13 @@ function renderArchiv() {
     let highStressResilienceCount = 0; 
     let archiveMonths = {}; 
     let allPastAusrutscherDates = [];
+    
+    // --- NEUE ZÄHLER FÜR DAS KLICK-FENSTER ---
+    let winTracked = 0;
+    let winSmoked = 0;
+    let winPause = 0;
+    let winTriple = 0;
+    let win25 = 0;
     // Engmaschiges Meilenstein-Raster (Wochen, Monate, Jahre)
     const milestonesArr = [7, 14, 21, 28, 30, 35, 42, 49, 56, 60, 63, 70, 77, 84, 90, 120, 150, 180, 210, 240, 270, 300, 330, 365, 730, 1095, 1460, 1825];
 
@@ -923,29 +922,25 @@ function renderArchiv() {
             if(currentAlc > 0) archiveMonths[mKey].aDays++;
             if(currentM > 0) archiveMonths[mKey].mDays++;
 
-            // --- Dynamische Fenster-Logik ---
-            const cleanDateLimit = toIsoString(addDays(new Date(), -currentCleanWindow));
-            if (dStr >= cleanDateLimit) {
-                trackedInCleanWindow++;
-                if (!isConsumption) pauseInCleanWindow++;
+            // --- Synchronisierte Fenster-Logik (V17.2) ---
+            let isInWindow = false;
+            if (currentCleanWindow === 'all') {
+                isInWindow = true;
+            } else if (currentCleanWindow === 'cycle') {
+                if (cycle.status === 'active') isInWindow = true;
+            } else {
+                const limit = toIsoString(addDays(new Date(), -currentCleanWindow));
+                if (dStr >= limit) isInWindow = true;
             }
 
-            if (currentRatioWindow === 0) {
-                // All-Time Ratio Logik (wie bisher)
-                if (!isConsumption) pauseInRatioWindow++;
-                if (isConsumption) consumptionInRatioWindow++;
-            } else {
-                // Fenster-Ratio Logik (z.B. letzte 60 Tage)
-                const ratioDateLimit = toIsoString(addDays(new Date(), -currentRatioWindow));
-                if (dStr >= ratioDateLimit) {
-                    if (!isConsumption) pauseInRatioWindow++;
-                    if (isConsumption) consumptionInRatioWindow++;
+            if (isInWindow) {
+                winTracked++;
+                if (isConsumption) winSmoked++;
+                else {
+                    winPause++;
+                    if (currentAlc === 0 && currentM === 0) winTriple++;
+                    if (currentAlc === 0 && (currentM === 0 || currentM === 3)) win25++;
                 }
-            }
-            
-            // Triple Clean (Nutzt die bereits oben definierten Variablen!)
-            if (!isConsumption && currentAlc === 0 && currentM === 0) {
-                tripleCleanDays++;
             }
         });
 
@@ -1021,25 +1016,32 @@ function renderArchiv() {
         });
     });
 
-    const cleanQuote = pastDaysTracked > 0 ? Math.round((pastPauseDays / pastDaysTracked) * 100) : 0;
-    const cleanQuoteVal = trackedInCleanWindow > 0 ? Math.round((pauseInCleanWindow / trackedInCleanWindow) * 100) : 0;
-    const ratioVal = consumptionInRatioWindow > 0 ? Math.round(pauseInRatioWindow / consumptionInRatioWindow) : pauseInRatioWindow;
     const avgAus = totalAusrutscher > 0 ? (sumAusrutscherDays / totalAusrutscher).toFixed(1) : 0;
     let avgNirvana = cyclesWithNirvana > 0 ? Math.round(totalNirvanaDays / cyclesWithNirvana) : 0;
 
-    safeText('stat-clean-quote', cleanQuote + '%');
-    safeText('stat-clean-30', cleanQuoteVal + '%'); 
-    safeText('stat-clean-ratio', `1:${ratioVal}`);
-    safeText('stat-triple-clean', tripleCleanDays); // NEU 
+    // --- Die neuen synchronisierten Fenster-Werte ---
+    const winQuote = winTracked > 0 ? Math.round((winPause / winTracked) * 100) : 0;
+    const winRatio = winSmoked > 0 ? (winPause / winSmoked).toFixed(1).replace('.', ',') : winPause;
+
+    safeText('stat-clean-quote', winQuote + '%');
+    safeText('stat-clean-ratio', `1:${winRatio}`);
+    safeText('stat-triple-clean', winTriple); 
+    safeText('stat-25-clean', win25); 
+    safeText('stat-smoked-days', winSmoked); 
+    
     safeText('stat-max-nirvana', maxNirvana); 
     safeText('stat-total-days', pastDaysTracked); 
     safeText('stat-avg-ausrutscher', avgAus);
     safeText('stat-avg-nirvana', avgNirvana);
     safeText('stat-total-milestones', totalMilestones);
 
-    // Beschriftungen (Labels) dynamisch anpassen
-    safeText('label-clean-window', `${currentCleanWindow}-Tage Quote`);
-    safeText('label-ratio-window', currentRatioWindow === 0 ? "Clean-Ratio (All)" : `Clean-Ratio (${currentRatioWindow}d)`);
+    // --- Beschriftungen für alle Klick-Boxen synchronisieren ---
+    let labelTxt = "";
+    if (currentCleanWindow === 'all') labelTxt = "All-Time";
+    else if (currentCleanWindow === 'cycle') labelTxt = "Zyklus";
+    else labelTxt = currentCleanWindow + "d";
+    
+    document.querySelectorAll('.win-label').forEach(el => el.textContent = labelTxt);
 
     let totalBreatheSessions = 0;
     let totalBreatheMinutes = 0;
@@ -1269,15 +1271,8 @@ function triggerBonusConfetti() {
 }
 // --- Statistik-Interaktion ---
 function cycleCleanWindow() {
-    // Wechselt: 30 -> 60 -> 90 -> 30
-    currentCleanWindow = (currentCleanWindow === 90) ? 30 : currentCleanWindow + 30;
-    renderArchiv();
-}
-
-function cycleRatioWindow() {
-    // Wechselt: 0 (All) -> 30 -> 60 -> 90 -> 0
-    if (currentRatioWindow === 0) currentRatioWindow = 30;
-    else if (currentRatioWindow === 90) currentRatioWindow = 0;
-    else currentRatioWindow += 30;
+    const states = ['all', 'cycle', 30, 60, 90];
+    let idx = states.indexOf(currentCleanWindow);
+    currentCleanWindow = states[(idx + 1) % states.length];
     renderArchiv();
 }
