@@ -600,9 +600,10 @@ function renderHistorie() {
         
         regenM = baseDays * 2; 
         
-        let baseAlk = active.base.aLevel || 0;
-        if (baseAlk === 1) regenA = 2; // Moderat
-        else if (baseAlk === 2) regenA = 3; // Hoch
+        // Typ-Sicherheit & Neues Strafmaß für die Startphase
+            let baseAlk = parseInt(active.base.aLevel) || 0;
+            if (baseAlk === 1) regenA = 2; // Moderat
+            else if (baseAlk === 2) regenA = 5; // Hoch (Erhöht auf 5)
         
         // 2. Kalender vom Tag nach der Basisphase bis heute durchblättern
         let simDate = addDays(baseEnd, 1);
@@ -623,13 +624,17 @@ function renderHistorie() {
             // Heutigen Log auf Strafen prüfen (Becher füllt sich)
             let log = (active.logs || {})[dStr];
             if (log && log.type !== undefined && !log.isSimulated) {
+                // FIX: Typ-Sicherheit (Strings in echte Zahlen umwandeln)
+                let mVal = parseInt(log.m) || 0;
+                let aVal = parseInt(log.a) || 0;
+
                 // Der +1 Trick ist hier bereits eingerechnet!
-                if (log.m === 1) regenM += 2;
-                else if (log.m === 2) regenM += 3;
-                else if (log.m === 3 && mDecayed) regenM += 1; // NEU: Der Gefrier-Effekt
+                if (mVal === 1) regenM += 2;
+                else if (mVal === 2) regenM += 3;
+                else if (mVal === 3 && mDecayed) regenM += 1; // Der Gefrier-Effekt
                 
-                if (log.a === 1) regenA += 3;
-                else if (log.a === 2) regenA += 4;
+                if (aVal === 1) regenA += 3;
+                else if (aVal === 2) regenA += 5; // NEU: Starker Alk erhöht um 5 Tage!
             }
             
             simDate = addDays(simDate, 1);
