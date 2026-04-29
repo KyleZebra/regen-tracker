@@ -374,7 +374,7 @@ function renderDashboard() {
                     ring.classList.add(nirvanaClass); 
                     ring.setAttribute('stroke-dasharray', `${nirvanaProgress}, 100`); 
                 }
-                if(pTxt) pTxt.classList.add('nirvanaClass'); 
+                if(pTxt) pTxt.classList.add(nirvanaClass); 
                 safeText('dash-percent', Math.round(nirvanaProgress) + '%'); 
                 safeText('dash-ring-label', "ZUM ZIEL");
                 safeText('dash-days-left', `Nächstes Ziel: ${nextM} Tage`); 
@@ -1268,7 +1268,6 @@ function triggerBonusConfetti() {
     }
 }
 // --- Statistik-Interaktion ---
-let currentCleanWindow = 'all'; // HIER WAR DER FEHLER: Diese Variable hat gefehlt!
 function cycleCleanWindow() {
     const states = ['all', 'cycle', 30, 60, 90];
     let idx = states.indexOf(currentCleanWindow);
