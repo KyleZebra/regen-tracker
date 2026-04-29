@@ -890,9 +890,11 @@ function renderArchiv() {
     // --- NEUE ZÄHLER FÜR DAS KLICK-FENSTER ---
     let winTracked = 0;
     let winSmoked = 0;
+    let winSmallSmoked = 0; // NEU
     let winPause = 0;
     let winTriple = 0;
     let win25 = 0;
+
     // Engmaschiges Meilenstein-Raster (Wochen, Monate, Jahre)
     const milestonesArr = [7, 14, 21, 28, 30, 35, 42, 49, 56, 60, 63, 70, 77, 84, 90, 120, 150, 180, 210, 240, 270, 300, 330, 365, 730, 1095, 1460, 1825];
 
@@ -932,10 +934,19 @@ function renderArchiv() {
                 if (dStr >= limit) isInWindow = true;
             }
 
+            // NEU: Prüfung auf kleinen Rauchtag
+            let isSmallConsumption = false;
+            if (isConsumption) {
+                if (isBase) isSmallConsumption = cycle.base.isSmall === true;
+                else isSmallConsumption = log.isSmall === true;
+            }
+
             if (isInWindow) {
                 winTracked++;
-                if (isConsumption) winSmoked++;
-                else {
+                if (isConsumption) {
+                    winSmoked++;
+                    if (isSmallConsumption) winSmallSmoked++;
+                } else {
                     winPause++;
                     if (currentAlc === 0 && currentM === 0) winTriple++;
                     if (currentAlc === 0 && (currentM === 0 || currentM === 3)) win25++;
@@ -1026,7 +1037,7 @@ function renderArchiv() {
     safeText('stat-triple-clean', winTriple); 
     safeText('stat-25-clean', win25); 
     safeText('stat-smoked-days', winSmoked); 
-    
+    safeText('stat-small-smoked', winSmallSmoked); 
     safeText('stat-max-nirvana', maxNirvana); 
     safeText('stat-total-days', pastDaysTracked); 
     safeText('stat-avg-ausrutscher', avgAus);
