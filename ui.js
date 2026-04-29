@@ -909,8 +909,12 @@ function renderArchiv() {
             let mKey = dStr.substring(0, 7); 
             if(!archiveMonths[mKey]) archiveMonths[mKey] = { tDays:0, aDays:0, mDays:0, erk:[], dtx:[] };
             
+            // --- REIHENFOLGE GEFIXT: Erst Variablen definieren, dann prüfen ---
+            let isBase = (cycle.base?.start && dStr >= cycle.base.start && dStr <= cycle.base.end);
+            let log = (cycle.logs || {})[dStr] || {};
+            
             // FIX V17.5: Erkennt Konsum in ALLEN Zyklen (nicht nur im aktiven)
-            let isConsumption = isBase || (log && log.type === 'ausrutscher');
+            let isConsumption = isBase || (log.type === 'ausrutscher');
             
             // NEU V17.5: Unterscheidung ob kleiner Rauchtag
             let isSmallConsumption = false;
@@ -922,9 +926,6 @@ function renderArchiv() {
             if(isConsumption) {
                 archiveMonths[mKey].tDays++;
             }
-            
-            let isBase = (cycle.base?.start && dStr >= cycle.base.start && dStr <= cycle.base.end);
-            let log = (cycle.logs || {})[dStr] || {};
             
             let currentAlc = (isBase ? (cycle.base.aLevel||0) : (log.a || 0));
             let currentM = (isBase ? (cycle.base.mLevel||0) : (log.m || 0));
