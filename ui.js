@@ -944,13 +944,6 @@ function renderArchiv() {
                 if (dStr >= limit) isInWindow = true;
             }
 
-            // NEU: Prüfung auf kleinen Rauchtag
-            let isSmallConsumption = false;
-            if (isConsumption) {
-                if (isBase) isSmallConsumption = cycle.base.isSmall === true;
-                else isSmallConsumption = log.isSmall === true;
-            }
-
             if (isInWindow) {
                 winTracked++;
                 if (isConsumption) {
