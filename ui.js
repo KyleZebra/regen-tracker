@@ -909,7 +909,16 @@ function renderArchiv() {
             let mKey = dStr.substring(0, 7); 
             if(!archiveMonths[mKey]) archiveMonths[mKey] = { tDays:0, aDays:0, mDays:0, erk:[], dtx:[] };
             
-            let isConsumption = res.history.t.some(d => toIsoString(d)===dStr) || res.history.a.some(d => toIsoString(d)===dStr);
+            // FIX V17.5: Erkennt Konsum in ALLEN Zyklen (nicht nur im aktiven)
+            let isConsumption = isBase || (log && log.type === 'ausrutscher');
+            
+            // NEU V17.5: Unterscheidung ob kleiner Rauchtag
+            let isSmallConsumption = false;
+            if (isConsumption) {
+                if (isBase) isSmallConsumption = (cycle.base.isSmall === true);
+                else if (log) isSmallConsumption = (log.isSmall === true);
+            }
+
             if(isConsumption) {
                 archiveMonths[mKey].tDays++;
             }
@@ -945,7 +954,7 @@ function renderArchiv() {
                 winTracked++;
                 if (isConsumption) {
                     winSmoked++;
-                    if (isSmallConsumption) winSmallSmoked++;
+                    if (isSmallConsumption) winSmallSmoked++; // NEU
                 } else {
                     winPause++;
                     if (currentAlc === 0 && currentM === 0) winTriple++;
