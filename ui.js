@@ -1272,4 +1272,6 @@ let currentCleanWindow = 'all'; // HIER WAR DER FEHLER: Diese Variable hat gefeh
 function cycleCleanWindow() {
     const states = ['all', 'cycle', 30, 60, 90];
     let idx = states.indexOf(currentCleanWindow);
+    currentCleanWindow = states[(idx + 1) % states.length];
+    renderArchiv();
 }
