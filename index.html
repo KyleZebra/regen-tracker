@@ -249,6 +249,7 @@
         <h3>📈 Deine Life-Tracker Statistiken</h3>
         <p style="font-size: 0.8rem; color: #7f8c8d; text-align: center; margin-top: -10px; margin-bottom: 15px;">Auswertungen basieren nur auf Tagen in der Vergangenheit.</p>
         <div class="stat-grid">
+            <!-- 1. Reihe -->
             <div class="stat-box" onclick="cycleCleanWindow()" style="cursor:pointer;">
                 <div class="stat-val blue" id="stat-clean-quote">0%</div>
                 <div class="stat-label">Clean-Quote (<span class="win-label">All-Time</span>)</div>
@@ -265,6 +266,11 @@
                 <div class="stat-val" style="color:#2ecc71;" id="stat-25-clean">0</div>
                 <div class="stat-label">2,5-Clean (<span class="win-label">All-Time</span>)</div>
             </div>
+            <!-- 2. Reihe -->
+            <div class="stat-box" onclick="cycleCleanWindow()" style="cursor:pointer;">
+                <div class="stat-val" style="color:#27ae60;" id="stat-clean-days">0</div>
+                <div class="stat-label">Ohne Rauchen (<span class="win-label">All-Time</span>)</div>
+            </div>
             <div class="stat-box" onclick="cycleCleanWindow()" style="cursor:pointer;">
                 <div class="stat-val" style="color:#e74c3c;" id="stat-smoked-days">0</div>
                 <div class="stat-label">Rauchtage (<span class="win-label">All-Time</span>)</div>
@@ -273,20 +279,18 @@
                 <div class="stat-val" style="color:#e67e22;" id="stat-small-smoked">0</div>
                 <div class="stat-label">Kl. Rauchtage (<span class="win-label">All-Time</span>)</div>
             </div>
-            <div class="stat-box">
+            <div class="stat-box" onclick="cycleCleanWindow()" style="cursor:pointer;">
                 <div class="stat-val" id="stat-total-days">0</div>
-                <div class="stat-label">Tage Getrackt</div>
-            </div>
-            <div class="stat-box">
-                <div class="stat-val" id="stat-max-nirvana">0</div>
-                <div class="stat-label">Max Nirwana</div>
+                <div class="stat-label">Getrackte Tage (<span class="win-label">All-Time</span>)</div>
             </div>
         </div>
         
         <h4 style="color:#7f8c8d; margin-top: 1.5rem; margin-bottom: 10px; font-size:0.85rem; text-transform:uppercase;">🌟 Nirwana & Meilensteine</h4>
         <div class="stat-grid" style="margin-bottom: 1.5rem;">
-            <div class="stat-box" style="background: #fef9e7; border-color: #fdebd0;"><div class="stat-val" style="color: #f39c12;" id="stat-avg-nirvana">0</div><div class="stat-label">Ø Tage im Nirwana</div></div>
-            <div class="stat-box" style="background: #fef9e7; border-color: #fdebd0;"><div class="stat-val" style="color: #f39c12;" id="stat-total-milestones">0</div><div class="stat-label">Meilensteine gesammelt</div></div>
+            <div class="stat-box" style="background: #fef9e7; border-color: #fdebd0;"><div class="stat-val" style="color: #f39c12;" id="stat-max-nirvana">0</div><div class="stat-label">Max. Streak</div></div>
+            <div class="stat-box" style="background: #fef9e7; border-color: #fdebd0;"><div class="stat-val" style="color: #f39c12;" id="stat-total-nirvana">0</div><div class="stat-label">Tage (Gesamt)</div></div>
+            <div class="stat-box" style="background: #fef9e7; border-color: #fdebd0;"><div class="stat-val" style="color: #f39c12;" id="stat-avg-nirvana">0</div><div class="stat-label">Ø Tage je Zyklus</div></div>
+            <div class="stat-box" style="background: #fef9e7; border-color: #fdebd0;"><div class="stat-val" style="color: #f39c12;" id="stat-total-milestones">0</div><div class="stat-label">Meilensteine</div></div>
         </div>
 
         <h4 style="color:#7f8c8d; margin-top: 1.5rem; margin-bottom: 10px; font-size:0.85rem; text-transform:uppercase;">🧘‍♂️ Therapie & Fokus</h4>

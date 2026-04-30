@@ -2,7 +2,7 @@
 // data.js - State Management & Core Helpers
 // ==========================================
 
-const APP_VERSION = '18.2 (EchoMove)';
+const APP_VERSION = '18.3 (EchoMove)';
 
 // --- Defensive DOM Helpers ---
 const safeVal = (id) => { 

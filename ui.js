@@ -1036,15 +1036,19 @@ function renderArchiv() {
     const winQuote = winTracked > 0 ? Math.round((winPause / winTracked) * 100) : 0;
     const winRatio = winSmoked > 0 ? (winPause / winSmoked).toFixed(1).replace('.', ',') : winPause;
 
+    // -- Rotierbares 8er Grid --
     safeText('stat-clean-quote', winQuote + '%');
     safeText('stat-clean-ratio', `1:${winRatio}`);
     safeText('stat-triple-clean', winTriple); 
     safeText('stat-25-clean', win25); 
+    safeText('stat-clean-days', winPause); // NEU: Tage ohne Rauchen
     safeText('stat-smoked-days', winSmoked); 
     safeText('stat-small-smoked', winSmallSmoked); 
+    safeText('stat-total-days', winTracked); // FIX: Jetzt dynamisch durch Klick!
+    
+    // -- 4er Nirwana Grid --
     safeText('stat-max-nirvana', maxNirvana); 
-    safeText('stat-total-days', pastDaysTracked); 
-    safeText('stat-avg-ausrutscher', avgAus);
+    safeText('stat-total-nirvana', totalNirvanaDays); // NEU: Gesamte Nirwana Tage
     safeText('stat-avg-nirvana', avgNirvana);
     safeText('stat-total-milestones', totalMilestones);
 
