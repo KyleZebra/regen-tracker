@@ -31,7 +31,8 @@ function renderMemoryEcho() {
     app.cycles.forEach(c => {
         if (c.logs) {
             Object.entries(c.logs).forEach(([date, log]) => {
-                if (log.note && log.note.trim().length > 0) {
+                // FIX: Nur Einträge vom Typ 'ausrutscher' (Rauchen) berücksichtigen
+                if (log.type === 'ausrutscher' && log.note && log.note.trim().length > 0) {
                     candidates.push({ 
                         date: date, 
                         note: log.note, 
@@ -43,7 +44,7 @@ function renderMemoryEcho() {
     });
 
     if (candidates.length === 0) {
-        safeDisplay('dash-echo', 'none');
+        safeDisplay('arch-echo', 'none');
         return;
     }
 
@@ -57,9 +58,9 @@ function renderMemoryEcho() {
     const echo = candidates[index];
 
     const dObj = parseLocal(echo.date);
-    safeText('echo-date', dObj ? dObj.toLocaleDateString('de-DE', { day: '2-digit', month: 'long', year: 'numeric' }) : echo.date);
-    safeText('echo-text', `"${echo.note}"`);
-    safeDisplay('dash-echo', 'block');
+    safeText('arch-echo-date', dObj ? dObj.toLocaleDateString('de-DE', { day: '2-digit', month: 'long', year: 'numeric' }) : echo.date);
+    safeText('arch-echo-text', `"${echo.note}"`);
+    safeDisplay('arch-echo', 'block');
 }
 
 function toggleDiary() { 
@@ -254,9 +255,6 @@ function renderDashboard() {
 
     let fDebt = Number.isInteger(Math.round(displayDebt * 10) / 10) ? Math.round(displayDebt * 10) / 10 : (Math.round(displayDebt * 10) / 10).toFixed(1).replace('.', ',');
 
-    // --- FIX: Reset des Echos (wird nur im etablierten Nirwana wieder aktiviert) ---
-    safeDisplay('dash-echo', 'none');
-
     if (res.isOpen) {
         safeProp('dash-status-badge', 'className', 'status-badge status-open'); 
         safeText('dash-status-badge', "Konsumphase Aktiv");
@@ -319,8 +317,6 @@ function renderDashboard() {
             else if (res.nirvanaStreak >= 90) nirvanaClass = 'nirvana-gold';
             else if (res.nirvanaStreak >= 30) nirvanaClass = 'nirvana-deep';
             
-            // --- NEU: Erinnerungsecho aufrufen ---
-            renderMemoryEcho();
             let prevM = [...miles].reverse().find(m => res.nirvanaStreak >= m) || 0;
             let nirvanaProgress = nextM !== 9999 ? ((res.nirvanaStreak - prevM) / (nextM - prevM)) * 100 : 100;
             
@@ -1261,6 +1257,9 @@ function renderArchiv() {
             ${debugRes}
         </div>
     </details>`);
+
+    // --- Erinnerungsecho im Archiv aktualisieren ---
+    if (typeof renderMemoryEcho === 'function') renderMemoryEcho();
 }
 // --- Gamification & Effekte ---
 function triggerBonusConfetti() {
