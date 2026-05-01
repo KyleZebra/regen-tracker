@@ -906,49 +906,54 @@ function renderArchiv() {
         let allDays = [...res.history.t, ...res.history.a, ...res.history.b, ...res.history.r, ...res.history.n];
         let uniqueDays = [...new Set(allDays.map(d => toIsoString(d)))].filter(d => d <= todayStr).sort();
 
-                uniqueDays.forEach(dStr => {
-            // FIX V18.5: Den simulierten "Morgen"-Tag rigoros aus allen Statistiken aussperren!
-            if (dStr > toIsoString(new Date())) return;
+                        uniqueDays.forEach(dStr => {
+            let todayStr = toIsoString(new Date());
+
+            // 1. Zukunft rigoros aussperren (Geister-Tage)
+            if (dStr > todayStr) return;
 
             let mKey = dStr.substring(0, 7); 
             if(!archiveMonths[mKey]) archiveMonths[mKey] = { tDays:0, aDays:0, mDays:0, erk:[], dtx:[] };
             
-            // --- REIHENFOLGE GEFIXT: Erst Variablen definieren, dann prüfen ---
             let isBase = (cycle.base?.start && dStr >= cycle.base.start && dStr <= cycle.base.end);
             let log = (cycle.logs || {})[dStr] || {};
-            
-            // FIX V17.5: Erkennt Konsum in ALLEN Zyklen (nicht nur im aktiven)
             let isConsumption = isBase || (log.type === 'ausrutscher');
             
-            // NEU V17.5: Unterscheidung ob kleiner Rauchtag
             let isSmallConsumption = false;
             if (isConsumption) {
                 if (isBase) isSmallConsumption = (cycle.base.isSmall === true);
                 else if (log) isSmallConsumption = (log.isSmall === true);
             }
 
+            // FIX V18.6: HEUTE ignorieren, solange kein Rückfall passiert ist!
+            // Ein cleander Tag gilt erst morgen als abgeschlossen und "getrackt".
+            if (dStr === todayStr && !isConsumption) return;
+
             if(isConsumption) {
                 archiveMonths[mKey].tDays++;
             }
             
-            let currentAlc = (isBase ? (cycle.base.aLevel||0) : (log.a || 0));
-            let currentM = (isBase ? (cycle.base.mLevel||0) : (log.m || 0));
+            let currentAlc = parseInt(isBase ? (cycle.base.aLevel||0) : (log.a || 0)) || 0;
+            let currentM = parseInt(isBase ? (cycle.base.mLevel||0) : (log.m || 0)) || 0;
             
             if(currentAlc > 0) archiveMonths[mKey].aDays++;
             if(currentM > 0) archiveMonths[mKey].mDays++;
+            
+            if(log.erk) archiveMonths[mKey].erk.push(log.erk);
+            if(log.dtx) archiveMonths[mKey].dtx.push(log.dtx);
 
-                        // --- Synchronisierte Fenster-Logik (V17.2) ---
+            // --- Synchronisierte Fenster-Logik ---
             let isInWindow = false;
             if (currentCleanWindow === 'all') {
                 isInWindow = true;
             } else if (currentCleanWindow === 'cycle') {
                 if (cycle.status === 'active') isInWindow = true;
             } else {
-                // FIX V18.4: Off-By-One Fehler behoben. Wir ziehen (Fenster - 1) ab, 
-                // da der heutige Tag bereits als 1 Tag zählt.
-                const limit = toIsoString(addDays(new Date(), -(currentCleanWindow - 1)));
+                // Da 'Heute' nun oben sauber rausgefiltert wird, können wir das Limit wieder mathematisch exakt auf 30/60/90 Tage setzen!
+                const limit = toIsoString(addDays(new Date(), -currentCleanWindow));
                 if (dStr >= limit) isInWindow = true;
             }
+
 
             if (isInWindow) {
                 winTracked++;
