@@ -934,14 +934,16 @@ function renderArchiv() {
             if(currentAlc > 0) archiveMonths[mKey].aDays++;
             if(currentM > 0) archiveMonths[mKey].mDays++;
 
-            // --- Synchronisierte Fenster-Logik (V17.2) ---
+                        // --- Synchronisierte Fenster-Logik (V17.2) ---
             let isInWindow = false;
             if (currentCleanWindow === 'all') {
                 isInWindow = true;
             } else if (currentCleanWindow === 'cycle') {
                 if (cycle.status === 'active') isInWindow = true;
             } else {
-                const limit = toIsoString(addDays(new Date(), -currentCleanWindow));
+                // FIX V18.4: Off-By-One Fehler behoben. Wir ziehen (Fenster - 1) ab, 
+                // da der heutige Tag bereits als 1 Tag zählt.
+                const limit = toIsoString(addDays(new Date(), -(currentCleanWindow - 1)));
                 if (dStr >= limit) isInWindow = true;
             }
 
