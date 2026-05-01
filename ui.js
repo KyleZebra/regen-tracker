@@ -906,7 +906,10 @@ function renderArchiv() {
         let allDays = [...res.history.t, ...res.history.a, ...res.history.b, ...res.history.r, ...res.history.n];
         let uniqueDays = [...new Set(allDays.map(d => toIsoString(d)))].filter(d => d <= todayStr).sort();
 
-        uniqueDays.forEach(dStr => {
+                uniqueDays.forEach(dStr => {
+            // FIX V18.5: Den simulierten "Morgen"-Tag rigoros aus allen Statistiken aussperren!
+            if (dStr > toIsoString(new Date())) return;
+
             let mKey = dStr.substring(0, 7); 
             if(!archiveMonths[mKey]) archiveMonths[mKey] = { tDays:0, aDays:0, mDays:0, erk:[], dtx:[] };
             
