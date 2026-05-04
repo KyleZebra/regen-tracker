@@ -309,16 +309,27 @@ function renderDashboard() {
             // Phase 3 & 4: Etabliertes Nirwana (Ab Tag X+1 abends und alle Folgetage)
             // Engmaschiges Netz nach Nutzerwunsch
             let miles = [7, 14, 21, 28, 30, 35, 42, 49, 56, 60, 63, 70, 77, 84, 90, 120, 150, 180, 210, 240, 270, 300, 330, 365, 730, 1095, 1460, 1825, 9999];
-            let nextM = miles.find(m => res.nirvanaStreak < m) || 9999;
             
-            // --- NEU: Farbevolution Logik ---
+            // FIX V18.7: Meilenstein-Erkennung am exakten Tag
+            let isMilestoneDay = miles.includes(res.nirvanaStreak) && res.nirvanaStreak > 0;
+            
+            let nextM = miles.find(m => res.nirvanaStreak < m) || 9999;
+            let prevM = [...miles].reverse().find(m => res.nirvanaStreak >= m) || 0;
+            
+            // Wenn heute der Meilenstein erreicht wurde, frieren wir das Ziel ein (Ring bleibt 100% voll)
+            if (isMilestoneDay) {
+                nextM = res.nirvanaStreak;
+                prevM = [...miles].reverse().find(m => m < res.nirvanaStreak) || 0;
+            }
+            
+            // --- Farbevolution Logik ---
             let nirvanaClass = 'nirvana';
             if (res.nirvanaStreak >= 365) nirvanaClass = 'nirvana-obsidian';
             else if (res.nirvanaStreak >= 90) nirvanaClass = 'nirvana-gold';
             else if (res.nirvanaStreak >= 30) nirvanaClass = 'nirvana-deep';
             
-            let prevM = [...miles].reverse().find(m => res.nirvanaStreak >= m) || 0;
             let nirvanaProgress = nextM !== 9999 ? ((res.nirvanaStreak - prevM) / (nextM - prevM)) * 100 : 100;
+            if (nirvanaProgress > 100) nirvanaProgress = 100;
             
             let s = res.nirvanaStreak;
             let mStr = "";
@@ -341,6 +352,26 @@ function renderDashboard() {
             } else { 
                 mStr = `${s} Tag${s!==1?'e':''}`; 
             }
+
+            // Automatisches Konfetti (Nur am Abend des erreichten Tages)
+            if (isMilestoneDay && !isSandbox && !ds.pendingNirvana) {
+                setTimeout(() => {
+                    const mKey = 'milestone_celebration_' + res.nirvanaStreak;
+                    if (!sessionStorage.getItem(mKey) && typeof confetti === 'function') {
+                        confetti({
+                            particleCount: 200,
+                            spread: 120,
+                            origin: { y: 0.4 },
+                            colors: ['#f1c40f', '#f39c12', '#2ecc71', '#3498db'],
+                            zIndex: 9999
+                        });
+                        sessionStorage.setItem(mKey, 'true');
+                    }
+                }, 400);
+            }
+            
+            let ringLabelText = isMilestoneDay ? "ERREICHT" : "ZUM ZIEL";
+            let nextGoalText = isMilestoneDay ? "🎉 Meilenstein erreicht!" : `Nächstes Ziel: ${nextM} Tage`;
             
             if (ds.pendingNirvana) {
                 // Phase 4: Morgen im Nirwana (Wartet auf Log)
@@ -349,11 +380,13 @@ function renderDashboard() {
                 if(ring) { 
                     ring.classList.add(nirvanaClass); 
                     ring.setAttribute('stroke-dasharray', `${nirvanaProgress}, 100`); 
+                    if(isMilestoneDay) ring.style.filter = "drop-shadow(0px 0px 8px rgba(241, 196, 15, 0.8))";
+                    else ring.style.filter = "none";
                 }
                 if(pTxt) pTxt.classList.add(nirvanaClass); 
                 safeText('dash-percent', Math.round(nirvanaProgress) + '%'); 
-                safeText('dash-ring-label', "ZUM ZIEL");
-                safeText('dash-days-left', `Nächstes Ziel: ${nextM} Tage`); 
+                safeText('dash-ring-label', ringLabelText);
+                safeText('dash-days-left', nextGoalText); 
                 safeText('dash-target-date', `Bisher: ${mStr}`);
                 safeText('dash-sub', "Bestätige den heutigen Tag als clean, um deine Streak zu erhöhen!"); 
                 safeDisplay('dash-streak', 'inline-block'); 
@@ -365,17 +398,19 @@ function renderDashboard() {
             } else {
                 // Phase 3: Abend im Nirwana (Geloggt)
                 safeProp('dash-status-badge', 'className', 'status-badge status-done'); 
-                safeText('dash-status-badge', "Nirwana Level-Up");
+                safeText('dash-status-badge', isMilestoneDay ? "Meilenstein!" : "Nirwana Level-Up");
                 if(ring) { 
                     ring.classList.add(nirvanaClass); 
                     ring.setAttribute('stroke-dasharray', `${nirvanaProgress}, 100`); 
+                    if(isMilestoneDay) ring.style.filter = "drop-shadow(0px 0px 8px rgba(241, 196, 15, 0.8))";
+                    else ring.style.filter = "none";
                 }
                 if(pTxt) pTxt.classList.add(nirvanaClass); 
                 safeText('dash-percent', Math.round(nirvanaProgress) + '%'); 
-                safeText('dash-ring-label', "ZUM ZIEL");
-                safeText('dash-days-left', `Nächstes Ziel: ${nextM} Tage`); 
+                safeText('dash-ring-label', ringLabelText);
+                safeText('dash-days-left', nextGoalText); 
                 safeText('dash-target-date', `Bisher: ${mStr}`);
-                safeText('dash-sub', isSandbox ? "Du bist in der Simulation clean." : "Regeneration abgeschlossen.");
+                safeText('dash-sub', isSandbox ? "Du bist in der Simulation clean." : (isMilestoneDay ? "Du hast ein großes Ziel erreicht. Genieße den Moment!" : "Regeneration abgeschlossen."));
                 safeDisplay('dash-streak', 'inline-block'); 
                 const sb = document.getElementById('dash-streak'); 
                 if(sb) { 
