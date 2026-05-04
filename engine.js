@@ -110,7 +110,9 @@ function simulateCycle(cycle) {
         let totalTDaysEver = baseT;
         let state = 'BEWAEHRUNG';
 
-        let currentBlockTargetBew = isBaseSmall ? (baseT * 2) : (baseT * 3);
+        // FIX V18.8: Nach der Basisphase GILT IMMER eine feste Bewährungszeit (3 Tage Standard, 2 Tage bei kleinen)
+        // Die Dauer der Basisphase (baseT) wird hierfür ignoriert!
+        let currentBlockTargetBew = isBaseSmall ? 2 : 3;
         let currentBlockServed = 0;
         let bewTimer = currentBlockTargetBew - currentBlockServed;
 
@@ -325,7 +327,8 @@ function simulateCycle(cycle) {
         }
 
         if (!dashState && cycle.status === 'active') {
-            let initialBewTimer = isBaseSmall ? (baseT * 2) : (baseT * 3);
+            // FIX V18.8: Anzeige auf dem Dashboard ebenfalls auf feste 3 (oder 2) Tage justieren
+            let initialBewTimer = isBaseSmall ? 2 : 3;
             dashState = { debt: initialDebtTotal, totalDebtEver: initialDebtTotal, state: 'BEWAEHRUNG', bewTimer: initialBewTimer, gotBonusToday: false, pendingBonus: false };
         }
 

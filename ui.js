@@ -380,8 +380,14 @@ function renderDashboard() {
                 if(ring) { 
                     ring.classList.add(nirvanaClass); 
                     ring.setAttribute('stroke-dasharray', `${nirvanaProgress}, 100`); 
-                    if(isMilestoneDay) ring.style.filter = "drop-shadow(0px 0px 8px rgba(241, 196, 15, 0.8))";
-                    else ring.style.filter = "none";
+                    ring.style.filter = "none"; // Alten, fehlerhaften Filter vom Kreis löschen
+                    
+                    // FIX V18.9: Den weichen Schatten auf das übergeordnete SVG anwenden, damit er nicht abgeschnitten wird!
+                    let svgParent = ring.closest('svg');
+                    if (svgParent) {
+                        if (isMilestoneDay) svgParent.style.filter = "drop-shadow(0px 0px 6px rgba(241, 196, 15, 0.9))";
+                        else svgParent.style.filter = "none";
+                    }
                 }
                 if(pTxt) pTxt.classList.add(nirvanaClass); 
                 safeText('dash-percent', Math.round(nirvanaProgress) + '%'); 
@@ -402,8 +408,14 @@ function renderDashboard() {
                 if(ring) { 
                     ring.classList.add(nirvanaClass); 
                     ring.setAttribute('stroke-dasharray', `${nirvanaProgress}, 100`); 
-                    if(isMilestoneDay) ring.style.filter = "drop-shadow(0px 0px 8px rgba(241, 196, 15, 0.8))";
-                    else ring.style.filter = "none";
+                    ring.style.filter = "none"; // Alten, fehlerhaften Filter vom Kreis löschen
+                    
+                    // FIX V18.9: Den weichen Schatten auf das übergeordnete SVG anwenden, damit er nicht abgeschnitten wird!
+                    let svgParent = ring.closest('svg');
+                    if (svgParent) {
+                        if (isMilestoneDay) svgParent.style.filter = "drop-shadow(0px 0px 6px rgba(241, 196, 15, 0.9))";
+                        else svgParent.style.filter = "none";
+                    }
                 }
                 if(pTxt) pTxt.classList.add(nirvanaClass); 
                 safeText('dash-percent', Math.round(nirvanaProgress) + '%'); 
