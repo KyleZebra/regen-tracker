@@ -535,7 +535,8 @@ function deleteEditDay() {
     closeModal('modal-edit-day'); 
 
     if (active.base && active.base.start === dStr && getApp().cycles.length > 1) {
-        let hasRealLogs = Object.keys(active.logs || {}).some(k => active.logs[k].type === 'pause' || active.logs[k].type === 'ausrutscher');
+        // FIX V18.10: Den aktuell zu löschenden Tag (dStr) aus der Prüfung ausschließen!
+        let hasRealLogs = Object.keys(active.logs || {}).some(k => k !== dStr && (active.logs[k].type === 'pause' || active.logs[k].type === 'ausrutscher'));
         if (!hasRealLogs) {
             customConfirm("Möchtest du diesen neu gestarteten Zyklus komplett löschen und deinen alten Zyklus aus dem Archiv zurückholen?", () => { 
                 const app = getApp();
