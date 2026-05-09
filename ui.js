@@ -1204,6 +1204,51 @@ function renderArchiv() {
     if (archived.length === 0) {
         archContainer.insertAdjacentHTML('beforeend', "<p style='color:#7f8c8d; text-align:center;'>Noch keine Zyklen abgeschlossen.</p>"); 
     } else {
+        // --- FIX V19.2: Dynamischer Balken-Graph für die letzten 10 Zyklen ---
+        let chartBars = [];
+        let maxRatio = 1; // Mindest-Skalierung, damit Balken nicht riesig werden
+        
+        // Letzte 10 Zyklen isolieren (chronologisch von alt nach neu für den Graphen)
+        archived.slice(-10).forEach(cycle => {
+            const res = globalSimResults.find(r => r && r.cycleId === cycle.id);
+            if (!res || res.failed) return;
+            
+            const smokedDays = res.history.t.length + res.history.a.length;
+            const cleanDays = res.history.b.length + res.history.r.length + res.history.n.length;
+            const ratio = smokedDays > 0 ? (cleanDays / smokedDays) : cleanDays;
+            
+            if (ratio > maxRatio) maxRatio = ratio; // Höchstwert für die Y-Achse finden
+            
+            // Sehr kurzes Datum für die X-Achse (z.B. "10.23" für Okt 2023)
+            let dateLabel = cycle.base?.start ? parseLocal(cycle.base.start).toLocaleDateString('de-DE', {month:'2-digit', year:'2-digit'}) : '?';
+            chartBars.push({ ratio, label: dateLabel });
+        });
+
+        if (chartBars.length > 0) {
+            let barsHtml = chartBars.map(b => {
+                let h = maxRatio > 0 ? (b.ratio / maxRatio) * 100 : 0;
+                let valStr = Number.isInteger(b.ratio) ? b.ratio : b.ratio.toFixed(1).replace('.', ',');
+                return `
+                <div style="display:flex; flex-direction:column; align-items:center; flex:1; margin:0 2px;">
+                    <div style="font-size:0.7rem; color:#7f8c8d; margin-bottom:6px; font-weight:800;">${valStr}</div>
+                    <div style="width:100%; max-width:24px; height:80px; background:#f4f6f7; border-radius:4px 4px 0 0; position:relative; display:flex; align-items:flex-end;">
+                        <div style="width:100%; height:${h}%; background:var(--btn-calc); border-radius:4px 4px 0 0; transition: height 0.5s ease-out; box-shadow: 0 0 5px rgba(39, 174, 96, 0.3);"></div>
+                    </div>
+                    <div style="font-size:0.6rem; color:#95a5a6; margin-top:8px;">${b.label}</div>
+                </div>`;
+            }).join('');
+
+            archContainer.insertAdjacentHTML('beforeend', `
+            <div class="archive-card" style="margin-bottom: 25px; padding-bottom: 15px; border-left: none; border-top: 4px solid var(--btn-calc);">
+                <div class="archive-title" style="margin-bottom: 15px; font-size: 0.95rem; color: #2c3e50; text-align: center;">📈 Verhältnis-Trend (Letzte ${chartBars.length} Zyklen)</div>
+                <div style="font-size:0.7rem; color:#7f8c8d; text-align:center; margin-bottom:15px;">Wert = Cleane Tage pro 1 Rauchtag (Höher ist besser)</div>
+                <div style="display:flex; align-items:flex-end; justify-content:space-around; height:120px;">
+                    ${barsHtml}
+                </div>
+            </div>`);
+        }
+        // --- Ende Graph ---
+
         [...archived].reverse().forEach(cycle => {
             const res = globalSimResults.find(r => r && r.cycleId === cycle.id); 
             
