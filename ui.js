@@ -1230,21 +1230,41 @@ function renderArchiv() {
             if(!cycle.base?.start) return; 
             
             const allArchDates = [...res.history.t, ...res.history.a, ...res.history.b, ...res.history.r, ...res.history.n];
+            
+            // --- Mathematische Aufbereitung der exakten Zyklus-Stats ---
+            const totalDays = allArchDates.length;
+            const smokedDays = res.history.t.length + res.history.a.length;
+            const cleanDays = res.history.b.length + res.history.r.length + res.history.n.length;
+            
+            const baseDebt = res.expectedBaseDebt || 0;
+            const surcharge = (res.totalDebtEver || 0) - baseDebt;
+            
+            const nirvanaDays = res.history.n.length;
+            const ratio = smokedDays > 0 ? (cleanDays / smokedDays).toFixed(1).replace('.', ',') : cleanDays;
+            
             const card = document.createElement('div'); 
             card.className = 'archive-card';
             card.innerHTML = `
                 <div class="archive-header">
                     <div class="archive-title">Zyklus: ${parseLocal(cycle.base.start).toLocaleDateString('de-DE', {day:'2-digit', month:'short', year:'numeric'})} – ${allArchDates.length>0 ? allArchDates[allArchDates.length-1].toLocaleDateString('de-DE', {day:'2-digit', month:'short'}) : "Unbekannt"}</div>
                     <div style="display:flex; align-items:center; gap:10px;">
-                        <div class="archive-badge">${allArchDates.length} Tage Total</div>
+                        <div class="archive-badge">${totalDays} Tage Total</div>
                         <button class="btn-tool" style="padding:4px 8px; border:1px solid var(--danger); color:var(--danger); min-width:auto;" onclick="if(typeof deleteArchivedCycle==='function')deleteArchivedCycle(${cycle.id})" title="Zyklus löschen">🗑️</button>
                     </div>
                 </div>
-                <div class="archive-stats">
-                    <div><strong>Start-Konsum:</strong> ${cycle.base.tDays} Tage</div>
-                    <div><strong>Rauchen in Phase:</strong> ${Object.values(cycle.logs || {}).filter(l=>l.type==='ausrutscher').length}</div>
-                    <div><strong>Regenerationsdauer:</strong> ${res.history.b.length + res.history.r.length} Tage</div>
-                    <div><strong>Nirwana-Streak danach:</strong> ${res.nirvanaStreak} Tage</div>
+                <div class="archive-stats" style="grid-template-columns: 1fr 1fr; gap: 8px; padding-top: 5px;">
+                    <div><strong>Dauer:</strong> ${totalDays} Tage</div>
+                    <div><strong>Nirwana:</strong> ${nirvanaDays} Tage</div>
+                    
+                    <div><strong>Geraucht:</strong> <span style="color:var(--danger); font-weight:bold;">${smokedDays} Tage</span></div>
+                    <div><strong>Clean:</strong> <span style="color:var(--btn-calc); font-weight:bold;">${cleanDays} Tage</span></div>
+                    
+                    <div><strong>Basis-Schuld:</strong> ${baseDebt} Tage</div>
+                    <div><strong>Aufschlag:</strong> <span style="color:var(--danger);">+${surcharge} Tage</span></div>
+                    
+                    <div style="grid-column: span 2; border-top: 1px solid rgba(0,0,0,0.1); padding-top: 8px; margin-top: 4px;">
+                        <strong>Verhältnis (Rauchen : Clean):</strong> 1 : ${ratio}
+                    </div>
                 </div>`;
             archContainer.appendChild(card);
         });
