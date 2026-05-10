@@ -609,3 +609,50 @@ function deleteEditDay() {
         customAlert("An diesem Tag gibt es keinen spezifischen Eintrag zum Löschen."); 
     }
 }
+
+// --- Archiv-Tagebuch Modal ---
+function openArchiveDiary() {
+    const app = getApp();
+    if (!app || !app.cycles) return;
+
+    let allNotes = [];
+
+    // Alle Logs mit einer Notiz aus allen Zyklen einsammeln
+    app.cycles.forEach(c => {
+        if (c.logs) {
+            Object.entries(c.logs).forEach(([date, log]) => {
+                if (log.note && log.note.trim().length > 0) {
+                    allNotes.push({ date, note: log.note, type: log.type, isSimulated: log.isSimulated });
+                }
+            });
+        }
+    });
+
+    // Chronologisch absteigend sortieren (neueste zuerst)
+    allNotes.sort((a, b) => b.date.localeCompare(a.date));
+
+    let html = "";
+    if (allNotes.length === 0) {
+        html = "<div style='text-align:center; padding:20px; color:#7f8c8d;'>Noch keine Tagebucheinträge vorhanden.</div>";
+    } else {
+        allNotes.forEach(item => {
+            const dObj = parseLocal(item.date);
+            const dStr = dObj ? dObj.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: 'long', year: 'numeric' }) : item.date;
+            
+            let bg = item.type === 'ausrutscher' ? '#fff5f5' : '#f0fdf4';
+            let border = item.type === 'ausrutscher' ? 'var(--danger)' : 'var(--btn-calc)';
+            let icon = item.type === 'ausrutscher' ? '🔴' : '🟢';
+            if (item.isSimulated) { bg = '#f5eef8'; border = '#9b59b6'; icon = '🔮'; }
+
+            html += `
+            <div style="background: ${bg}; border-left: 4px solid ${border}; padding: 12px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.05); border-left-width: 4px;">
+                <div style="font-size: 0.75rem; font-weight: 800; color: #7f8c8d; margin-bottom: 5px;">${icon} ${dStr}</div>
+                <div style="color: var(--text-main); font-size: 0.9rem; line-height: 1.4;">${escapeHTML(item.note)}</div>
+            </div>`;
+        });
+    }
+
+    safeHTML('archive-diary-list', html);
+    const m = document.getElementById('modal-archive-diary');
+    if (m) m.classList.add('active');
+}

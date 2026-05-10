@@ -27,40 +27,75 @@ function renderMemoryEcho() {
     const app = getApp();
     if (!app || !app.cycles) return;
 
-    let candidates = [];
+    let candAus = [];
+    let candPau = [];
+
     app.cycles.forEach(c => {
         if (c.logs) {
             Object.entries(c.logs).forEach(([date, log]) => {
-                // FIX: Nur Einträge vom Typ 'ausrutscher' (Rauchen) berücksichtigen
-                if (log.type === 'ausrutscher' && log.note && log.note.trim().length > 0) {
-                    candidates.push({ 
-                        date: date, 
-                        note: log.note, 
-                        type: log.type 
-                    });
+                if (log.note && log.note.trim().length > 0) {
+                    if (log.type === 'ausrutscher') candAus.push({ date, note: log.note, type: log.type });
+                    else if (log.type === 'pause') candPau.push({ date, note: log.note, type: log.type });
                 }
             });
         }
     });
 
-    if (candidates.length === 0) {
-        safeDisplay('arch-echo', 'none');
+    const echoContainer = document.getElementById('arch-echo');
+    if (!echoContainer) return;
+
+    if (candAus.length === 0 && candPau.length === 0) {
+        echoContainer.style.display = 'none';
         return;
     }
 
+    // Zufallsgenerator an den heutigen Tag koppeln
     const seed = new Date().toDateString();
     let hash = 0;
     for (let i = 0; i < seed.length; i++) {
         hash = ((hash << 5) - hash) + seed.charCodeAt(i);
         hash |= 0;
     }
-    const index = Math.abs(hash) % candidates.length;
-    const echo = candidates[index];
+    hash = Math.abs(hash);
 
-    const dObj = parseLocal(echo.date);
-    safeText('arch-echo-date', dObj ? dObj.toLocaleDateString('de-DE', { day: '2-digit', month: 'long', year: 'numeric' }) : echo.date);
-    safeText('arch-echo-text', `"${echo.note}"`);
-    safeDisplay('arch-echo', 'block');
+    let html = '<div class="outlook-title" style="color: #2c3e50; margin-bottom: 15px;">💭 Tägliches Erinnerungsecho</div>';
+    html += '<div style="display:flex; flex-direction:column; gap:10px; margin-bottom: 15px;">';
+
+    // Roter Kasten (Rauchen)
+    if (candAus.length > 0) {
+        const echoAus = candAus[hash % candAus.length];
+        const dObj = parseLocal(echoAus.date);
+        const dStr = dObj ? dObj.toLocaleDateString('de-DE', { day: '2-digit', month: 'long', year: 'numeric' }) : echoAus.date;
+        html += `
+        <div style="background: #fff5f5; border-left: 4px solid var(--danger); padding: 12px; border-radius: 8px;">
+            <div style="font-size: 0.75rem; font-weight: 800; color: var(--danger); margin-bottom: 5px;">🔴 RAUCHEN (${dStr})</div>
+            <div style="font-style: italic; color: var(--text-main); font-size: 0.9rem;">"${escapeHTML(echoAus.note)}"</div>
+        </div>`;
+    }
+
+    // Grüner Kasten (Pause)
+    if (candPau.length > 0) {
+        const echoPau = candPau[(hash + 1) % candPau.length]; // +1 für andere Verschiebung
+        const dObj = parseLocal(echoPau.date);
+        const dStr = dObj ? dObj.toLocaleDateString('de-DE', { day: '2-digit', month: 'long', year: 'numeric' }) : echoPau.date;
+        html += `
+        <div style="background: #f0fdf4; border-left: 4px solid var(--btn-calc); padding: 12px; border-radius: 8px;">
+            <div style="font-size: 0.75rem; font-weight: 800; color: var(--btn-calc); margin-bottom: 5px;">🟢 PAUSE (${dStr})</div>
+            <div style="font-style: italic; color: var(--text-main); font-size: 0.9rem;">"${escapeHTML(echoPau.note)}"</div>
+        </div>`;
+    }
+
+    html += '</div>';
+    html += `<button class="btn-tool" style="width:100%; border: 1px solid #bdc3c7; background: #fdfdfd; font-weight: bold;" onclick="if(typeof openArchiveDiary==='function') openArchiveDiary()">📚 Gesamtes Tagebuch lesen</button>`;
+
+    // Neutrales Styling für die Box selbst
+    echoContainer.style.background = '#fcfcfc';
+    echoContainer.style.borderLeft = 'none';
+    echoContainer.style.padding = '15px';
+    echoContainer.style.border = '1px solid #e0e0e0';
+
+    echoContainer.innerHTML = html;
+    echoContainer.style.display = 'block';
 }
 
 function toggleDiary() { 

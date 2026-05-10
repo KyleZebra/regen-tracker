@@ -307,11 +307,7 @@
         </div>
     </div>
 
-    <div id="arch-echo" class="outlook-box" style="display:none; background: #fff5f5; border-left: 4px solid var(--danger); border-style: solid; margin-top: 2rem;">
-        <div class="outlook-title" style="color: var(--danger);">💭 Erinnerungsecho (Rauchtage)</div>
-        <div id="arch-echo-date" style="font-size: 0.75rem; font-weight: 800; color: #95a5a6; margin-bottom: 5px;"></div>
-        <div id="arch-echo-text" style="font-style: italic; color: var(--text-main); font-size: 0.9rem; line-height: 1.4;"></div>
-    </div>
+    <div id="arch-echo" class="outlook-box" style="display:none; margin-top: 2rem;"></div>
 
     <h3 style="margin-left:5px; color:#7f8c8d;">Abgeschlossene Zyklen</h3>
     <div id="archive-container"></div>
@@ -625,6 +621,20 @@
       <div class="modal-actions-row" style="margin-top: 20px;">
         <button class="btn-tool" onclick="closeModal('modal-historical')">Abbrechen</button>
         <button class="btn-quick" style="background:#8e44ad;" onclick="saveHistorical()">Speichern</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal-archive-diary" class="modal-overlay">
+    <div class="modal-card" style="max-width: 600px;">
+      <h3 style="color:#2c3e50; margin-bottom: 5px;">📚 Gesamtes Tagebuch</h3>
+      <p style="font-size:0.85rem; color:#666; margin-bottom: 15px;">Hier findest du alle deine Notizen aus vergangenen und aktuellen Zyklen.</p>
+      
+      <div id="archive-diary-list" style="max-height: 55vh; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-right: 5px;">
+          </div>
+      
+      <div class="modal-actions-row" style="margin-top: 20px;">
+          <button class="btn-tool" style="width:100%;" onclick="closeModal('modal-archive-diary')">Schließen</button>
       </div>
     </div>
   </div>
