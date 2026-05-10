@@ -364,8 +364,14 @@ function submitAusrutscher() {
             active.base.sLevel = Math.max(active.base.sLevel || 0, s); 
             active.base.aLevel = Math.max(active.base.aLevel || 0, a); 
             active.base.mLevel = Math.max(active.base.mLevel || 0, m); 
+
+            // FIX V19.3: Log explizit anlegen, damit es im Tagebuch erscheint!
+            if (!active.logs) active.logs = {};
+            active.logs[dStr] = { type: 'ausrutscher', t: t, isSmall: isSmall, s: s, a: a, m: m, mood: mood, note: note };
+            
             closeModal('modal-ausrutscher'); 
             saveData(); 
+            if(typeof updateUI === 'function') updateUI(); // FIX V19.3: UI sofort aktualisieren
             return; 
         } else if (dStr > expectedNext) {
             active.base.isOpen = false; 
@@ -377,6 +383,7 @@ function submitAusrutscher() {
     
     closeModal('modal-ausrutscher'); 
     saveData();
+    if(typeof updateUI === 'function') updateUI(); // FIX V19.3: UI sofort aktualisieren
 }
 
 // --- Simulator Modals ---
@@ -547,15 +554,37 @@ function deleteEditDay() {
                 if (dStr === toIsoString(new Date())) sessionStorage.removeItem('bonusShown_' + dStr);
                 
                 saveData(); 
-                if(document.getElementById('diary-container')?.style.display === 'block' && typeof renderDiaryList === 'function') {
-                    renderDiaryList();
-                }
+                if(typeof updateUI === 'function') updateUI(); // Komplettes UI Refresh!
             }); 
             return;
         } else { 
             customAlert("Dieser Zyklus hat bereits weitere Einträge. Du kannst das Startdatum nicht löschen. Ändere stattdessen die Start-Parameter im 'Aktuell'-Tab."); 
             return; 
         }
+    }
+    
+    // FIX V19.3: Wenn man den letzten Tag einer noch offenen Basisphase löscht, muss diese wieder verkürzt werden!
+    if (active.base && active.base.isOpen && dStr === active.base.end && dStr !== active.base.start) {
+        customConfirm("Möchtest du diesen Tag aus der laufenden Basisphase entfernen?", () => {
+            let t = 1;
+            if (active.logs && active.logs[dStr] && active.logs[dStr].t) t = active.logs[dStr].t;
+            
+            // Basisphase mathematisch schrumpfen
+            active.base.end = toIsoString(addDays(parseLocal(dStr), -1)); 
+            active.base.tDays = Math.max(1, active.base.tDays - t);
+            
+            if (active.logs && active.logs[dStr]) delete active.logs[dStr];
+            if (dStr === toIsoString(new Date())) sessionStorage.removeItem('bonusShown_' + dStr);
+            
+            saveData();
+            if(typeof updateUI === 'function') updateUI(); // Komplettes UI Refresh!
+        });
+        return;
+    }
+
+    // Sicherheit: Verhindern, dass man Tage "mitten" in der Basisphase zerlöchert
+    if (active.base && dStr > active.base.start && dStr < active.base.end) {
+        return customAlert("Dieser Tag liegt mitten in der Basisphase. Du kannst nur das Startdatum (ganzer Zyklus) oder den zuletzt geloggten Tag löschen.");
     }
     
     if (active.logs && active.logs[dStr]) { 
@@ -565,9 +594,7 @@ function deleteEditDay() {
             if (dStr === toIsoString(new Date())) sessionStorage.removeItem('bonusShown_' + dStr);
             
             saveData(); 
-            if(document.getElementById('diary-container')?.style.display === 'block' && typeof renderDiaryList === 'function') {
-                renderDiaryList();
-            }
+            if(typeof updateUI === 'function') updateUI(); // Komplettes UI Refresh!
         });
     } else { 
         customAlert("An diesem Tag gibt es keinen spezifischen Eintrag zum Löschen."); 
