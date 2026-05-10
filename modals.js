@@ -591,6 +591,15 @@ function deleteEditDay() {
         customConfirm("Eintrag unwiderruflich löschen?", () => { 
             delete active.logs[dStr]; 
             
+            // FIX V19.4: Basisphase wieder öffnen, wenn das Löschen dieses Tags bedeutet, 
+            // dass nach dem Ende der Basisphase keine weiteren Einträge mehr existieren.
+            if (active.base && active.base.start && !active.base.isOpen && dStr > active.base.end) {
+                let hasLogsAfterBase = Object.keys(active.logs).some(k => k > active.base.end);
+                if (!hasLogsAfterBase) {
+                    active.base.isOpen = true; // Riegel wieder auffahren!
+                }
+            }
+            
             if (dStr === toIsoString(new Date())) sessionStorage.removeItem('bonusShown_' + dStr);
             
             saveData(); 
