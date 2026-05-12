@@ -8,6 +8,8 @@ function closeModal(id) {
     const m = document.getElementById(id);
     if (m) {
         m.classList.remove('active'); 
+        // FIX V19.8: Scroll-Sperre aufheben
+        document.body.classList.remove('modal-open');
     }
 }
 
@@ -610,10 +612,11 @@ function deleteEditDay() {
     }
 }
 
-// --- Archiv-Tagebuch Modal (V19.7: Scroll- & Design-Fix) ---
 function openArchiveDiary() {
     const app = getApp();
     if (!app || !app.cycles) return;
+
+    document.body.classList.add('modal-open'); // FIX V19.8: Hintergrund sperren
 
     let allNotes = [];
     app.cycles.forEach(c => {
@@ -642,7 +645,6 @@ function openArchiveDiary() {
         grouped[mKey].items.push(note);
     });
 
-    const todayKey = toIsoString(new Date()).substring(0, 7);
     const keys = Object.keys(grouped).sort().reverse();
     let html = "";
 
@@ -651,34 +653,30 @@ function openArchiveDiary() {
     } else {
         keys.forEach(mKey => {
             const group = grouped[mKey];
-            const isOpen = (mKey === todayKey) ? 'open' : '';
             
-            // Design-Optimierung: Kräftigere Header für bessere Sichtbarkeit
+            // NEU: Wir verzichten auf <details>, da Sticky-Header in Listen für mobile Geräte besser scrollen
             html += `
-            <details class="diary-month-group" ${isOpen} style="margin-bottom:8px; border: 1px solid #e0e0e0; border-radius:10px; background:#fff; overflow:hidden;">
-                <summary style="background: #f8f9fa; padding: 14px; cursor: pointer; font-weight: 800; color: #2c3e50; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; outline: none; list-style: none;">
-                    <span>📅 ${group.title}</span>
-                    <span style="font-size: 0.7rem; background: var(--header-bg); color: var(--header-text); padding: 2px 10px; border-radius: 12px;">${group.items.length} Notizen</span>
-                </summary>
-                <div style="padding: 10px; display: flex; flex-direction: column; gap: 10px; background: #fff;">`;
+            <div class="sticky-month-header" style="padding: 10px 15px; font-weight: 800; color: #2c3e50; font-size: 0.9rem; display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+                <span>📅 ${group.title}</span>
+                <span style="font-size: 0.7rem; background: var(--header-bg); padding: 2px 8px; border-radius: 8px;">${group.items.length}</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 10px; padding: 10px 0;">`;
             
             group.items.forEach(item => {
                 const dObj = parseLocal(item.date);
                 const dStr = dObj ? dObj.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: 'long', year: 'numeric' }) : item.date;
-                
                 let bg = item.type === 'ausrutscher' ? '#fff5f5' : '#f0fdf4';
                 let border = item.type === 'ausrutscher' ? 'var(--danger)' : 'var(--btn-calc)';
                 let icon = item.type === 'ausrutscher' ? '🔴' : '🟢';
                 if (item.isSimulated) { bg = '#f5eef8'; border = '#9b59b6'; icon = '🔮'; }
 
                 html += `
-                <div style="background: ${bg}; border-left: 4px solid ${border}; padding: 12px; border-radius: 8px; border-top: 1px solid rgba(0,0,0,0.03); border-right: 1px solid rgba(0,0,0,0.03); border-bottom: 1px solid rgba(0,0,0,0.03);">
+                <div style="background: ${bg}; border-left: 4px solid ${border}; padding: 12px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.05);">
                     <div style="font-size: 0.75rem; font-weight: 800; color: #7f8c8d; margin-bottom: 5px;">${icon} ${dStr}</div>
                     <div style="color: var(--text-main); font-size: 0.9rem; line-height: 1.5; white-space: pre-wrap;">${escapeHTML(item.note)}</div>
                 </div>`;
             });
-            
-            html += `</div></details>`;
+            html += `</div>`;
         });
     }
 

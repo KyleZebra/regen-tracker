@@ -284,3 +284,18 @@ td.active-month .date-num { color: var(--text-main); }
 .br-text { position: relative; z-index: 2; font-size: 1.5rem; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
 .br-timer { font-size: 1.2rem; font-weight: bold; opacity: 0.5; font-variant-numeric: tabular-nums; }
 .br-done-msg { display: none; text-align: center; animation: fadeIn 0.5s; }
+
+/* FIX V19.8: Verhindert das Scrollen des Hintergrunds */
+body.modal-open {
+    overflow: hidden !important;
+    height: 100vh;
+}
+
+/* FIX V19.8: Macht die Monatsnamen im Tagebuch-Archiv beim Scrollen sichtbar */
+.sticky-month-header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: #f8f9fa;
+    border-bottom: 2px solid var(--header-bg);
+}
