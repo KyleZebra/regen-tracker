@@ -610,14 +610,12 @@ function deleteEditDay() {
     }
 }
 
-// --- Archiv-Tagebuch Modal (V19.6: Mit Monats-Gruppierung) ---
+// --- Archiv-Tagebuch Modal (V19.7: Scroll- & Design-Fix) ---
 function openArchiveDiary() {
     const app = getApp();
     if (!app || !app.cycles) return;
 
     let allNotes = [];
-
-    // 1. Alle Notizen einsammeln
     app.cycles.forEach(c => {
         if (c.logs) {
             Object.entries(c.logs).forEach(([date, log]) => {
@@ -628,15 +626,13 @@ function openArchiveDiary() {
         }
     });
 
-    // 2. Chronologisch absteigend sortieren
     allNotes.sort((a, b) => b.date.localeCompare(a.date));
 
-    // 3. Nach Monaten gruppieren
     let grouped = {};
     allNotes.forEach(note => {
         const dObj = parseLocal(note.date);
         if(!dObj) return;
-        const mKey = note.date.substring(0, 7); // Format: YYYY-MM
+        const mKey = note.date.substring(0, 7); 
         if(!grouped[mKey]) {
             grouped[mKey] = {
                 title: dObj.toLocaleDateString('de-DE', { month: 'long', year: 'numeric' }),
@@ -655,16 +651,16 @@ function openArchiveDiary() {
     } else {
         keys.forEach(mKey => {
             const group = grouped[mKey];
-            // FIX V19.6: Aktueller Monat ist standardmäßig offen
             const isOpen = (mKey === todayKey) ? 'open' : '';
             
+            // Design-Optimierung: Kräftigere Header für bessere Sichtbarkeit
             html += `
-            <details class="diary-month-group" ${isOpen} style="margin-bottom:10px; border: 1px solid rgba(0,0,0,0.05); border-radius:12px; overflow:hidden;">
-                <summary class="diary-month-title" style="background:rgba(0,0,0,0.03); padding:12px; cursor:pointer; font-weight:bold; list-style:none; display:flex; justify-content:space-between; align-items:center;">
+            <details class="diary-month-group" ${isOpen} style="margin-bottom:8px; border: 1px solid #e0e0e0; border-radius:10px; background:#fff; overflow:hidden;">
+                <summary style="background: #f8f9fa; padding: 14px; cursor: pointer; font-weight: 800; color: #2c3e50; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; outline: none; list-style: none;">
                     <span>📅 ${group.title}</span>
-                    <span style="font-size:0.75rem; opacity:0.6; background:#fff; padding:2px 8px; border-radius:10px; border:1px solid #eee;">${group.items.length}</span>
+                    <span style="font-size: 0.7rem; background: var(--header-bg); color: var(--header-text); padding: 2px 10px; border-radius: 12px;">${group.items.length} Notizen</span>
                 </summary>
-                <div style="padding: 12px; display: flex; flex-direction: column; gap: 10px; background:#fff;">`;
+                <div style="padding: 10px; display: flex; flex-direction: column; gap: 10px; background: #fff;">`;
             
             group.items.forEach(item => {
                 const dObj = parseLocal(item.date);
@@ -676,9 +672,9 @@ function openArchiveDiary() {
                 if (item.isSimulated) { bg = '#f5eef8'; border = '#9b59b6'; icon = '🔮'; }
 
                 html += `
-                <div style="background: ${bg}; border-left: 4px solid ${border}; padding: 12px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.05); border-left-width: 4px;">
+                <div style="background: ${bg}; border-left: 4px solid ${border}; padding: 12px; border-radius: 8px; border-top: 1px solid rgba(0,0,0,0.03); border-right: 1px solid rgba(0,0,0,0.03); border-bottom: 1px solid rgba(0,0,0,0.03);">
                     <div style="font-size: 0.75rem; font-weight: 800; color: #7f8c8d; margin-bottom: 5px;">${icon} ${dStr}</div>
-                    <div style="color: var(--text-main); font-size: 0.9rem; line-height: 1.4;">${escapeHTML(item.note)}</div>
+                    <div style="color: var(--text-main); font-size: 0.9rem; line-height: 1.5; white-space: pre-wrap;">${escapeHTML(item.note)}</div>
                 </div>`;
             });
             

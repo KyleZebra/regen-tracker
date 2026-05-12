@@ -626,16 +626,12 @@
   </div>
 
   <div id="modal-archive-diary" class="modal-overlay">
-    <div class="modal-card" style="max-width: 600px;">
+    <div class="modal-card" style="max-width: 600px; max-height: 85vh; display: flex; flex-direction: column;">
       <h3 style="color:#2c3e50; margin-bottom: 5px;">📚 Gesamtes Tagebuch</h3>
       <p style="font-size:0.85rem; color:#666; margin-bottom: 15px;">Hier findest du alle deine Notizen aus vergangenen und aktuellen Zyklen.</p>
       
-      <div id="archive-diary-list" style="max-height: 55vh; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-right: 5px;">
+      <div id="archive-diary-list" style="overflow-y: auto; flex-grow: 1; display: flex; flex-direction: column; gap: 12px; padding-right: 8px; margin-bottom: 10px;">
           </div>
-      
-      <div class="modal-actions-row" style="margin-top: 20px;">
-          <button class="btn-tool" style="width:100%;" onclick="closeModal('modal-archive-diary')">Schließen</button>
-      </div>
     </div>
   </div>
 
