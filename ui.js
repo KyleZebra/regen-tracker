@@ -204,19 +204,40 @@ function saveBase(force = false) {
     if (force) saveData();
 }
 
-function saveMonthlyNotes(mKey, btn) {
+function populateMonthlyNote() {
     const active = getActiveCycle();
-    if(!active) return;
-    if(!active.monthlyNotes) active.monthlyNotes = {};
+    if (!active) return;
+    const today = new Date();
+    const mKey = toIsoString(today).substring(0, 7);
+    const monthName = today.toLocaleDateString('de-DE', { month: 'long', year: 'numeric' });
     
-    const erkVal = (safeVal(`note-erk-${mKey}`) || "").trim();
-    const dtxVal = (safeVal(`note-dtx-${mKey}`) || "").trim();
+    safeHTML('monthly-notes-title', `📝 Gedanken zum Monat: ${monthName}`);
     
-    active.monthlyNotes[mKey] = { erk: erkVal, dtx: dtxVal };
+    if (active.monthlyNotes && active.monthlyNotes[mKey]) {
+        // Fallback auf alte "erk"-Daten, falls vorhanden, für einen nahtlosen Übergang
+        const val = active.monthlyNotes[mKey].note !== undefined ? active.monthlyNotes[mKey].note : (active.monthlyNotes[mKey].erk || "");
+        safeSetVal('current-month-note', val);
+    } else {
+        safeSetVal('current-month-note', "");
+    }
+}
+
+function saveCurrentMonthlyNote(btn) {
+    const active = getActiveCycle();
+    if (!active) return;
+    if (!active.monthlyNotes) active.monthlyNotes = {};
+    
+    const today = new Date();
+    const mKey = toIsoString(today).substring(0, 7);
+    const noteVal = (safeVal('current-month-note') || "").trim();
+    
+    if (!active.monthlyNotes[mKey]) active.monthlyNotes[mKey] = {};
+    active.monthlyNotes[mKey].note = noteVal;
+    
     saveData(true); 
     
-    if(btn && btn.nextElementSibling) {
-        const msg = btn.nextElementSibling;
+    const msg = document.getElementById('monthly-note-saved-msg');
+    if (msg) {
         msg.style.display = 'inline-block';
         setTimeout(() => msg.style.display = 'none', 2000);
     }
@@ -229,8 +250,12 @@ function updateUI() {
     safeDisplay('dashboard-main', active ? 'block' : 'none');
     safeDisplay('setup-warning', active ? 'none' : 'block');
     
+    // FIX V19.10: Notiz-Feld im Aktuell-Tab verstecken, wenn kein Zyklus aktiv ist
+    safeDisplay('monthly-notes-card', active ? 'block' : 'none');
+    
     if (active) { 
         populateBaseForm(); 
+        if (typeof populateMonthlyNote === 'function') populateMonthlyNote(); // FIX V19.9: Befüllt das Notizfeld
         try { if(typeof renderDashboard === 'function') renderDashboard(); } catch(e) { console.error("Render Dashboard Error", e); }
         try { if(typeof renderHistorie === 'function') renderHistorie(); } catch(e) { console.error("Render Historie Error", e); }
     }
@@ -926,19 +951,8 @@ function renderDiaryList() {
                 html += `<div class="diary-item" style="${item.isImplicit && item.breatheCount === 0 ? 'opacity: 0.7;' : ''}">
                     <div style="flex:1;"><div class="diary-date">${item.formattedDate}</div>${badge}<div class="diary-meta">${meta}</div>${basePenalty}${penaltyStr}${bonusStr}${noteStr}</div><button class="diary-edit-btn" onclick="if(typeof openDiaryEdit==='function')openDiaryEdit('${item.dStr}')">Edit</button></div>`;
             });
-            
-            let activeNotes = (active.monthlyNotes || {})[mKey] || {erk: '', dtx: ''};
-            html += `<div style="margin-top:15px; padding-top:15px; border-top:2px dashed #eee;">
-                  <label>💡 Erkenntnisse in diesem Monat:</label>
-                  <textarea id="note-erk-${mKey}" rows="3" placeholder="Deine Erkenntnisse...">${escapeHTML(activeNotes.erk)}</textarea>
-                  <label style="margin-top:10px;">🌿 Gedanken zur Entgiftung (DTX):</label>
-                  <textarea id="note-dtx-${mKey}" rows="3" placeholder="Deine DTX-Gedanken...">${escapeHTML(activeNotes.dtx)}</textarea>
-                  <div style="display:flex; align-items:center; gap:10px; margin-top:10px;">
-                      <button class="btn-tool" style="padding:8px 15px; min-width:auto;" onclick="if(typeof saveMonthlyNotes==='function')saveMonthlyNotes('${mKey}', this)">💾 Speichern</button>
-                      <span style="display:none; color:#27ae60; font-weight:bold; font-size:0.85rem;">✅ Gespeichert</span>
-                  </div>
-            </div>`;
-            
+                        
+            // FIX V19.9: Alte In-Modal Textfelder entfernt
             html += `</div></details>`; 
             isFirst = false;
         }
@@ -995,7 +1009,7 @@ function renderArchiv() {
             if (dStr > todayStr) return;
 
             let mKey = dStr.substring(0, 7); 
-            if(!archiveMonths[mKey]) archiveMonths[mKey] = { tDays:0, aDays:0, mDays:0, erk:[], dtx:[] };
+            if(!archiveMonths[mKey]) archiveMonths[mKey] = { tDays:0, aDays:0, mDays:0, erk:[], dtx:[], note:[] };
             
             let isBase = (cycle.base?.start && dStr >= cycle.base.start && dStr <= cycle.base.end);
             let log = (cycle.logs || {})[dStr] || {};
@@ -1052,9 +1066,10 @@ function renderArchiv() {
 
         if(cycle.monthlyNotes) {
             Object.keys(cycle.monthlyNotes).forEach(mKey => { 
-                if(!archiveMonths[mKey]) archiveMonths[mKey] = { tDays:0, aDays:0, mDays:0, erk:[], dtx:[] }; 
+                if(!archiveMonths[mKey]) archiveMonths[mKey] = { tDays:0, aDays:0, mDays:0, erk:[], dtx:[], note:[] }; 
                 if(cycle.monthlyNotes[mKey].erk) archiveMonths[mKey].erk.push(cycle.monthlyNotes[mKey].erk); 
                 if(cycle.monthlyNotes[mKey].dtx) archiveMonths[mKey].dtx.push(cycle.monthlyNotes[mKey].dtx); 
+                if(cycle.monthlyNotes[mKey].note) archiveMonths[mKey].note.push(cycle.monthlyNotes[mKey].note); 
             });
         }
         
@@ -1362,11 +1377,16 @@ function renderArchiv() {
             let daysInMonth = new Date(parts[0], parts[1], 0).getDate();
             let textsHtml = '';
             
-            if(data.erk.length > 0) {
-                textsHtml += `<div style="margin-top:10px; font-size:0.85rem;"><strong>💡 Erkenntnisse:</strong><br><div style="color:#555; font-style:italic; padding-left:10px; border-left:2px solid #f1c40f; margin-top:5px;">${data.erk.join('<hr style="margin:8px 0; border:0; border-top:1px dashed #eee;">')}</div></div>`;
+            // FIX V19.9: Kombinierter Output für neue Notizen (mit Absatz-Erhalt durch pre-wrap)
+            if(data.note && data.note.length > 0) {
+                textsHtml += `<div style="margin-top:15px; font-size:0.85rem;"><strong>📝 Gedanken zum Monat:</strong><br><div style="color:#2c3e50; padding:10px; background:#f4f6f7; border-radius:8px; margin-top:5px; white-space:pre-wrap; line-height:1.5;">${data.note.join('\n\n---\n\n')}</div></div>`;
             }
-            if(data.dtx.length > 0) {
-                textsHtml += `<div style="margin-top:10px; font-size:0.85rem;"><strong>🌿 DTX-Gedanken:</strong><br><div style="color:#555; font-style:italic; padding-left:10px; border-left:2px solid #27ae60; margin-top:5px;">${data.dtx.join('<hr style="margin:8px 0; border:0; border-top:1px dashed #eee;">')}</div></div>`;
+            // Legacy Support für alte Einträge
+            if(data.erk && data.erk.length > 0) {
+                textsHtml += `<div style="margin-top:10px; font-size:0.85rem;"><strong>💡 Erkenntnisse (Alt):</strong><br><div style="color:#555; font-style:italic; padding-left:10px; border-left:2px solid #f1c40f; margin-top:5px; white-space:pre-wrap;">${data.erk.join('\n\n---\n\n')}</div></div>`;
+            }
+            if(data.dtx && data.dtx.length > 0) {
+                textsHtml += `<div style="margin-top:10px; font-size:0.85rem;"><strong>🌿 DTX-Gedanken (Alt):</strong><br><div style="color:#555; font-style:italic; padding-left:10px; border-left:2px solid #27ae60; margin-top:5px; white-space:pre-wrap;">${data.dtx.join('\n\n---\n\n')}</div></div>`;
             }
             
             // NEU: Die umgedrehte Mathematik (100 - X) für die Füllung der Balken
