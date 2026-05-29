@@ -1391,32 +1391,40 @@ function renderArchiv() {
             
             // NEU: Die umgedrehte Mathematik (100 - X) für die Füllung der Balken
             // T-Tage ist jetzt Grün (#27ae60), je mehr cleane Tage, desto voller.
+            
+            let hasNotes = textsHtml.trim() !== '';
+            
             archMonthsHtml += `
-            <div class="archive-card" style="border-left-color: #8e44ad; background: #fff;">
-                <div class="archive-header" style="border-bottom:none; margin-bottom:0;">
-                    <div class="archive-title" style="color:#8e44ad;">${monthNames[parseInt(parts[1])-1]} ${parts[0]}</div>
-                </div>
-                <div class="archive-stats" style="grid-template-columns: 1fr 1fr 1fr; background:#fdfafb; padding:10px; border-radius:8px; margin-top:10px;">
-                    <div>
-                        <strong style="color:var(--danger);">🔴 ${data.tDays}</strong> T-Tage
-                        <div style="height:4px; background:#eee; border-radius:2px; margin-top:4px;" title="Clean-Quote">
-                            <div style="width:${Math.max(0, 100 - (data.tDays / daysInMonth) * 100)}%; height:100%; background:#27ae60; border-radius:2px;"></div>
+            <div class="archive-card" style="border-left-color: #8e44ad; background: #fff; padding: 0;">
+                <details style="width: 100%;">
+                    <summary style="padding: 15px; cursor: ${hasNotes ? 'pointer' : 'default'}; list-style: none; outline: none;" ${!hasNotes ? 'onclick="return false;"' : ''}>
+                        <div class="archive-header" style="border-bottom:none; margin-bottom:0; display:flex; justify-content:space-between; align-items:center; width:100%;">
+                            <div class="archive-title" style="color:#8e44ad;">${monthNames[parseInt(parts[1])-1]} ${parts[0]}</div>
+                            ${hasNotes ? '<span style="font-size: 0.75rem; background: #f4f6f7; padding: 4px 10px; border-radius: 12px; color: #7f8c8d; border: 1px solid #eee; font-weight:bold;">Notizen 🔽</span>' : ''}
                         </div>
-                    </div>
-                    <div>
-                        <strong>🍷 ${data.aDays}</strong> Alk.-Tage
-                        <div style="height:4px; background:#eee; border-radius:2px; margin-top:4px;" title="Alkfrei-Quote">
-                            <div style="width:${Math.max(0, 100 - (data.aDays / daysInMonth) * 100)}%; height:100%; background:#8e44ad; border-radius:2px;"></div>
+                        <div class="archive-stats" style="grid-template-columns: 1fr 1fr 1fr; background:#fdfafb; padding:10px; border-radius:8px; margin-top:10px;">
+                            <div>
+                                <strong style="color:var(--danger);">🔴 ${data.tDays}</strong> T-Tage
+                                <div style="height:4px; background:#eee; border-radius:2px; margin-top:4px;" title="Clean-Quote">
+                                    <div style="width:${Math.max(0, 100 - (data.tDays / daysInMonth) * 100)}%; height:100%; background:#27ae60; border-radius:2px;"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <strong>🍷 ${data.aDays}</strong> Alk.-Tage
+                                <div style="height:4px; background:#eee; border-radius:2px; margin-top:4px;" title="Alkfrei-Quote">
+                                    <div style="width:${Math.max(0, 100 - (data.aDays / daysInMonth) * 100)}%; height:100%; background:#8e44ad; border-radius:2px;"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <strong>✊ ${data.mDays}</strong> M-Tage
+                                <div style="height:4px; background:#eee; border-radius:2px; margin-top:4px;" title="M-frei-Quote">
+                                    <div style="width:${Math.max(0, 100 - (data.mDays / daysInMonth) * 100)}%; height:100%; background:#f39c12; border-radius:2px;"></div>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                    <div>
-                        <strong>✊ ${data.mDays}</strong> M-Tage
-                        <div style="height:4px; background:#eee; border-radius:2px; margin-top:4px;" title="M-frei-Quote">
-                            <div style="width:${Math.max(0, 100 - (data.mDays / daysInMonth) * 100)}%; height:100%; background:#f39c12; border-radius:2px;"></div>
-                        </div>
-                    </div>
-                </div>
-                ${textsHtml}
+                    </summary>
+                    ${hasNotes ? `<div style="padding: 0 15px 15px 15px; border-top: 1px dashed #eee;">${textsHtml}</div>` : ''}
+                </details>
             </div>`;
         });
     }
