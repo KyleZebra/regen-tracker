@@ -243,6 +243,18 @@ function saveCurrentMonthlyNote(btn) {
     }
 }
 
+function saveManualSurcharge() {
+    const active = getActiveCycle();
+    if (!active) return;
+    
+    let val = parseInt(safeVal('manual-surcharge-input')) || 0;
+    if (val < 0) val = 0; // FIX V20.1: Sperre für negative Werte
+    
+    active.manualSurcharge = val;
+    saveData(true);
+    if(typeof updateUI === 'function') updateUI();
+}
+
 // --- Main Update Entry ---
 function updateUI() {
     safeText('app-version-display', APP_VERSION); // Schreibt die Version ins HTML-Span
@@ -680,15 +692,31 @@ function renderHistorie() {
     const totalT = res.totalTDaysEver || 0; 
     const totalRegenDebt = res.totalDebtEver || 0; 
     const expectedBaseDebt = res.expectedBaseDebt || 0;
-    const aufschlag = totalRegenDebt - expectedBaseDebt;
+    const manualS = res.manualSurcharge || 0;
+    const systemAufschlag = totalRegenDebt - expectedBaseDebt - manualS;
     
+    // FIX V20.1: Aufsplittung der Bilanz in 5 Felder (Gesamtschuld spannt über 2 Spalten)
     let html = `
     <div style="margin-top:0.5rem; font-weight:bold; color:#2c3e50; margin-bottom: 10px;">📊 Gesamtbilanz dieses Zyklus</div>
-    <div class="stat-grid" style="margin-bottom: 1rem;">
+    <div class="stat-grid" style="margin-bottom: 1rem; grid-template-columns: 1fr 1fr;">
         <div class="stat-box" style="padding: 10px;"><div class="stat-val" style="font-size: 1.4rem;">${totalT}</div><div class="stat-label" style="font-size: 0.65rem;">T-Tage</div></div>
         <div class="stat-box" style="padding: 10px;"><div class="stat-val" style="font-size: 1.4rem;">${expectedBaseDebt}</div><div class="stat-label" style="font-size: 0.65rem;">Basis Schuld</div></div>
-        <div class="stat-box" style="padding: 10px;"><div class="stat-val danger" style="font-size: 1.4rem; color: var(--danger);">+${aufschlag}</div><div class="stat-label" style="font-size: 0.65rem;">Aufschlag</div></div>
-        <div class="stat-box" style="padding: 10px;"><div class="stat-val blue" style="font-size: 1.4rem; color: var(--nirvana-blue);">${totalRegenDebt}</div><div class="stat-label" style="font-size: 0.65rem;">Gesamtschuld</div></div>
+        <div class="stat-box" style="padding: 10px;"><div class="stat-val danger" style="font-size: 1.4rem; color: var(--danger);">+${systemAufschlag}</div><div class="stat-label" style="font-size: 0.65rem;">System-Strafe</div></div>
+        <div class="stat-box" style="padding: 10px;"><div class="stat-val" style="font-size: 1.4rem; color: #8e44ad;">+${manualS}</div><div class="stat-label" style="font-size: 0.65rem;">Manuell</div></div>
+        <div class="stat-box" style="padding: 10px; grid-column: span 2;"><div class="stat-val blue" style="font-size: 1.4rem; color: var(--nirvana-blue);">${totalRegenDebt}</div><div class="stat-label" style="font-size: 0.65rem;">Gesamtschuld</div></div>
+    </div>`;
+
+    // FIX V20.1: Steuer-Feld für den manuellen Aufschlag (direkt oberhalb des Regen-o-Meters)
+    html += `
+    <div style="margin-bottom: 15px; padding: 15px; background: #fff; border: 1px solid #e0e0e0; border-radius: 12px; box-shadow: var(--shadow);">
+        <div style="font-weight: 800; font-size: 1.1rem; color: #2c3e50; margin-bottom: 5px; text-align: center;">⚙️ Manueller Aufschlag</div>
+        <div style="font-size: 0.8rem; color: #7f8c8d; text-align: center; margin-bottom: 15px;">Füge zusätzliche Regenerationstage hinzu, falls du mehr Zeit benötigst.</div>
+        <div style="display: flex; justify-content: center; align-items: center; gap: 10px;">
+            <button class="btn-tool" style="min-width: 40px; padding: 5px 10px; font-size: 1.2rem; flex: none;" onclick="document.getElementById('manual-surcharge-input').stepDown()">-</button>
+            <input type="number" id="manual-surcharge-input" value="${manualS}" min="0" style="width: 70px; text-align: center; font-weight: bold; font-size: 1.1rem; flex: none; background: var(--input-bg); border: 2px solid transparent; border-radius: 8px;">
+            <button class="btn-tool" style="min-width: 40px; padding: 5px 10px; font-size: 1.2rem; flex: none;" onclick="document.getElementById('manual-surcharge-input').stepUp()">+</button>
+            <button class="btn-tool" style="background: var(--header-bg); color: white; border: none; padding: 8px 15px; flex: none; font-weight: bold; border-radius: 8px;" onclick="saveManualSurcharge()">OK</button>
+        </div>
     </div>`;
     
     // --- NEU: Schatten-Rechner für das Regen-o-Meter ---

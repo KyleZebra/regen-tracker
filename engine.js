@@ -101,11 +101,15 @@ function simulateCycle(cycle) {
         }
         let comboAdd = (cycle.base.sLevel === 2 && cycle.base.aLevel === 2) ? 1 : 0;
 
+        // FIX V20.1: Manuellen Aufschlag auslesen und absichern
+        let manualSurcharge = parseInt(cycle.manualSurcharge) || 0;
+        if (manualSurcharge < 0) manualSurcharge = 0;
+
         let initialDebtTotal = baseVal + sAdd + aAdd + comboAdd;
         let smallTxt = isBaseSmall ? " (Kleiner Tag)" : " (Standardtag)";
         let basePenaltyStr = `Initiale Schuld: ${initialDebtTotal} Tage (Basis: ${baseVal}${smallTxt}, Stress: ${sAdd}, Alk: ${aAdd}, Kombi: ${comboAdd})`;
 
-        let debt = initialDebtTotal;
+        let debt = initialDebtTotal + manualSurcharge;
         let totalDebtEver = debt;
         let totalTDaysEver = baseT;
         let state = 'BEWAEHRUNG';
@@ -329,7 +333,7 @@ function simulateCycle(cycle) {
         if (!dashState && cycle.status === 'active') {
             // FIX V18.8: Anzeige auf dem Dashboard ebenfalls auf feste 3 (oder 2) Tage justieren
             let initialBewTimer = isBaseSmall ? 2 : 3;
-            dashState = { debt: initialDebtTotal, totalDebtEver: initialDebtTotal, state: 'BEWAEHRUNG', bewTimer: initialBewTimer, gotBonusToday: false, pendingBonus: false };
+            dashState = { debt: initialDebtTotal + manualSurcharge, totalDebtEver: initialDebtTotal + manualSurcharge, state: 'BEWAEHRUNG', bewTimer: initialBewTimer, gotBonusToday: false, pendingBonus: false };
         }
 
         let mFreeCurrent = 0;
@@ -349,6 +353,7 @@ function simulateCycle(cycle) {
             totalTDaysEver: totalTDaysEver,
             totalDebtEver: totalDebtEver,
             expectedBaseDebt: expectedBaseDebt,
+            manualSurcharge: manualSurcharge, // FIX V20.1: Exportiert für UI
             dashState: dashState,
             nirvanaStreak: history.n.length,
             initialDebtTotal: initialDebtTotal,
