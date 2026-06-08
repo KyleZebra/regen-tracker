@@ -248,11 +248,14 @@ function saveManualSurcharge() {
     if (!active) return;
     
     let val = parseInt(safeVal('manual-surcharge-input')) || 0;
-    if (val < 0) val = 0; // FIX V20.1: Sperre für negative Werte
+    if (val < 0) val = 0; 
     
     active.manualSurcharge = val;
-    saveData(true);
-    if(typeof updateUI === 'function') updateUI();
+    
+    // FIX V20.2: "true" (silent mode) entfernt. 
+    // saveData() stößt nun die Engine-Simulation (runAllSimulations) an, 
+    // welche am Ende wiederum ganz automatisch updateUI() aufruft!
+    saveData(); 
 }
 
 // --- Main Update Entry ---
