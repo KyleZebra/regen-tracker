@@ -34,6 +34,14 @@
     <div class="version">Version <span id="app-version-display"></span></div>
   </header>
 
+  <!-- FIX V21.1: Das neue Update-Banner -->
+  <div id="update-banner" style="display: none; background: #3498db; color: white; padding: 12px; border-radius: var(--border-radius); margin-bottom: 1rem; text-align: center; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+      🚀 Eine neue Version von ReTrack ist verfügbar!
+      <div style="margin-top: 10px;">
+          <button onclick="applyAppUpdate()" style="background: white; color: #3498db; border: none; padding: 6px 15px; border-radius: 8px; font-weight: 800; cursor: pointer; transition: transform 0.1s;" onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'">Jetzt aktualisieren</button>
+      </div>
+  </div>
+
   <div class="tabs">
     <button class="tab-btn active" data-tab="dashboard" onclick="switchTab('dashboard')">🏠 Heute</button>
     <button class="tab-btn" data-tab="historie" onclick="switchTab('historie')">⚙️ Aktuell</button>

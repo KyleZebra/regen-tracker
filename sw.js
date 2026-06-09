@@ -2,7 +2,7 @@
 // sw.js - Service Worker & Offline Cache
 // ==========================================
 
-const CACHE_NAME = 'retrack-cache-v21';
+const CACHE_NAME = 'retrack-cache-v21.1';
 
 const urlsToCache = [
     './',
@@ -19,7 +19,7 @@ const urlsToCache = [
 ];
 
 self.addEventListener('install', event => {
-    self.skipWaiting(); 
+    // FIX V21.1: self.skipWaiting() entfernt! Der Worker wartet nun auf Nutzer-Bestätigung.
     event.waitUntil(
         caches.open(CACHE_NAME).then(cache => {
             // NEU: Zwingt den Browser, absolut frische Dateien vom Server zu holen 
@@ -59,4 +59,10 @@ self.addEventListener('fetch', event => {
             return cachedResponse || fetch(event.request);
         })
     );
+});
+// NEU V21.1: Nachrichten-Empfänger wartet auf Klick im Banner
+self.addEventListener('message', event => {
+    if (event.data && event.data.action === 'SKIP_WAITING') {
+        self.skipWaiting();
+    }
 });

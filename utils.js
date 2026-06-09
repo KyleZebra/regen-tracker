@@ -471,11 +471,43 @@ function abortBreathe() {
     safeDisplay('breathe-overlay', 'none'); 
 }
 
-// --- SW UPDATE LOGIC ---
-// Einfache Registrierung ohne Banner-Logik
+// --- SW UPDATE LOGIC (V21.1: Manuelles Banner-Update) ---
+let newWorker;
+let refreshing = false;
+
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
-        .catch(err => console.error('Service Worker Fehler:', err));
+        navigator.serviceWorker.register('./sw.js').then(reg => {
+            // Fall 1: Beim Neuladen liegt bereits ein fertiger Worker in der Warteschlange
+            if (reg.waiting) {
+                newWorker = reg.waiting;
+                safeDisplay('update-banner', 'block');
+            }
+
+            // Fall 2: Ein neuer Worker wird gerade heruntergeladen, während die App läuft
+            reg.addEventListener('updatefound', () => {
+                newWorker = reg.installing;
+                newWorker.addEventListener('statechange', () => {
+                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                        safeDisplay('update-banner', 'block');
+                    }
+                });
+            });
+        }).catch(err => console.error('Service Worker Fehler:', err));
     });
+
+    // Der Wächter: Führt exakt EINEN Reload aus, wenn der neue Worker die Macht übernimmt
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (refreshing) return; // Verhindert den Endlos-Reload Bug
+        refreshing = true;
+        window.location.reload();
+    });
+}
+
+// Wird durch den Button im blauen HTML-Banner aufgerufen
+function applyAppUpdate() {
+    if (newWorker) {
+        // Sendet den Befehl an den wartenden Worker, die Macht zu übernehmen
+        newWorker.postMessage({ action: 'SKIP_WAITING' });
+    }
 }
