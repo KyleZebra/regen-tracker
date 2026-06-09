@@ -79,7 +79,8 @@ function runAllSimulations() {
     }
 }
 
-function simulateCycle(cycle) {
+// FIX V22: Skip-Parameter hinzugefügt für das Nirwana-Echo
+function simulateCycle(cycle, skipEchoCheck = false) {
     try {
         if (!cycle || !cycle.base || !cycle.base.start || !cycle.base.end) {
             return { failed: true, cycleId: cycle ? cycle.id : 'unknown', errorMessage: "Daten unvollständig." };
@@ -105,6 +106,25 @@ function simulateCycle(cycle) {
         let manualSurcharge = parseInt(cycle.manualSurcharge) || 0;
         if (manualSurcharge < 0) manualSurcharge = 0;
 
+        // FIX V22: Nirwana-Echo aus dem vorherigen Zyklus ermitteln
+        let hasNirvanaEcho = false;
+        if (!skipEchoCheck) {
+            let app = getApp();
+            let cycleIndex = app.cycles.findIndex(c => c.id === cycle.id);
+            if (cycleIndex > 0) {
+                let prevCycle = app.cycles[cycleIndex - 1];
+                let prevRes = simulateCycle(prevCycle, true); // true = Verhindert Endlosschleife
+                if (prevRes && !prevRes.failed) {
+                    let prevSmoked = prevRes.history.t.length + prevRes.history.a.length;
+                    let prevNirvana = prevRes.history.n.length;
+                    // Echo zündet, wenn es Nüchternheit gab und diese >= den Rauchtagen war!
+                    if (prevSmoked > 0 && prevNirvana >= prevSmoked) {
+                        hasNirvanaEcho = true;
+                    }
+                }
+            }
+        }
+
         let initialDebtTotal = baseVal + sAdd + aAdd + comboAdd;
         let smallTxt = isBaseSmall ? " (Kleiner Tag)" : " (Standardtag)";
         let basePenaltyStr = `Initiale Schuld: ${initialDebtTotal} Tage (Basis: ${baseVal}${smallTxt}, Stress: ${sAdd}, Alk: ${aAdd}, Kombi: ${comboAdd})`;
@@ -112,16 +132,15 @@ function simulateCycle(cycle) {
         let debt = initialDebtTotal + manualSurcharge;
         let totalDebtEver = debt;
         let totalTDaysEver = baseT;
-        let state = 'BEWAEHRUNG';
 
-        // FIX V18.8: Nach der Basisphase GILT IMMER eine feste Bewährungszeit (3 Tage Standard, 2 Tage bei kleinen)
-        // Die Dauer der Basisphase (baseT) wird hierfür ignoriert!
-        let currentBlockTargetBew = isBaseSmall ? 2 : 3;
+        // FIX V22: Kleine Tage generieren 0 Bewährung.
+        let currentBlockTargetBew = isBaseSmall ? 0 : 3;
         let currentBlockServed = 0;
         let bewTimer = currentBlockTargetBew - currentBlockServed;
-
+        
+        let state = bewTimer > 0 ? 'BEWAEHRUNG' : 'REGEN';
         let withheldBonus = 0;
-        let hasPaidPauschaleThisCluster = true;
+        let hasPaidPauschaleThisCluster = bewTimer > 0;
         let currentBewDays = [];
 
         let pEnd = parseLocal(cycle.base.end);
@@ -183,6 +202,9 @@ function simulateCycle(cycle) {
         let lastRealDayStr = (cLogs[todayStr] && typeof cLogs[todayStr] === 'object' && cLogs[todayStr].type !== undefined) ? todayStr : yesterdayStr;
 
         let dStr, log, isLogged, isFuture, isPast, isToday, isLogSmall, iBase, iS, iA, iC, pauschale, penalty, canPayout, pStr, isPhantom;
+        
+        // FIX V22: Merker für den Rebound-Bonus
+        let yesterdayWasSmallAusrutscher = false;
 
         while ((debt > 0 || toIsoString(simDate) <= endSimLimit) && safety < 25000) {
             safety++;
@@ -214,19 +236,28 @@ function simulateCycle(cycle) {
 
                 debt += penalty;
                 totalDebtEver += penalty;
-                state = 'BEWAEHRUNG';
 
-                finalDebtZeroDate = null; // NEU: Reset des Ziel-Datums bei neuen Schulden
+                finalDebtZeroDate = null;
 
                 if (!hasPaidPauschaleThisCluster) {
-                    currentBlockTargetBew = isLogSmall ? (log.t * 2) : (log.t * 3);
+                    currentBlockTargetBew = isLogSmall ? 0 : (log.t * 3);
                     currentBlockServed = 0;
                     hasPaidPauschaleThisCluster = true;
                 } else {
-                    currentBlockTargetBew += isLogSmall ? (log.t * 2) : (log.t * 3);
+                    currentBlockTargetBew += isLogSmall ? 0 : (log.t * 3);
                 }
 
                 bewTimer = currentBlockTargetBew - currentBlockServed;
+
+                // FIX V22: Wenn Bewährung 0 ist, direkt in REGEN schalten! (Und Pauschale wieder scharfschalten)
+                if (bewTimer <= 0) {
+                    state = 'REGEN';
+                    hasPaidPauschaleThisCluster = false; // Bei Ketten-Konsum greift morgen sofort die +1 Pauschale!
+                    currentBlockTargetBew = 0;
+                    currentBlockServed = 0;
+                } else {
+                    state = 'BEWAEHRUNG';
+                }
 
                 if (currentBewDays.length > 0) {
                     history.b.push(...currentBewDays);
@@ -290,8 +321,18 @@ function simulateCycle(cycle) {
                             currentBlockTargetBew = 0;
                             currentBlockServed = 0;
                         }
-                    } else {
-                        debt -= 1.0;
+                    } else { // state === 'REGEN'
+                        let reduction = 1.0;
+                        
+                        // FIX V22: Nirwana-Echo Rebound (Zündet nur bei Pause nach kleinem Tag)
+                        if (hasNirvanaEcho && yesterdayWasSmallAusrutscher) {
+                            reduction = 2.0;
+                            if (!isPhantom) {
+                                history.bonusDict[dStr] = `🌠 Nirwana-Echo: -2.0 Tage`;
+                            }
+                        }
+
+                        debt -= reduction;
                         if (debt < 0) debt = 0;
                         history.r.push(new Date(simDate));
                     }
@@ -319,8 +360,17 @@ function simulateCycle(cycle) {
                     dashState.pendingBonus = true;
                 }
                 if (todayNirvanaPending && dashState) {
-                    dashState.pendingNirvana = true; // NEU: Signal ans Dashboard
+                    dashState.pendingNirvana = true;
                 }
+            }
+
+            // FIX V22: Prüfen, ob der HEUTIGE Tag ein kleiner Ausrutscher war (Für den Rebound morgen)
+            if (activeAusrutscherDays > 0) {
+                yesterdayWasSmallAusrutscher = isLogSmall;
+            } else if (log && log.type === 'ausrutscher') {
+                yesterdayWasSmallAusrutscher = isLogSmall;
+            } else {
+                yesterdayWasSmallAusrutscher = false;
             }
 
             simDate.setDate(simDate.getDate() + 1);
@@ -331,9 +381,10 @@ function simulateCycle(cycle) {
         }
 
         if (!dashState && cycle.status === 'active') {
-            // FIX V18.8: Anzeige auf dem Dashboard ebenfalls auf feste 3 (oder 2) Tage justieren
-            let initialBewTimer = isBaseSmall ? 2 : 3;
-            dashState = { debt: initialDebtTotal + manualSurcharge, totalDebtEver: initialDebtTotal + manualSurcharge, state: 'BEWAEHRUNG', bewTimer: initialBewTimer, gotBonusToday: false, pendingBonus: false };
+            // FIX V22: Anzeige auf dem Dashboard berücksichtigt kleine Tage ohne Bewährung
+            let initialBewTimer = isBaseSmall ? 0 : 3;
+            let initialState = isBaseSmall ? 'REGEN' : 'BEWAEHRUNG';
+            dashState = { debt: initialDebtTotal + manualSurcharge, totalDebtEver: initialDebtTotal + manualSurcharge, state: initialState, bewTimer: initialBewTimer, gotBonusToday: false, pendingBonus: false };
         }
 
         let mFreeCurrent = 0;
