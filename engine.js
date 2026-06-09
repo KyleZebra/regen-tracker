@@ -410,7 +410,8 @@ function simulateCycle(cycle, skipEchoCheck = false) {
             initialDebtTotal: initialDebtTotal,
             basePenaltyStr: basePenaltyStr,
             mFreeGoal: totalTDaysEver * 2,
-            mFreeCurrent: mFreeCurrent
+            mFreeCurrent: mFreeCurrent,
+            hasNirvanaEcho: hasNirvanaEcho // FIX V22: Export für Dashboard-UI
         };
     } catch(err) {
         return { failed: true, cycleId: cycle ? cycle.id : 'unknown', errorMessage: err.message };

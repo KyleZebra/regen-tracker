@@ -318,6 +318,7 @@ function renderDashboard() {
     }
     
     safeProp('dash-streak', 'className', 'streak-badge');
+    safeDisplay('dash-echo-badge', res.hasNirvanaEcho ? 'inline-block' : 'none');
 
     if (ds.totalDebtEver > 0 && displayDebt > 0 && !res.isOpen) {
         let g = Math.round((ds.totalDebtEver - displayDebt) * 10) / 10;
@@ -834,10 +835,18 @@ function renderHistorie() {
       let isTodayClass = (dStr === todayStr) ? "today-highlight" : "";
 
       if (res.history.t.some(d => d.toDateString() === dStr)) { 
-          tagClass = "tday"; tagText="1. Konsum"; 
+          if (active && active.base && active.base.isSmall) {
+              tagClass = "tday-small"; tagText="1. Konsum (Kl.)"; 
+          } else {
+              tagClass = "tday"; tagText="1. Konsum"; 
+          }
       } else if (res.history.a.some(d => d.toDateString() === dStr)) { 
-          tagClass = "ausrutscher"; tagText="weiteres Rauchen"; 
-      } else if (res.history.b.some(d => d.toDateString() === dStr)) { 
+          if (log && log.isSmall) {
+              tagClass = "ausrutscher-small"; tagText="Rauchen (Kl.)"; 
+          } else {
+              tagClass = "ausrutscher"; tagText="weiteres Rauchen"; 
+          }
+      } else if (res.history.b.some(d => d.toDateString() === dStr)) {
           tagClass = "bewaehrung"; tagText="Bewährung"; 
       } else if (res.history.r.some(d => d.toDateString() === dStr)) { 
           tagClass = "regen"; tagText="Regen."; 
@@ -1368,11 +1377,13 @@ function renderArchiv() {
             const nirvanaDays = res.history.n.length;
             const ratio = smokedDays > 0 ? (cleanDays / smokedDays).toFixed(1).replace('.', ',') : cleanDays;
             
+            let echoBadge = (smokedDays > 0 && nirvanaDays >= smokedDays) ? `<span style="background:#f5eef8; color:#8e44ad; font-size:0.7rem; padding:3px 8px; border-radius:12px; font-weight:800; border:1px solid #d2b4de; margin-left:8px;">🌠 Echo verdient</span>` : "";
+            
             const card = document.createElement('div'); 
             card.className = 'archive-card';
             card.innerHTML = `
                 <div class="archive-header">
-                    <div class="archive-title">Zyklus: ${parseLocal(cycle.base.start).toLocaleDateString('de-DE', {day:'2-digit', month:'short', year:'numeric'})} – ${allArchDates.length>0 ? allArchDates[allArchDates.length-1].toLocaleDateString('de-DE', {day:'2-digit', month:'short'}) : "Unbekannt"}</div>
+                    <div class="archive-title" style="display:flex; align-items:center; flex-wrap:wrap; gap:5px;">Zyklus: ${parseLocal(cycle.base.start).toLocaleDateString('de-DE', {day:'2-digit', month:'short', year:'numeric'})} – ${allArchDates.length>0 ? allArchDates[allArchDates.length-1].toLocaleDateString('de-DE', {day:'2-digit', month:'short'}) : "Unbekannt"} ${echoBadge}</div>
                     <div style="display:flex; align-items:center; gap:10px;">
                         <div class="archive-badge">${totalDays} Tage Total</div>
                         <button class="btn-tool" style="padding:4px 8px; border:1px solid var(--danger); color:var(--danger); min-width:auto;" onclick="if(typeof deleteArchivedCycle==='function')deleteArchivedCycle(${cycle.id})" title="Zyklus löschen">🗑️</button>
