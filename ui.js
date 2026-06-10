@@ -296,10 +296,10 @@ function renderDashboard() {
         safeText('dash-percent', "-");
         safeText('dash-days-left', "Start ausstehend");
         safeText('dash-target-date', "Ziel: Unbekannt");
-        safeDisplay('dash-progress', 'none');
+       safeDisplay('dash-progress', 'none');
         safeDisplay('dash-budget-box', 'none');
         safeDisplay('dash-outlook', 'none');
-        safeDisplay('dash-echo', 'none'); // FIX
+        safeDisplay('dash-echo-badge', 'none'); // FIX: Exakte ID getroffen
         return;
     }
     
@@ -721,13 +721,22 @@ function renderDashboard() {
 
 function renderHistorie() {
     const res = activeSimResult; 
+    
+    // FIX V26: Visueller Error-Monitor statt stillem Ausblenden!
     if(!res || res.failed) { 
-        safeDisplay('historie-output', 'none'); 
+        safeDisplay('historie-output', 'block'); 
+        safeDisplay('export-card', 'none'); // Versteckt nur den Kalender
+        safeHTML('bilanz-container', `
+            <div style="background:#fadbd8; color:#c0392b; padding:15px; border-radius:8px; margin-top:15px; font-weight:bold; border-left: 4px solid #c0392b;">
+                🚨 Engine-Blockade: ${res ? res.errorMessage : 'Simulation konnte nicht gestartet werden. Bitte prüfe das Start- und Enddatum!'}
+            </div>
+        `);
         return; 
     }
     
     const active = getActiveCycle(); 
     safeDisplay('historie-output', 'block');
+    safeDisplay('export-card', 'block');
     
     const totalT = res.totalTDaysEver || 0; 
     const totalRegenDebt = res.totalDebtEver || 0; 
@@ -1403,12 +1412,10 @@ function renderArchiv() {
             let cycleSmallSmoked = 0;
             [...res.history.t, ...res.history.a].forEach(d => {
                 let dStr = toIsoString(d);
-                let isBase = (cycle.base?.start && dStr >= cycle.base.start && dStr <= cycle.base.end);
+                // FIX V26: Rückwärtskompatibel (ohne "?.") für ältere Browser
+                let isBase = (cycle.base && cycle.base.start && dStr >= cycle.base.start && dStr <= cycle.base.end);
                 if (isBase) {
                     if (cycle.base.isSmall) cycleSmallSmoked++;
-                } else {
-                    let log = (cycle.logs || {})[dStr];
-                    if (log && log.isSmall) cycleSmallSmoked++;
                 }
             });
             let cycleLargeSmoked = smokedDays - cycleSmallSmoked;

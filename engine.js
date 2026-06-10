@@ -202,6 +202,9 @@ function simulateCycle(cycle, skipEchoCheck = false) {
         let todayNirvanaPending = false; // NEU: Flag für das ausstehende Nirwana
         let cLogs = cycle.logs || {};
         
+        // FIX V26.1: Fehlende Deklaration wiederhergestellt (Behebt den Absturz der Engine)
+        let lastRealDayStr = (cLogs[todayStr] && typeof cLogs[todayStr] === 'object' && cLogs[todayStr].type !== undefined) ? todayStr : yesterdayStr;
+
         let dStr, log, isLogged, isFuture, isPast, isToday, isLogSmall, iBase, iS, iA, iC, pauschale, penalty, canPayout, pStr, isPhantom;
         
         // FIX V23: Charge-System für das mehrtägige Nirwana-Echo
