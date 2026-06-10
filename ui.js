@@ -1375,9 +1375,10 @@ function renderArchiv() {
     if (archived.length === 0) {
         archContainer.insertAdjacentHTML('beforeend', "<p style='color:#7f8c8d; text-align:center;'>Noch keine Zyklen abgeschlossen.</p>"); 
     } else {
-        // --- FIX V19.2: Dynamischer Balken-Graph für die letzten 10 Zyklen ---
+        // --- FIX V26.5: Dynamischer Doppel-Balken-Graph für die letzten 10 Zyklen ---
         let chartBars = [];
-        let maxRatio = 1; // Mindest-Skalierung, damit Balken nicht riesig werden
+        let maxRatio = 1; // Mindest-Skalierung für Clean-Ratio
+        let maxSlRatio = 1; // Mindest-Skalierung für Klein:Groß-Ratio
         
         // Letzte 10 Zyklen isolieren (chronologisch von alt nach neu für den Graphen)
         archived.slice(-10).forEach(cycle => {
@@ -1388,22 +1389,58 @@ function renderArchiv() {
             const cleanDays = res.history.b.length + res.history.r.length + res.history.n.length;
             const ratio = smokedDays > 0 ? (cleanDays / smokedDays) : cleanDays;
             
-            if (ratio > maxRatio) maxRatio = ratio; // Höchstwert für die Y-Achse finden
+            // Berechnung: Klein vs Groß für das Diagramm
+            let cycleSmallSmoked = 0;
+            let cardActiveDaysLeft = 0;
+            let cardActiveIsSmall = false;
+
+            let smokedDatesStr = [...res.history.t, ...res.history.a].map(d => toIsoString(d)).sort();
+            smokedDatesStr.forEach(dStr => {
+                let isBase = (cycle.base && cycle.base.start && dStr >= cycle.base.start && dStr <= cycle.base.end);
+                if (isBase) {
+                    if (cycle.base.isSmall) cycleSmallSmoked++;
+                } else {
+                    let log = (cycle.logs || {})[dStr];
+                    if (cardActiveDaysLeft > 0) {
+                        if (cardActiveIsSmall) cycleSmallSmoked++;
+                        cardActiveDaysLeft--;
+                    } else if (log && log.type === 'ausrutscher') {
+                        cardActiveIsSmall = log.isSmall === true;
+                        cardActiveDaysLeft = (log.t || 1) - 1;
+                        if (cardActiveIsSmall) cycleSmallSmoked++;
+                    }
+                }
+            });
+            let cycleLargeSmoked = smokedDays - cycleSmallSmoked;
+            let slRatio = cycleLargeSmoked > 0 ? (cycleSmallSmoked / cycleLargeSmoked) : cycleSmallSmoked;
+
+            if (ratio > maxRatio) maxRatio = ratio;
+            if (slRatio > maxSlRatio) maxSlRatio = slRatio;
             
-            // Sehr kurzes Datum für die X-Achse (z.B. "10.23" für Okt 2023)
-            let dateLabel = cycle.base?.start ? parseLocal(cycle.base.start).toLocaleDateString('de-DE', {month:'2-digit', year:'2-digit'}) : '?';
-            chartBars.push({ ratio, label: dateLabel });
+            // FIX V26.5: Kompatibilitätssicherer Abruf des Startdatums (ohne "?.")
+            let dateLabel = (cycle.base && cycle.base.start) ? parseLocal(cycle.base.start).toLocaleDateString('de-DE', {month:'2-digit', year:'2-digit'}) : '?';
+            chartBars.push({ ratio, slRatio, label: dateLabel });
         });
 
         if (chartBars.length > 0) {
             let barsHtml = chartBars.map(b => {
-                let h = maxRatio > 0 ? (b.ratio / maxRatio) * 100 : 0;
-                let valStr = Number.isInteger(b.ratio) ? b.ratio : b.ratio.toFixed(1).replace('.', ',');
+                // Grüner Balken (Clean vs. Rauchen)
+                let h1 = maxRatio > 0 ? (b.ratio / maxRatio) * 100 : 0;
+                let valStr1 = Number.isInteger(b.ratio) ? b.ratio : b.ratio.toFixed(1).replace('.', ',');
+                
+                // Violetter Balken (Klein vs. Groß)
+                let h2 = maxSlRatio > 0 ? (b.slRatio / maxSlRatio) * 100 : 0;
+                let valStr2 = Number.isInteger(b.slRatio) ? b.slRatio : b.slRatio.toFixed(1).replace('.', ',');
+
                 return `
                 <div style="display:flex; flex-direction:column; align-items:center; flex:1; margin:0 2px;">
-                    <div style="font-size:0.7rem; color:#7f8c8d; margin-bottom:6px; font-weight:800;">${valStr}</div>
-                    <div style="width:100%; max-width:24px; height:80px; background:#f4f6f7; border-radius:4px 4px 0 0; position:relative; display:flex; align-items:flex-end;">
-                        <div style="width:100%; height:${h}%; background:var(--btn-calc); border-radius:4px 4px 0 0; transition: height 0.5s ease-out; box-shadow: 0 0 5px rgba(39, 174, 96, 0.3);"></div>
+                    <div style="display:flex; justify-content:space-around; width:100%; font-size:0.6rem; color:#7f8c8d; margin-bottom:4px; font-weight:800;">
+                        <span style="color:var(--btn-calc);">${valStr1}</span>
+                        <span style="color:#8e44ad;">${valStr2}</span>
+                    </div>
+                    <div style="width:100%; max-width:32px; height:80px; background:transparent; display:flex; align-items:flex-end; gap:2px; justify-content:center;">
+                        <div style="width:12px; height:${h1}%; background:var(--btn-calc); border-radius:3px 3px 0 0; transition: height 0.5s ease-out; box-shadow: 0 0 5px rgba(39, 174, 96, 0.3);" title="Clean : Rauchen (${valStr1}:1)"></div>
+                        <div style="width:12px; height:${h2}%; background:#8e44ad; border-radius:3px 3px 0 0; transition: height 0.5s ease-out; box-shadow: 0 0 5px rgba(142, 68, 173, 0.3);" title="Klein : Groß (${valStr2}:1)"></div>
                     </div>
                     <div style="font-size:0.6rem; color:#95a5a6; margin-top:8px;">${b.label}</div>
                 </div>`;
@@ -1411,8 +1448,11 @@ function renderArchiv() {
 
             archContainer.insertAdjacentHTML('beforeend', `
             <div class="archive-card" style="margin-bottom: 25px; padding-bottom: 15px; border-left: none; border-top: 4px solid var(--btn-calc);">
-                <div class="archive-title" style="margin-bottom: 15px; font-size: 0.95rem; color: #2c3e50; text-align: center;">📈 Verhältnis-Trend (Letzte ${chartBars.length} Zyklen)</div>
-                <div style="font-size:0.7rem; color:#7f8c8d; text-align:center; margin-bottom:15px;">Wert = Cleane Tage pro 1 Rauchtag (Höher ist besser)</div>
+                <div class="archive-title" style="margin-bottom: 15px; font-size: 0.95rem; color: #2c3e50; text-align: center;">📈 Verhältnis-Trends (Letzte ${chartBars.length} Zyklen)</div>
+                <div style="font-size:0.7rem; color:#7f8c8d; text-align:center; margin-bottom:15px; line-height: 1.6;">
+                    <span style="color:var(--btn-calc); font-weight:bold; white-space:nowrap;">🟩 Clean pro Rauchtag</span> &nbsp;|&nbsp; 
+                    <span style="color:#8e44ad; font-weight:bold; white-space:nowrap;">🟪 Kleine pro gr. Tag</span>
+                </div>
                 <div style="display:flex; align-items:flex-end; justify-content:space-around; height:120px;">
                     ${barsHtml}
                 </div>
