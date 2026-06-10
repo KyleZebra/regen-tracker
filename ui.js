@@ -138,8 +138,11 @@ function populateBaseForm() {
     safeSetVal('base-a', active.base.aLevel || 0); 
     safeSetVal('base-m', active.base.mLevel || 0);
     
-    // Befüllt das neue, statische Feld für den Aufschlag
-    safeSetVal('manual-surcharge-input', active.manualSurcharge || 0);
+    // Befüllt das neue, statische Feld für den Aufschlag (Extrem-Fallback auf 0)
+    let safeSurcharge = active.manualSurcharge !== undefined && active.manualSurcharge !== null ? active.manualSurcharge : 0;
+    if (document.getElementById('manual-surcharge-input')) {
+        safeSetVal('manual-surcharge-input', safeSurcharge);
+    }
     
     let lock = active.base.isOpen;
     

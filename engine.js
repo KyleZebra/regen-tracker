@@ -102,9 +102,12 @@ function simulateCycle(cycle, skipEchoCheck = false) {
         }
         let comboAdd = (cycle.base.sLevel === 2 && cycle.base.aLevel === 2) ? 1 : 0;
 
-        // FIX V20.1: Manuellen Aufschlag auslesen und absichern
-        let manualSurcharge = parseInt(cycle.manualSurcharge) || 0;
-        if (manualSurcharge < 0) manualSurcharge = 0;
+        // FIX V25.1: Extrem robuste Absicherung des manuellen Aufschlags
+        let manualSurcharge = 0;
+        if (cycle && cycle.manualSurcharge !== undefined && cycle.manualSurcharge !== null) {
+            manualSurcharge = parseInt(cycle.manualSurcharge);
+            if (isNaN(manualSurcharge) || manualSurcharge < 0) manualSurcharge = 0;
+        }
 
         // FIX V22: Nirwana-Echo aus dem vorherigen Zyklus ermitteln
         let hasNirvanaEcho = false;
@@ -333,7 +336,7 @@ function simulateCycle(cycle, skipEchoCheck = false) {
                     } else { // state === 'REGEN'
                         let reduction = 1.0;
                         
-                        // FIX V25: Mehrstufiges Nirwana-Echo (Verbraucht offene Ladungen mit Zähler)
+                        // FIX V25.1: Mehrstufiges Nirwana-Echo (Verbraucht offene Ladungen mit Zähler)
                         if (hasNirvanaEcho && reboundCharges > 0) {
                             reduction = 2.0;
                             let chargeNum = 3 - reboundCharges; // Wird zu 1 oder 2
