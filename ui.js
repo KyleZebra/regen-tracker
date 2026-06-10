@@ -745,12 +745,38 @@ function renderHistorie() {
     const manualS = res.manualSurcharge || 0;
     const systemAufschlag = totalRegenDebt - expectedBaseDebt - manualS;
     
-    // FIX V20.1: Aufsplittung der Bilanz in 5 Felder (Gesamtschuld spannt über 2 Spalten)
+    // FIX V26.4: Berechnung der kleinen und großen Tage für den aktuellen Zyklus
+    let currentSmallSmoked = 0;
+    let currentActiveDaysLeft = 0;
+    let currentActiveIsSmall = false;
+
+    let currentSmokedDatesStr = [...res.history.t, ...res.history.a].map(d => toIsoString(d)).sort();
+    currentSmokedDatesStr.forEach(dStr => {
+        let isBase = (active.base && active.base.start && dStr >= active.base.start && dStr <= active.base.end);
+        if (isBase) {
+            if (active.base.isSmall) currentSmallSmoked++;
+        } else {
+            let log = (active.logs || {})[dStr];
+            if (currentActiveDaysLeft > 0) {
+                if (currentActiveIsSmall) currentSmallSmoked++;
+                currentActiveDaysLeft--;
+            } else if (log && log.type === 'ausrutscher') {
+                currentActiveIsSmall = log.isSmall === true;
+                currentActiveDaysLeft = (log.t || 1) - 1;
+                if (currentActiveIsSmall) currentSmallSmoked++;
+            }
+        }
+    });
+    let currentLargeSmoked = totalT - currentSmallSmoked;
+    
+    // FIX V26.4: Aufsplittung der Bilanz in 7 Felder (Gesamtschuld spannt über 2 Spalten)
     let html = `
     <div style="margin-top:0.5rem; font-weight:bold; color:#2c3e50; margin-bottom: 10px;">📊 Gesamtbilanz dieses Zyklus</div>
     <div class="stat-grid" style="margin-bottom: 1rem; grid-template-columns: 1fr 1fr;">
         <div class="stat-box" style="padding: 10px;"><div class="stat-val" style="font-size: 1.4rem;">${totalT}</div><div class="stat-label" style="font-size: 0.65rem;">T-Tage</div></div>
         <div class="stat-box" style="padding: 10px;"><div class="stat-val" style="font-size: 1.4rem;">${expectedBaseDebt}</div><div class="stat-label" style="font-size: 0.65rem;">Basis Schuld</div></div>
+        <div class="stat-box" style="padding: 10px;"><div class="stat-val" style="font-size: 1.4rem; color: #e67e22;">${currentSmallSmoked}</div><div class="stat-label" style="font-size: 0.65rem;">Davon Klein</div></div>
+        <div class="stat-box" style="padding: 10px;"><div class="stat-val" style="font-size: 1.4rem; color: #c0392b;">${currentLargeSmoked}</div><div class="stat-label" style="font-size: 0.65rem;">Davon Groß</div></div>
         <div class="stat-box" style="padding: 10px;"><div class="stat-val danger" style="font-size: 1.4rem; color: var(--danger);">+${systemAufschlag}</div><div class="stat-label" style="font-size: 0.65rem;">System-Strafe</div></div>
         <div class="stat-box" style="padding: 10px;"><div class="stat-val" style="font-size: 1.4rem; color: #8e44ad;">+${manualS}</div><div class="stat-label" style="font-size: 0.65rem;">Manuell</div></div>
         <div class="stat-box" style="padding: 10px; grid-column: span 2;"><div class="stat-val blue" style="font-size: 1.4rem; color: var(--nirvana-blue);">${totalRegenDebt}</div><div class="stat-label" style="font-size: 0.65rem;">Gesamtschuld</div></div>
@@ -1073,30 +1099,47 @@ function renderArchiv() {
         if(!res || res.failed) return; 
         
         let allDays = [...res.history.t, ...res.history.a, ...res.history.b, ...res.history.r, ...res.history.n];
-        let uniqueDays = [...new Set(allDays.map(d => toIsoString(d)))].filter(d => d <= todayStr).sort();
+            let uniqueDays = [...new Set(allDays.map(d => toIsoString(d)))].filter(d => d <= todayStr).sort();
 
-                        uniqueDays.forEach(dStr => {
-            let todayStr = toIsoString(new Date());
+            // FIX V26.3: Tracking für mehrtägige Ausrutscher-Logs initialisieren
+            let activeAusrutscherDays = 0;
+            let activeIsSmall = false;
 
-            // 1. Zukunft rigoros aussperren (Geister-Tage)
-            if (dStr > todayStr) return;
+            uniqueDays.forEach(dStr => {
+                let todayStr = toIsoString(new Date());
 
-            let mKey = dStr.substring(0, 7); 
-            if(!archiveMonths[mKey]) archiveMonths[mKey] = { tDays:0, aDays:0, mDays:0, erk:[], dtx:[], note:[] };
-            
-            let isBase = (cycle.base?.start && dStr >= cycle.base.start && dStr <= cycle.base.end);
-            let log = (cycle.logs || {})[dStr] || {};
-            let isConsumption = isBase || (log.type === 'ausrutscher');
-            
-            let isSmallConsumption = false;
-            if (isConsumption) {
-                if (isBase) isSmallConsumption = (cycle.base.isSmall === true);
-                else if (log) isSmallConsumption = (log.isSmall === true);
-            }
+                // 1. Zukunft rigoros aussperren (Geister-Tage)
+                if (dStr > todayStr) return;
 
-            // FIX V18.6: HEUTE ignorieren, solange kein Rückfall passiert ist!
-            // Ein cleander Tag gilt erst morgen als abgeschlossen und "getrackt".
-            if (dStr === todayStr && !isConsumption) return;
+                let mKey = dStr.substring(0, 7); 
+                if(!archiveMonths[mKey]) archiveMonths[mKey] = { tDays:0, aDays:0, mDays:0, erk:[], dtx:[], note:[] };
+                
+                let isBase = (cycle.base && cycle.base.start && dStr >= cycle.base.start && dStr <= cycle.base.end);
+                let log = (cycle.logs || {})[dStr] || {};
+                
+                // FIX V26.3: Auch Folgetage eines Ausrutschers (ohne eigenen Log) als Konsum erkennen
+                let isConsumption = false;
+                let isSmallConsumption = false;
+
+                if (isBase) {
+                    isConsumption = true;
+                    isSmallConsumption = (cycle.base.isSmall === true);
+                } else {
+                    if (activeAusrutscherDays > 0) {
+                        isConsumption = true;
+                        isSmallConsumption = activeIsSmall;
+                        activeAusrutscherDays--;
+                    } else if (log.type === 'ausrutscher') {
+                        isConsumption = true;
+                        isSmallConsumption = (log.isSmall === true);
+                        activeIsSmall = isSmallConsumption;
+                        activeAusrutscherDays = (log.t || 1) - 1;
+                    }
+                }
+
+                // FIX V18.6: HEUTE ignorieren, solange kein Rückfall passiert ist!
+                // Ein cleander Tag gilt erst morgen als abgeschlossen und "getrackt".
+                if (dStr === todayStr && !isConsumption) return;
 
             if(isConsumption) {
                 archiveMonths[mKey].tDays++;
@@ -1409,14 +1452,26 @@ function renderArchiv() {
             const smokedDays = res.history.t.length + res.history.a.length;
             const cleanDays = res.history.b.length + res.history.r.length + res.history.n.length;
             
-            // NEU: Klein vs Groß für diesen Zyklus iterieren
+            // FIX V26.3: Klein vs Groß für diesen Zyklus (inkl. mehrtägiger Logs) iterieren
             let cycleSmallSmoked = 0;
-            [...res.history.t, ...res.history.a].forEach(d => {
-                let dStr = toIsoString(d);
-                // FIX V26: Rückwärtskompatibel (ohne "?.") für ältere Browser
+            let cardActiveDaysLeft = 0;
+            let cardActiveIsSmall = false;
+
+            let smokedDatesStr = [...res.history.t, ...res.history.a].map(d => toIsoString(d)).sort();
+            smokedDatesStr.forEach(dStr => {
                 let isBase = (cycle.base && cycle.base.start && dStr >= cycle.base.start && dStr <= cycle.base.end);
                 if (isBase) {
                     if (cycle.base.isSmall) cycleSmallSmoked++;
+                } else {
+                    let log = (cycle.logs || {})[dStr];
+                    if (cardActiveDaysLeft > 0) {
+                        if (cardActiveIsSmall) cycleSmallSmoked++;
+                        cardActiveDaysLeft--;
+                    } else if (log && log.type === 'ausrutscher') {
+                        cardActiveIsSmall = log.isSmall === true;
+                        cardActiveDaysLeft = (log.t || 1) - 1;
+                        if (cardActiveIsSmall) cycleSmallSmoked++;
+                    }
                 }
             });
             let cycleLargeSmoked = smokedDays - cycleSmallSmoked;
