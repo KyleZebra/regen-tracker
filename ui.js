@@ -633,7 +633,8 @@ function renderDashboard() {
             let strA = Number.isInteger(dA) ? dA : dA.toFixed(1).replace('.', ',');
             let strB = Number.isInteger(dB) ? dB : dB.toFixed(1).replace('.', ',');
             
-            let pauseLabel = ds.activeReboundCharges > 0 ? "🟢 Bei Pause <span style='color:#8e44ad;font-size:0.8rem;'>(🌠 -2.0 Boost)</span>:" : "🟢 Bei Pause:";
+            // FIX V26.2: Doppelte Absicherung für den Text-Boost
+            let pauseLabel = (res.hasNirvanaEcho && ds.activeReboundCharges > 0) ? "🟢 Bei Pause <span style='color:#8e44ad;font-size:0.8rem;'>(🌠 -2.0 Boost)</span>:" : "🟢 Bei Pause:";
             
             safeHTML('dash-outlook', `
                 <div class="outlook-title">📊 Tagesausblick für heute</div>

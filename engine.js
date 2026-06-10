@@ -225,8 +225,8 @@ function simulateCycle(cycle, skipEchoCheck = false) {
                 history.a.push(new Date(simDate));
                 activeAusrutscherDays--;
                 
-                // Echo-Ladungen jeden Tag des Ausrutschers frisch halten
-                if (currentAusrutscherIsSmall) reboundCharges = 2;
+                // Echo-Ladungen jeden Tag des Ausrutschers frisch halten (NUR wenn Echo aktiv ist!)
+                if (currentAusrutscherIsSmall && hasNirvanaEcho) reboundCharges = 2;
                 else reboundCharges = 0;
                 
             } else if (log && log.type === 'ausrutscher') {
@@ -236,8 +236,8 @@ function simulateCycle(cycle, skipEchoCheck = false) {
                 currentAusrutscherIsSmall = log.isSmall === true;
                 isLogSmall = currentAusrutscherIsSmall;
                 
-                // Echo-Ladungen beim initialen Log setzen
-                if (currentAusrutscherIsSmall) reboundCharges = 2;
+                // Echo-Ladungen beim initialen Log setzen (NUR wenn Echo aktiv ist!)
+                if (currentAusrutscherIsSmall && hasNirvanaEcho) reboundCharges = 2;
                 else reboundCharges = 0;
                 iBase = isLogSmall ? (log.t * 2) : (log.t * 3);
                 expectedBaseDebt += iBase;
