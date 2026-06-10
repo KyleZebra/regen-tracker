@@ -1375,10 +1375,11 @@ function renderArchiv() {
     if (archived.length === 0) {
         archContainer.insertAdjacentHTML('beforeend', "<p style='color:#7f8c8d; text-align:center;'>Noch keine Zyklen abgeschlossen.</p>"); 
     } else {
-        // --- FIX V26.5: Dynamischer Doppel-Balken-Graph für die letzten 10 Zyklen ---
+        // --- FIX V26.6: Dynamischer Triple-Balken-Graph für die letzten 10 Zyklen ---
         let chartBars = [];
         let maxRatio = 1; // Mindest-Skalierung für Clean-Ratio
         let maxSlRatio = 1; // Mindest-Skalierung für Klein:Groß-Ratio
+        let maxNirvanaChart = 1; // Mindest-Skalierung für Nirwana
         
         // Letzte 10 Zyklen isolieren (chronologisch von alt nach neu für den Graphen)
         archived.slice(-10).forEach(cycle => {
@@ -1413,13 +1414,16 @@ function renderArchiv() {
             });
             let cycleLargeSmoked = smokedDays - cycleSmallSmoked;
             let slRatio = cycleLargeSmoked > 0 ? (cycleSmallSmoked / cycleLargeSmoked) : cycleSmallSmoked;
+            
+            const nirvanaDays = res.history.n.length;
 
             if (ratio > maxRatio) maxRatio = ratio;
             if (slRatio > maxSlRatio) maxSlRatio = slRatio;
+            if (nirvanaDays > maxNirvanaChart) maxNirvanaChart = nirvanaDays;
             
-            // FIX V26.5: Kompatibilitätssicherer Abruf des Startdatums (ohne "?.")
+            // Kompatibilitätssicherer Abruf des Startdatums
             let dateLabel = (cycle.base && cycle.base.start) ? parseLocal(cycle.base.start).toLocaleDateString('de-DE', {month:'2-digit', year:'2-digit'}) : '?';
-            chartBars.push({ ratio, slRatio, label: dateLabel });
+            chartBars.push({ ratio, slRatio, nirvanaDays, label: dateLabel });
         });
 
         if (chartBars.length > 0) {
@@ -1432,26 +1436,33 @@ function renderArchiv() {
                 let h2 = maxSlRatio > 0 ? (b.slRatio / maxSlRatio) * 100 : 0;
                 let valStr2 = Number.isInteger(b.slRatio) ? b.slRatio : b.slRatio.toFixed(1).replace('.', ',');
 
+                // Blauer Balken (Nirwana)
+                let h3 = maxNirvanaChart > 0 ? (b.nirvanaDays / maxNirvanaChart) * 100 : 0;
+                let valStr3 = b.nirvanaDays;
+
                 return `
-                <div style="display:flex; flex-direction:column; align-items:center; flex:1; margin:0 2px;">
-                    <div style="display:flex; justify-content:space-around; width:100%; font-size:0.6rem; color:#7f8c8d; margin-bottom:4px; font-weight:800;">
+                <div style="display:flex; flex-direction:column; align-items:center; flex:1; margin:0 1px;">
+                    <div style="display:flex; justify-content:space-around; width:100%; font-size:0.55rem; color:#7f8c8d; margin-bottom:4px; font-weight:800; gap:1px;">
                         <span style="color:var(--btn-calc);">${valStr1}</span>
                         <span style="color:#8e44ad;">${valStr2}</span>
+                        <span style="color:var(--nirvana-blue);">${valStr3}</span>
                     </div>
-                    <div style="width:100%; max-width:32px; height:80px; background:transparent; display:flex; align-items:flex-end; gap:2px; justify-content:center;">
-                        <div style="width:12px; height:${h1}%; background:var(--btn-calc); border-radius:3px 3px 0 0; transition: height 0.5s ease-out; box-shadow: 0 0 5px rgba(39, 174, 96, 0.3);" title="Clean : Rauchen (${valStr1}:1)"></div>
-                        <div style="width:12px; height:${h2}%; background:#8e44ad; border-radius:3px 3px 0 0; transition: height 0.5s ease-out; box-shadow: 0 0 5px rgba(142, 68, 173, 0.3);" title="Klein : Groß (${valStr2}:1)"></div>
+                    <div style="width:100%; max-width:38px; height:80px; background:transparent; display:flex; align-items:flex-end; gap:2px; justify-content:center;">
+                        <div style="width:10px; height:${h1}%; background:var(--btn-calc); border-radius:3px 3px 0 0; transition: height 0.5s ease-out; box-shadow: 0 0 5px rgba(39, 174, 96, 0.3);" title="Clean : Rauchen (${valStr1}:1)"></div>
+                        <div style="width:10px; height:${h2}%; background:#8e44ad; border-radius:3px 3px 0 0; transition: height 0.5s ease-out; box-shadow: 0 0 5px rgba(142, 68, 173, 0.3);" title="Klein : Groß (${valStr2}:1)"></div>
+                        <div style="width:10px; height:${h3}%; background:var(--nirvana-blue); border-radius:3px 3px 0 0; transition: height 0.5s ease-out; box-shadow: 0 0 5px rgba(52, 152, 219, 0.3);" title="Nirwana Tage (${valStr3})"></div>
                     </div>
-                    <div style="font-size:0.6rem; color:#95a5a6; margin-top:8px;">${b.label}</div>
+                    <div style="font-size:0.55rem; color:#95a5a6; margin-top:8px;">${b.label}</div>
                 </div>`;
             }).join('');
 
             archContainer.insertAdjacentHTML('beforeend', `
             <div class="archive-card" style="margin-bottom: 25px; padding-bottom: 15px; border-left: none; border-top: 4px solid var(--btn-calc);">
                 <div class="archive-title" style="margin-bottom: 15px; font-size: 0.95rem; color: #2c3e50; text-align: center;">📈 Verhältnis-Trends (Letzte ${chartBars.length} Zyklen)</div>
-                <div style="font-size:0.7rem; color:#7f8c8d; text-align:center; margin-bottom:15px; line-height: 1.6;">
-                    <span style="color:var(--btn-calc); font-weight:bold; white-space:nowrap;">🟩 Clean pro Rauchtag</span> &nbsp;|&nbsp; 
-                    <span style="color:#8e44ad; font-weight:bold; white-space:nowrap;">🟪 Kleine pro gr. Tag</span>
+                <div style="font-size:0.65rem; color:#7f8c8d; text-align:center; margin-bottom:15px; line-height: 1.6; display:flex; flex-wrap:wrap; justify-content:center; gap:8px;">
+                    <span style="color:var(--btn-calc); font-weight:bold;">🟩 Clean-Ratio</span>
+                    <span style="color:#8e44ad; font-weight:bold;">🟪 Klein-Ratio</span>
+                    <span style="color:var(--nirvana-blue); font-weight:bold;">🟦 Nirwana-Tage</span>
                 </div>
                 <div style="display:flex; align-items:flex-end; justify-content:space-around; height:120px;">
                     ${barsHtml}
