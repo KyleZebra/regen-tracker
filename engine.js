@@ -199,12 +199,11 @@ function simulateCycle(cycle, skipEchoCheck = false) {
         let todayNirvanaPending = false; // NEU: Flag für das ausstehende Nirwana
         let cLogs = cycle.logs || {};
         
-        let lastRealDayStr = (cLogs[todayStr] && typeof cLogs[todayStr] === 'object' && cLogs[todayStr].type !== undefined) ? todayStr : yesterdayStr;
-
         let dStr, log, isLogged, isFuture, isPast, isToday, isLogSmall, iBase, iS, iA, iC, pauschale, penalty, canPayout, pStr, isPhantom;
         
-        // FIX V22: Merker für den Rebound-Bonus
-        let yesterdayWasSmallAusrutscher = false;
+        // FIX V23: Charge-System für das mehrtägige Nirwana-Echo
+        let reboundCharges = 0;
+        let currentAusrutscherIsSmall = false;
 
         while ((debt > 0 || toIsoString(simDate) <= endSimLimit) && safety < 25000) {
             safety++;
@@ -219,11 +218,21 @@ function simulateCycle(cycle, skipEchoCheck = false) {
             if (activeAusrutscherDays > 0) {
                 history.a.push(new Date(simDate));
                 activeAusrutscherDays--;
+                
+                // Echo-Ladungen jeden Tag des Ausrutschers frisch halten
+                if (currentAusrutscherIsSmall) reboundCharges = 2;
+                else reboundCharges = 0;
+                
             } else if (log && log.type === 'ausrutscher') {
                 activeAusrutscherDays = log.t - 1;
                 totalTDaysEver += log.t;
 
-                isLogSmall = log.isSmall === true;
+                currentAusrutscherIsSmall = log.isSmall === true;
+                isLogSmall = currentAusrutscherIsSmall;
+                
+                // Echo-Ladungen beim initialen Log setzen
+                if (currentAusrutscherIsSmall) reboundCharges = 2;
+                else reboundCharges = 0;
                 iBase = isLogSmall ? (log.t * 2) : (log.t * 3);
                 expectedBaseDebt += iBase;
 
@@ -324,11 +333,13 @@ function simulateCycle(cycle, skipEchoCheck = false) {
                     } else { // state === 'REGEN'
                         let reduction = 1.0;
                         
-                        // FIX V22: Nirwana-Echo Rebound (Zündet nur bei Pause nach kleinem Tag)
-                        if (hasNirvanaEcho && yesterdayWasSmallAusrutscher) {
+                        // FIX V25: Mehrstufiges Nirwana-Echo (Verbraucht offene Ladungen mit Zähler)
+                        if (hasNirvanaEcho && reboundCharges > 0) {
                             reduction = 2.0;
+                            let chargeNum = 3 - reboundCharges; // Wird zu 1 oder 2
+                            reboundCharges--;
                             if (!isPhantom) {
-                                history.bonusDict[dStr] = `🌠 Nirwana-Echo: -2.0 Tage`;
+                                history.bonusDict[dStr] = `🌠 Nirwana-Echo (Ladung ${chargeNum}/2): -2.0 Tage`;
                             }
                         }
 
@@ -352,7 +363,7 @@ function simulateCycle(cycle, skipEchoCheck = false) {
             }
 
             if (dStr === lastRealDayStr && cycle.status === 'active') {
-                dashState = { debt, totalDebtEver, state, bewTimer, gotBonusToday: (isToday) ? gotBonusForToday : false, pendingBonus: false };
+                dashState = { debt, totalDebtEver, state, bewTimer, gotBonusToday: (isToday) ? gotBonusForToday : false, pendingBonus: false, activeReboundCharges: reboundCharges };
             }
 
             if (isToday && !isLogged && cycle.status === 'active') {
@@ -364,14 +375,7 @@ function simulateCycle(cycle, skipEchoCheck = false) {
                 }
             }
 
-            // FIX V22: Prüfen, ob der HEUTIGE Tag ein kleiner Ausrutscher war (Für den Rebound morgen)
-            if (activeAusrutscherDays > 0) {
-                yesterdayWasSmallAusrutscher = isLogSmall;
-            } else if (log && log.type === 'ausrutscher') {
-                yesterdayWasSmallAusrutscher = isLogSmall;
-            } else {
-                yesterdayWasSmallAusrutscher = false;
-            }
+            // (Alte yesterdayWasSmallAusrutscher-Logik komplett entfernt)
 
             simDate.setDate(simDate.getDate() + 1);
         }
@@ -381,10 +385,9 @@ function simulateCycle(cycle, skipEchoCheck = false) {
         }
 
         if (!dashState && cycle.status === 'active') {
-            // FIX V22: Anzeige auf dem Dashboard berücksichtigt kleine Tage ohne Bewährung
             let initialBewTimer = isBaseSmall ? 0 : 3;
             let initialState = isBaseSmall ? 'REGEN' : 'BEWAEHRUNG';
-            dashState = { debt: initialDebtTotal + manualSurcharge, totalDebtEver: initialDebtTotal + manualSurcharge, state: initialState, bewTimer: initialBewTimer, gotBonusToday: false, pendingBonus: false };
+            dashState = { debt: initialDebtTotal + manualSurcharge, totalDebtEver: initialDebtTotal + manualSurcharge, state: initialState, bewTimer: initialBewTimer, gotBonusToday: false, pendingBonus: false, activeReboundCharges: 0 };
         }
 
         let mFreeCurrent = 0;

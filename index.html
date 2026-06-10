@@ -125,59 +125,71 @@
       </div>
     </div>
 
-    <div class="card" id="base-form-card">
-      <h3>📊 Start des aktuellen Zyklus</h3>
-      <div id="open-base-warning" style="display:none; background:#fadbd8; color:#c0392b; padding:10px; border-radius:8px; margin-bottom:15px; font-weight:bold; font-size:0.9rem; text-align:center;"></div>
-      
-      <div class="form-grid">
-        <div>
-            <label>Startdatum</label>
-            <input type="date" id="base-start" onchange="calcBaseT()">
-        </div>
-        <div>
-            <label>Enddatum</label>
-            <input type="date" id="base-end" onchange="calcBaseT()">
-        </div>
-        <div class="form-group-tday" style="display:flex; gap:15px; align-items:center;">
-            <div style="flex:1">
-                <label>Dauer (Tage)</label>
-                <input type="number" id="base-t" readonly>
+    <details class="card" id="base-form-card">
+      <summary style="font-size: 1.1rem; font-weight: 800; cursor: pointer; color: #2c3e50; outline: none; margin-bottom: 5px;">⚙️ Einstellungen (Basis & Aufschlag)</summary>
+      <div style="margin-top: 15px; border-top: 1px solid #eee; padding-top: 15px;">
+          <h4 style="margin-top:0; margin-bottom:10px;">📊 Start des aktuellen Zyklus</h4>
+          <div id="open-base-warning" style="display:none; background:#fadbd8; color:#c0392b; padding:10px; border-radius:8px; margin-bottom:15px; font-weight:bold; font-size:0.9rem; text-align:center;"></div>
+          
+          <div class="form-grid">
+            <div>
+                <label>Startdatum</label>
+                <input type="date" id="base-start" onchange="calcBaseT()">
             </div>
-            <div style="flex:1; padding-top:20px;">
-                <label class="checkbox-wrapper">
-                    <input type="checkbox" id="base-small">
-                    <span>Kleiner Tag</span>
-                </label>
+            <div>
+                <label>Enddatum</label>
+                <input type="date" id="base-end" onchange="calcBaseT()">
             </div>
-        </div>
-        <div>
-            <label>Stress (Max)</label>
-            <select id="base-s" onchange="saveBase()">
-                <option value="0">Kein</option>
-                <option value="1">Moderat</option>
-                <option value="2">Hoch</option>
-            </select>
-        </div>
-        <div>
-            <label>Alkohol (Max)</label>
-            <select id="base-a" onchange="saveBase()">
-                <option value="0">Kein</option>
-                <option value="1">Moderat</option>
-                <option value="2">Hoch</option>
-            </select>
-        </div>
-        <div>
-            <label>Masturbation (M)</label>
-            <select id="base-m" onchange="saveBase()">
-                <option value="0">Kein</option>
-                <option value="3">Einmal</option>
-                <option value="1">Moderat</option>
-                <option value="2">Hoch</option>
-            </select>
-        </div>
+            <div class="form-group-tday" style="display:flex; gap:15px; align-items:center;">
+                <div style="flex:1">
+                    <label>Dauer (Tage)</label>
+                    <input type="number" id="base-t" readonly>
+                </div>
+                <div style="flex:1; padding-top:20px;">
+                    <label class="checkbox-wrapper">
+                        <input type="checkbox" id="base-small">
+                        <span>Kleiner Tag</span>
+                    </label>
+                </div>
+            </div>
+            <div>
+                <label>Stress (Max)</label>
+                <select id="base-s" onchange="saveBase()">
+                    <option value="0">Kein</option>
+                    <option value="1">Moderat</option>
+                    <option value="2">Hoch</option>
+                </select>
+            </div>
+            <div>
+                <label>Alkohol (Max)</label>
+                <select id="base-a" onchange="saveBase()">
+                    <option value="0">Kein</option>
+                    <option value="1">Moderat</option>
+                    <option value="2">Hoch</option>
+                </select>
+            </div>
+            <div>
+                <label>Masturbation (M)</label>
+                <select id="base-m" onchange="saveBase()">
+                    <option value="0">Kein</option>
+                    <option value="3">Einmal</option>
+                    <option value="1">Moderat</option>
+                    <option value="2">Hoch</option>
+                </select>
+            </div>
+          </div>
+          <button class="btn-tool" style="width:100%; margin-top: 15px; background: var(--header-bg); border: none; color: white;" onclick="saveBase(true)">💾 Speichern & Neu berechnen</button>
+          
+          <h4 style="margin-top: 25px; margin-bottom: 5px; border-top: 1px solid #eee; padding-top: 15px;">⚖️ Manueller Aufschlag</h4>
+          <p style="font-size: 0.8rem; color: #7f8c8d; margin-bottom: 15px;">Füge zusätzliche Regenerationstage hinzu, falls du mehr Zeit benötigst.</p>
+          <div style="display: flex; justify-content: center; align-items: center; gap: 10px;">
+              <button class="btn-tool" style="min-width: 40px; padding: 5px 10px; font-size: 1.2rem; flex: none;" onclick="document.getElementById('manual-surcharge-input').stepDown()">-</button>
+              <input type="number" id="manual-surcharge-input" value="0" min="0" style="width: 70px; text-align: center; font-weight: bold; font-size: 1.1rem; flex: none; background: var(--input-bg); border: 2px solid transparent; border-radius: 8px;">
+              <button class="btn-tool" style="min-width: 40px; padding: 5px 10px; font-size: 1.2rem; flex: none;" onclick="document.getElementById('manual-surcharge-input').stepUp()">+</button>
+              <button class="btn-tool" style="background: var(--header-bg); color: white; border: none; padding: 8px 15px; flex: none; font-weight: bold; border-radius: 8px;" onclick="saveManualSurcharge()">OK</button>
+          </div>
       </div>
-      <button class="btn-tool" style="width:100%; margin-top: 15px; background: var(--header-bg); border: none; color: white;" onclick="saveBase(true)">💾 Speichern & Neu berechnen</button>
-    </div>
+    </details>
 
     <div class="card" id="sandbox-planner-card">
         <h3 style="color:#9b59b6; border-bottom-color:#e8daef;">🔮 Zukunfts-Simulator</h3>
@@ -304,6 +316,14 @@
             <div class="stat-box" onclick="cycleCleanWindow()" style="cursor:pointer;">
                 <div class="stat-val" id="stat-total-days">0</div>
                 <div class="stat-label">Getrackte Tage (<span class="win-label">All-Time</span>)</div>
+            </div>
+            <div class="stat-box" onclick="cycleCleanWindow()" style="cursor:pointer;">
+                <div class="stat-val" style="color:#c0392b;" id="stat-large-smoked">0</div>
+                <div class="stat-label">Gr. Rauchtage (<span class="win-label">All-Time</span>)</div>
+            </div>
+            <div class="stat-box" onclick="cycleCleanWindow()" style="cursor:pointer;">
+                <div class="stat-val" style="color:#8e44ad;" id="stat-small-large-ratio">0:0</div>
+                <div class="stat-label">Klein:Groß (<span class="win-label">All-Time</span>)</div>
             </div>
         </div>
         

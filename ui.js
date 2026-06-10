@@ -138,6 +138,9 @@ function populateBaseForm() {
     safeSetVal('base-a', active.base.aLevel || 0); 
     safeSetVal('base-m', active.base.mLevel || 0);
     
+    // Befüllt das neue, statische Feld für den Aufschlag
+    safeSetVal('manual-surcharge-input', active.manualSurcharge || 0);
+    
     let lock = active.base.isOpen;
     
     if (isSandbox) { 
@@ -318,7 +321,28 @@ function renderDashboard() {
     }
     
     safeProp('dash-streak', 'className', 'streak-badge');
-    safeDisplay('dash-echo-badge', res.hasNirvanaEcho ? 'inline-block' : 'none');
+    
+    // FIX V24: Dynamische Anzeige für offene Echo-Ladungen
+    const dashEcho = document.getElementById('dash-echo-badge');
+    if (res.hasNirvanaEcho) {
+        if (ds.activeReboundCharges > 0) {
+            safeHTML('dash-echo-badge', `🌠 Super-Pause bereit! (${ds.activeReboundCharges}/2 Ladungen)`);
+            if (dashEcho) {
+                dashEcho.style.display = 'inline-block';
+                dashEcho.style.fontWeight = '800';
+                dashEcho.style.border = '2px solid #8e44ad';
+            }
+        } else {
+            safeHTML('dash-echo-badge', `🌠 Nirwana-Echo für Zyklus entsperrt`);
+            if (dashEcho) {
+                dashEcho.style.display = 'inline-block';
+                dashEcho.style.fontWeight = 'normal';
+                dashEcho.style.border = '1px solid #d2b4de';
+            }
+        }
+    } else {
+        safeDisplay('dash-echo-badge', 'none');
+    }
 
     if (ds.totalDebtEver > 0 && displayDebt > 0 && !res.isOpen) {
         let g = Math.round((ds.totalDebtEver - displayDebt) * 10) / 10;
@@ -532,7 +556,14 @@ function renderDashboard() {
         safeText('dash-ring-label', "REGENERATION");
         safeText('dash-days-left', `Schulden: ${fDebt} Tage`); 
         safeText('dash-target-date', `Ziel: ${res.finalEnd.toLocaleDateString('de-DE')}`);
-        safeText('dash-sub', "Du regenerierst mit 1,0x Geschwindigkeit."); 
+        
+        // FIX V24: Dynamischer Subtext für die Regenerationsgeschwindigkeit
+        if (res.hasNirvanaEcho && ds.activeReboundCharges > 0) {
+            safeText('dash-sub', `🌠 Du regenerierst durch das Echo mit 2,0x Geschwindigkeit!`);
+        } else {
+            safeText('dash-sub', "Du regenerierst mit 1,0x Geschwindigkeit."); 
+        }
+        
         safeDisplay('dash-streak', 'none');
     }
 
@@ -599,10 +630,12 @@ function renderDashboard() {
             let strA = Number.isInteger(dA) ? dA : dA.toFixed(1).replace('.', ',');
             let strB = Number.isInteger(dB) ? dB : dB.toFixed(1).replace('.', ',');
             
+            let pauseLabel = ds.activeReboundCharges > 0 ? "🟢 Bei Pause <span style='color:#8e44ad;font-size:0.8rem;'>(🌠 -2.0 Boost)</span>:" : "🟢 Bei Pause:";
+            
             safeHTML('dash-outlook', `
                 <div class="outlook-title">📊 Tagesausblick für heute</div>
                 <div class="outlook-row good">
-                    <span class="outlook-label">🟢 Bei Pause:</span>
+                    <span class="outlook-label">${pauseLabel}</span>
                     <span class="outlook-value">Schuld sinkt auf ${strA} (Ziel: ${resA.finalEnd.toLocaleDateString('de-DE')})</span>
                 </div>
                 <div class="outlook-row bad">
@@ -708,19 +741,6 @@ function renderHistorie() {
         <div class="stat-box" style="padding: 10px;"><div class="stat-val danger" style="font-size: 1.4rem; color: var(--danger);">+${systemAufschlag}</div><div class="stat-label" style="font-size: 0.65rem;">System-Strafe</div></div>
         <div class="stat-box" style="padding: 10px;"><div class="stat-val" style="font-size: 1.4rem; color: #8e44ad;">+${manualS}</div><div class="stat-label" style="font-size: 0.65rem;">Manuell</div></div>
         <div class="stat-box" style="padding: 10px; grid-column: span 2;"><div class="stat-val blue" style="font-size: 1.4rem; color: var(--nirvana-blue);">${totalRegenDebt}</div><div class="stat-label" style="font-size: 0.65rem;">Gesamtschuld</div></div>
-    </div>`;
-
-    // FIX V20.1: Steuer-Feld für den manuellen Aufschlag (direkt oberhalb des Regen-o-Meters)
-    html += `
-    <div style="margin-bottom: 15px; padding: 15px; background: #fff; border: 1px solid #e0e0e0; border-radius: 12px; box-shadow: var(--shadow);">
-        <div style="font-weight: 800; font-size: 1.1rem; color: #2c3e50; margin-bottom: 5px; text-align: center;">⚙️ Manueller Aufschlag</div>
-        <div style="font-size: 0.8rem; color: #7f8c8d; text-align: center; margin-bottom: 15px;">Füge zusätzliche Regenerationstage hinzu, falls du mehr Zeit benötigst.</div>
-        <div style="display: flex; justify-content: center; align-items: center; gap: 10px;">
-            <button class="btn-tool" style="min-width: 40px; padding: 5px 10px; font-size: 1.2rem; flex: none;" onclick="document.getElementById('manual-surcharge-input').stepDown()">-</button>
-            <input type="number" id="manual-surcharge-input" value="${manualS}" min="0" style="width: 70px; text-align: center; font-weight: bold; font-size: 1.1rem; flex: none; background: var(--input-bg); border: 2px solid transparent; border-radius: 8px;">
-            <button class="btn-tool" style="min-width: 40px; padding: 5px 10px; font-size: 1.2rem; flex: none;" onclick="document.getElementById('manual-surcharge-input').stepUp()">+</button>
-            <button class="btn-tool" style="background: var(--header-bg); color: white; border: none; padding: 8px 15px; flex: none; font-weight: bold; border-radius: 8px;" onclick="saveManualSurcharge()">OK</button>
-        </div>
     </div>`;
     
     // --- NEU: Schatten-Rechner für das Regen-o-Meter ---
@@ -1182,8 +1202,11 @@ function renderArchiv() {
     // --- Die neuen synchronisierten Fenster-Werte ---
     const winQuote = winTracked > 0 ? Math.round((winPause / winTracked) * 100) : 0;
     const winRatio = winSmoked > 0 ? (winPause / winSmoked).toFixed(1).replace('.', ',') : winPause;
+    
+    const winLargeSmoked = winSmoked - winSmallSmoked;
+    const winSlRatio = winLargeSmoked > 0 ? (winSmallSmoked / winLargeSmoked).toFixed(1).replace('.', ',') + ':1' : winSmallSmoked + ':0';
 
-    // -- Rotierbares 8er Grid --
+    // -- Rotierbares Stat-Grid --
     safeText('stat-clean-quote', winQuote + '%');
     safeText('stat-clean-ratio', `1:${winRatio}`);
     safeText('stat-triple-clean', winTriple); 
@@ -1192,6 +1215,8 @@ function renderArchiv() {
     safeText('stat-smoked-days', winSmoked); 
     safeText('stat-small-smoked', winSmallSmoked); 
     safeText('stat-total-days', winTracked); // FIX: Jetzt dynamisch durch Klick!
+    safeText('stat-large-smoked', winLargeSmoked); // NEU
+    safeText('stat-small-large-ratio', winSlRatio); // NEU
     
     // -- 4er Nirwana Grid --
     safeText('stat-max-nirvana', maxNirvana); 
@@ -1371,6 +1396,21 @@ function renderArchiv() {
             const smokedDays = res.history.t.length + res.history.a.length;
             const cleanDays = res.history.b.length + res.history.r.length + res.history.n.length;
             
+            // NEU: Klein vs Groß für diesen Zyklus iterieren
+            let cycleSmallSmoked = 0;
+            [...res.history.t, ...res.history.a].forEach(d => {
+                let dStr = toIsoString(d);
+                let isBase = (cycle.base?.start && dStr >= cycle.base.start && dStr <= cycle.base.end);
+                if (isBase) {
+                    if (cycle.base.isSmall) cycleSmallSmoked++;
+                } else {
+                    let log = (cycle.logs || {})[dStr];
+                    if (log && log.isSmall) cycleSmallSmoked++;
+                }
+            });
+            let cycleLargeSmoked = smokedDays - cycleSmallSmoked;
+            let cycleSlRatio = cycleLargeSmoked > 0 ? (cycleSmallSmoked / cycleLargeSmoked).toFixed(1).replace('.', ',') + ':1' : cycleSmallSmoked + ':0';
+
             const baseDebt = res.expectedBaseDebt || 0;
             const surcharge = (res.totalDebtEver || 0) - baseDebt;
             
@@ -1396,11 +1436,15 @@ function renderArchiv() {
                     <div><strong>Geraucht:</strong> <span style="color:var(--danger); font-weight:bold;">${smokedDays} Tage</span></div>
                     <div><strong>Clean:</strong> <span style="color:var(--btn-calc); font-weight:bold;">${cleanDays} Tage</span></div>
                     
+                    <div><strong>Davon Klein:</strong> <span style="color:#e67e22;">${cycleSmallSmoked} Tage</span></div>
+                    <div><strong>Davon Groß:</strong> <span style="color:#c0392b;">${cycleLargeSmoked} Tage</span></div>
+
                     <div><strong>Basis-Schuld:</strong> ${baseDebt} Tage</div>
                     <div><strong>Aufschlag:</strong> <span style="color:var(--danger);">+${surcharge} Tage</span></div>
                     
                     <div style="grid-column: span 2; border-top: 1px solid rgba(0,0,0,0.1); padding-top: 8px; margin-top: 4px;">
-                        <strong>Verhältnis (Rauchen : Clean):</strong> 1 : ${ratio}
+                        <strong>Verhältnis (Rauchen : Clean):</strong> 1 : ${ratio} <br>
+                        <strong style="color:#8e44ad;">Verhältnis (Klein : Groß):</strong> ${cycleSlRatio}
                     </div>
                 </div>`;
             archContainer.appendChild(card);
