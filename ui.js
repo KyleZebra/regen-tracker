@@ -612,6 +612,38 @@ function renderDashboard() {
         safeDisplay('dash-budget-box', 'none');
     }
 
+    // FIX V31: Anzeige für den Ausgleich des letzten Konsums
+    const compBox = document.getElementById('dash-compensation-box');
+    if (!isSandbox && !res.isOpen && ds.lastEventAdded !== undefined) {
+        let regenSince = ds.lastEventPeakDebt - displayDebt;
+        let balance = regenSince - ds.lastEventAdded;
+        
+        let dObj = parseLocal(ds.lastEventDateStr);
+        let dateLabel = dObj ? dObj.toLocaleDateString('de-DE', {day: '2-digit', month: '2-digit'}) : ds.lastEventDateStr;
+        let fmt = v => Number.isInteger(Math.round(v*10)/10) ? Math.round(v*10)/10 : (Math.round(v*10)/10).toFixed(1).replace('.', ',');
+        
+        if (balance >= 0) {
+            let surplusText = balance > 0 ? ` (+${fmt(balance)}T Altschuld)` : '';
+            safeHTML('dash-compensation-box', `
+                <div class="outlook-title" style="color: #27ae60;">✅ Konsum ausgeglichen!</div>
+                <div style="font-size: 0.85rem; color: #555;">
+                    Die <strong>${fmt(ds.lastEventAdded)} Tage Schuld</strong> vom letzten Rauchtag (${dateLabel}) sind komplett abgearbeitet${surplusText}.
+                </div>
+            `);
+            if (compBox) { compBox.style.display = 'block'; compBox.style.borderColor = '#c3e6cb'; compBox.style.background = '#f0fdf4'; }
+        } else {
+            safeHTML('dash-compensation-box', `
+                <div class="outlook-title" style="color: #e74c3c;">⏳ Konsum in Arbeit...</div>
+                <div style="font-size: 0.85rem; color: #555;">
+                    Vom letzten Rauchtag (${dateLabel}) sind noch <strong>${fmt(Math.abs(balance))} von ${fmt(ds.lastEventAdded)} Tagen</strong> Schuld offen.
+                </div>
+            `);
+            if (compBox) { compBox.style.display = 'block'; compBox.style.borderColor = '#f5c6cb'; compBox.style.background = '#fff5f5'; }
+        }
+    } else {
+        if (compBox) compBox.style.display = 'none';
+    }
+
     const todayStr = toIsoString(new Date());
     const isLoggedToday = activeCycle.logs && activeCycle.logs[todayStr] && activeCycle.logs[todayStr].type !== undefined;
     
