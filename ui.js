@@ -623,9 +623,9 @@ function renderDashboard() {
         let fmt = v => Number.isInteger(Math.round(v*10)/10) ? Math.round(v*10)/10 : (Math.round(v*10)/10).toFixed(1).replace('.', ',');
         
         if (balance >= 0) {
-            let surplusText = balance > 0 ? ` (+${fmt(balance)}T Altschuld)` : '';
+            let surplusText = balance > 0 ? ` (+ ${fmt(balance)}Tage Altschuld)` : '';
             safeHTML('dash-compensation-box', `
-                <div class="outlook-title" style="color: #27ae60;">✅ Konsum ausgeglichen!</div>
+                <div class="outlook-title" style="color: #27ae60;">✅ Ausgleich abgeschlossen!</div>
                 <div style="font-size: 0.85rem; color: #555;">
                     Die <strong>${fmt(ds.lastEventAdded)} Tage Schuld</strong> vom letzten Rauchtag (${dateLabel}) sind komplett abgearbeitet${surplusText}.
                 </div>
@@ -633,7 +633,7 @@ function renderDashboard() {
             if (compBox) { compBox.style.display = 'block'; compBox.style.borderColor = '#c3e6cb'; compBox.style.background = '#f0fdf4'; }
         } else {
             safeHTML('dash-compensation-box', `
-                <div class="outlook-title" style="color: #e74c3c;">⏳ Konsum in Arbeit...</div>
+                <div class="outlook-title" style="color: #e74c3c;">⏳ Ausgleich in Arbeit...</div>
                 <div style="font-size: 0.85rem; color: #555;">
                     Vom letzten Rauchtag (${dateLabel}) sind noch <strong>${fmt(Math.abs(balance))} von ${fmt(ds.lastEventAdded)} Tagen</strong> Schuld offen.
                 </div>
