@@ -623,7 +623,7 @@ function renderDashboard() {
         let fmt = v => Number.isInteger(Math.round(v*10)/10) ? Math.round(v*10)/10 : (Math.round(v*10)/10).toFixed(1).replace('.', ',');
         
         if (balance >= 0) {
-            let surplusText = balance > 0 ? ` (+ ${fmt(balance)}Tage Altschuld)` : '';
+            let surplusText = balance > 0 ? ` (+ ${fmt(balance)} Tag(e) Altschuld)` : '';
             safeHTML('dash-compensation-box', `
                 <div class="outlook-title" style="color: #27ae60;">✅ Ausgleich abgeschlossen!</div>
                 <div style="font-size: 0.85rem; color: #555;">
