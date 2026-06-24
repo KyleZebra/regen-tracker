@@ -652,7 +652,7 @@ function renderDashboard() {
             
             <div style="text-align: center; font-size: 0.85rem; font-weight: 700; color: #555;">
                 ${isDone 
-                    ? `Zusätzlich abgebaut: <span style="color: #8e44ad;">+ ${fmt(balance)} Tag(e) Altschuld</span>` 
+                    ? `Zusätzlich abgebaut: <span style="color: #8e44ad;">+ ${fmt(balance)} Tag(e)</span>` 
                     : `Es sind noch <span style="color: #e74c3c;">${fmt(Math.abs(balance))} Tag(e)</span> Strafe offen`
                 }
             </div>
