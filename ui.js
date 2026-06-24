@@ -630,7 +630,7 @@ function renderDashboard() {
 
         safeHTML('dash-compensation-box', `
             <div class="outlook-title" style="color: ${boxColor}; justify-content: center; font-size: 1rem; margin-bottom: 15px;">
-                ${isDone ? '✅ Konsum erfolgreich ausgeglichen!' : '⏳ Ausgleich in Arbeit...'}
+                ${isDone ? '✅ Konsum ausgeglichen!' : '⏳ Ausgleich läuft...'}
             </div>
             
             <div style="display: flex; justify-content: space-between; text-align: center; margin-bottom: 12px; gap: 10px;">
