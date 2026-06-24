@@ -637,12 +637,12 @@ function renderDashboard() {
                 <div style="flex: 1; background: rgba(255,255,255,0.7); border: 1px solid ${boxBorder}; padding: 10px 5px; border-radius: 8px;">
                     <div style="font-size: 0.7rem; color: #7f8c8d; text-transform: uppercase; font-weight: 800; margin-bottom: 4px;">Letzter Konsum</div>
                     <div style="font-weight: 800; font-size: 0.9rem; color: #2c3e50;">${dateLabel}</div>
-                    <div style="font-size: 0.75rem; color: #e74c3c; font-weight: 700; margin-top: 2px;">Strafe: ${fmt(ds.lastEventAdded)}T</div>
+                    <div style="font-size: 0.75rem; color: #e74c3c; font-weight: 700; margin-top: 2px;">Strafe: ${fmt(ds.lastEventAdded)} Tag(e)</div>
                 </div>
                 
                 <div style="flex: 1; background: rgba(255,255,255,0.7); border: 1px solid ${boxBorder}; padding: 10px 5px; border-radius: 8px;">
                     <div style="font-size: 0.7rem; color: #7f8c8d; text-transform: uppercase; font-weight: 800; margin-bottom: 4px;">Gesamt getilgt</div>
-                    <div style="font-weight: 800; font-size: 1.1rem; color: #27ae60;">+${fmt(regenSince)}<span style="font-size: 0.8rem;">T</span></div>
+                    <div style="font-weight: 800; font-size: 1.1rem; color: #27ae60;">+ ${fmt(regenSince)}<span style="font-size: 0.8rem;"> Tag(e)</span></div>
                 </div>
             </div>
             
@@ -652,8 +652,8 @@ function renderDashboard() {
             
             <div style="text-align: center; font-size: 0.85rem; font-weight: 700; color: #555;">
                 ${isDone 
-                    ? `Zusätzlich abgebaut: <span style="color: #8e44ad;">+${fmt(balance)} Tage Altschuld</span>` 
-                    : `Es sind noch <span style="color: #e74c3c;">${fmt(Math.abs(balance))} Tage</span> Strafe offen`
+                    ? `Zusätzlich abgebaut: <span style="color: #8e44ad;">+ ${fmt(balance)} Tag(e) Altschuld</span>` 
+                    : `Es sind noch <span style="color: #e74c3c;">${fmt(Math.abs(balance))} Tag(e)</span> Strafe offen`
                 }
             </div>
         `);
