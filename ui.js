@@ -612,34 +612,53 @@ function renderDashboard() {
         safeDisplay('dash-budget-box', 'none');
     }
 
-    // FIX V31: Anzeige für den Ausgleich des letzten Konsums
+    // FIX V33: Ästhetische Anzeige für den Ausgleich des letzten Konsums
     const compBox = document.getElementById('dash-compensation-box');
     if (!isSandbox && !res.isOpen && ds.lastEventAdded !== undefined) {
         let regenSince = ds.lastEventPeakDebt - displayDebt;
         let balance = regenSince - ds.lastEventAdded;
+        let progressPercent = ds.lastEventAdded > 0 ? Math.min(100, (regenSince / ds.lastEventAdded) * 100) : 100;
+        let isDone = balance >= 0;
         
         let dObj = parseLocal(ds.lastEventDateStr);
         let dateLabel = dObj ? dObj.toLocaleDateString('de-DE', {day: '2-digit', month: '2-digit'}) : ds.lastEventDateStr;
         let fmt = v => Number.isInteger(Math.round(v*10)/10) ? Math.round(v*10)/10 : (Math.round(v*10)/10).toFixed(1).replace('.', ',');
         
-        if (balance >= 0) {
-            let surplusText = balance > 0 ? ` (+ ${fmt(balance)} Tag(e) Altschuld)` : '';
-            safeHTML('dash-compensation-box', `
-                <div class="outlook-title" style="color: #27ae60;">✅ Ausgleich abgeschlossen!</div>
-                <div style="font-size: 0.85rem; color: #555;">
-                    Die <strong>${fmt(ds.lastEventAdded)} Tage Schuld</strong> vom letzten Rauchtag (${dateLabel}) sind komplett abgearbeitet${surplusText}.
+        let boxColor = isDone ? '#27ae60' : '#e74c3c';
+        let boxBg = isDone ? '#f0fdf4' : '#fff5f5';
+        let boxBorder = isDone ? '#c3e6cb' : '#f5c6cb';
+
+        safeHTML('dash-compensation-box', `
+            <div class="outlook-title" style="color: ${boxColor}; justify-content: center; font-size: 1rem; margin-bottom: 15px;">
+                ${isDone ? '✅ Konsum erfolgreich ausgeglichen!' : '⏳ Ausgleich in Arbeit...'}
+            </div>
+            
+            <div style="display: flex; justify-content: space-between; text-align: center; margin-bottom: 12px; gap: 10px;">
+                <div style="flex: 1; background: rgba(255,255,255,0.7); border: 1px solid ${boxBorder}; padding: 10px 5px; border-radius: 8px;">
+                    <div style="font-size: 0.7rem; color: #7f8c8d; text-transform: uppercase; font-weight: 800; margin-bottom: 4px;">Letzter Konsum</div>
+                    <div style="font-weight: 800; font-size: 0.9rem; color: #2c3e50;">${dateLabel}</div>
+                    <div style="font-size: 0.75rem; color: #e74c3c; font-weight: 700; margin-top: 2px;">Strafe: ${fmt(ds.lastEventAdded)}T</div>
                 </div>
-            `);
-            if (compBox) { compBox.style.display = 'block'; compBox.style.borderColor = '#c3e6cb'; compBox.style.background = '#f0fdf4'; }
-        } else {
-            safeHTML('dash-compensation-box', `
-                <div class="outlook-title" style="color: #e74c3c;">⏳ Ausgleich in Arbeit...</div>
-                <div style="font-size: 0.85rem; color: #555;">
-                    Vom letzten Rauchtag (${dateLabel}) sind noch <strong>${fmt(Math.abs(balance))} von ${fmt(ds.lastEventAdded)} Tagen</strong> Schuld offen.
+                
+                <div style="flex: 1; background: rgba(255,255,255,0.7); border: 1px solid ${boxBorder}; padding: 10px 5px; border-radius: 8px;">
+                    <div style="font-size: 0.7rem; color: #7f8c8d; text-transform: uppercase; font-weight: 800; margin-bottom: 4px;">Gesamt getilgt</div>
+                    <div style="font-weight: 800; font-size: 1.1rem; color: #27ae60;">+${fmt(regenSince)}<span style="font-size: 0.8rem;">T</span></div>
                 </div>
-            `);
-            if (compBox) { compBox.style.display = 'block'; compBox.style.borderColor = '#f5c6cb'; compBox.style.background = '#fff5f5'; }
-        }
+            </div>
+            
+            <div style="width: 100%; height: 8px; background: rgba(0,0,0,0.05); border-radius: 4px; margin-bottom: 10px; overflow: hidden; position: relative; border: 1px solid rgba(0,0,0,0.05);">
+                <div style="width: ${progressPercent}%; height: 100%; background: ${isDone ? '#27ae60' : '#f39c12'}; transition: width 0.5s ease-out;"></div>
+            </div>
+            
+            <div style="text-align: center; font-size: 0.85rem; font-weight: 700; color: #555;">
+                ${isDone 
+                    ? `Zusätzlich abgebaut: <span style="color: #8e44ad;">+${fmt(balance)} Tage Altschuld</span>` 
+                    : `Es sind noch <span style="color: #e74c3c;">${fmt(Math.abs(balance))} Tage</span> Strafe offen`
+                }
+            </div>
+        `);
+        
+        if (compBox) { compBox.style.display = 'block'; compBox.style.borderColor = boxBorder; compBox.style.background = boxBg; }
     } else {
         if (compBox) compBox.style.display = 'none';
     }
