@@ -624,7 +624,7 @@ function renderDashboard() {
         safeDisplay('dash-budget-box', 'none');
     }
 
-    // FIX V34: Interaktives Multi-Event Widget für den Ausgleich
+    // FIX V35: Interaktives Multi-Event Widget (Mathematisch kugelsicher)
     const compBox = document.getElementById('dash-compensation-box');
     if (!isSandbox && !res.isOpen && ds.recentEvents && ds.recentEvents.length > 0) {
         
@@ -640,8 +640,10 @@ function renderDashboard() {
             combinedPenalty += ds.recentEvents[i].added;
         }
         
-        // 2. Regeneration seit dem ÄLTESTEN betrachteten Vorfall
-        let regenSince = ds.recentEvents[targetEventIndex].peak - displayDebt;
+        // 2. Lebenszeit-Regeneration exakt berechnen (ohne Verfälschung durch neue Strafen)
+        let currentTotalRegen = ds.totalDebtEver - displayDebt;
+        let regenSince = currentTotalRegen - ds.recentEvents[targetEventIndex].regenAtEvent;
+        
         let balance = regenSince - combinedPenalty;
         let progressPercent = combinedPenalty > 0 ? Math.min(100, (regenSince / combinedPenalty) * 100) : 100;
         let isDone = balance >= 0;

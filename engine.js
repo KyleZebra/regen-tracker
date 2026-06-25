@@ -207,11 +207,11 @@ function simulateCycle(cycle, skipEchoCheck = false) {
 
         let dStr, log, isLogged, isFuture, isPast, isToday, isLogSmall, iBase, iS, iA, iC, pauschale, penalty, canPayout, pStr, isPhantom;
         
-        // FIX V34: Array-basierter Tracker für die letzten 3 Konsum-Events
+        // FIX V35: Tracker für die letzten 3 Events (mit Absoluter Regeneration als Anker)
         let recentEvents = [{
             date: cycle.base.end || toIsoString(new Date()),
             added: initialDebtTotal + manualSurcharge,
-            peak: debt
+            regenAtEvent: 0
         }];
 
         // FIX V23: Charge-System für das mehrtägige Nirwana-Echo
@@ -259,8 +259,8 @@ function simulateCycle(cycle, skipEchoCheck = false) {
                 debt += penalty;
                 totalDebtEver += penalty;
 
-                // FIX V34: Peak für den Ausgleich im Array festhalten
-                recentEvents.unshift({ date: dStr, added: penalty, peak: debt });
+                // FIX V35: Absolute Regeneration als unbestechlichen Anker im Array festhalten
+                recentEvents.unshift({ date: dStr, added: penalty, regenAtEvent: (totalDebtEver - debt) });
                 if (recentEvents.length > 3) recentEvents.pop();
 
                 finalDebtZeroDate = null;
