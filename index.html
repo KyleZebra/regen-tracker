@@ -120,7 +120,7 @@
     <div class="card" id="monthly-notes-card">
       <h3 id="monthly-notes-title">📝 Gedanken zum Monat</h3>
       <p style="font-size:0.8rem; color:#666; margin-top:-10px;">Diese Notizen werden zyklusübergreifend in deinem Archiv gesammelt.</p>
-      <textarea id="current-month-note" rows="8" placeholder="Was beschäftigt dich in diesem Monat?..." onblur="saveCurrentMonthlyNote()"></textarea>
+      <textarea id="current-month-note" rows="15" placeholder="Was beschäftigt dich in diesem Monat?..." onblur="saveCurrentMonthlyNote()"></textarea>
       <div style="display:flex; justify-content:flex-end; margin-top:10px;">
           <button class="btn-tool" style="padding:8px 15px; min-width:auto;" onclick="saveCurrentMonthlyNote(this)">💾 Speichern</button>
           <span id="monthly-note-saved-msg" style="display:none; color:#27ae60; font-weight:bold; font-size:0.85rem; margin-left:10px; align-self:center;">✅ Gespeichert</span>
@@ -353,10 +353,15 @@
 
     <div id="arch-echo" class="outlook-box" style="display:none; margin-top: 2rem;"></div>
 
-    <h3 style="margin-left:5px; color:#7f8c8d;">Abgeschlossene Zyklen</h3>
-    <div id="archive-container"></div>
+    <details style="margin-top: 2rem; margin-bottom: 1.5rem;">
+        <summary style="font-size: 1.1rem; font-weight: 800; cursor: pointer; color: #7f8c8d; outline: none; margin-bottom: 15px; margin-left: 5px;">📂 Abgeschlossene Zyklen</summary>
+        <div id="archive-container"></div>
+    </details>
         
-    <div id="archive-months-container"></div>
+    <details style="margin-bottom: 2rem;">
+        <summary style="font-size: 1.1rem; font-weight: 800; cursor: pointer; color: #7f8c8d; outline: none; margin-bottom: 15px; margin-left: 5px; border-bottom: 2px solid #fcf3cf; padding-bottom: 10px;">📅 Kalendarischer Jahres-Rückblick</summary>
+        <div id="archive-months-container" style="margin-top: 15px;"></div>
+    </details>
     
     <div class="tool-grid" style="margin-top:2rem;">
       <button class="btn-tool" style="color:var(--danger); border-color:#fadbd8; width:100%; grid-column: 1 / -1;" onclick="hardReset()">⚠️ Werkseinstellungen (Alles löschen)</button>

@@ -1662,7 +1662,8 @@ function renderArchiv() {
         });
     }
     
-    let archMonthsHtml = '<h3 style="margin-top:3rem; margin-bottom:1rem; border-bottom:2px solid #fcf3cf; padding-bottom:10px; color:#7f8c8d;">📅 Kalendarischer Jahres-Rückblick</h3>';
+    // FIX V36: Header wurde ins einklappbare HTML (<summary>) verschoben
+    let archMonthsHtml = ''; 
     let mKeys = Object.keys(archiveMonths).sort().reverse();
     
     if(mKeys.length === 0) {
