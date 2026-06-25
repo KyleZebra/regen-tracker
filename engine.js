@@ -207,10 +207,12 @@ function simulateCycle(cycle, skipEchoCheck = false) {
 
         let dStr, log, isLogged, isFuture, isPast, isToday, isLogSmall, iBase, iS, iA, iC, pauschale, penalty, canPayout, pStr, isPhantom;
         
-        // FIX V31: Tracker für den Ausgleich des letzten Rauchtages
-        let lastEventAdded = initialDebtTotal + manualSurcharge;
-        let lastEventPeakDebt = debt;
-        let lastEventDateStr = cycle.base.end || toIsoString(new Date());
+        // FIX V34: Array-basierter Tracker für die letzten 3 Konsum-Events
+        let recentEvents = [{
+            date: cycle.base.end || toIsoString(new Date()),
+            added: initialDebtTotal + manualSurcharge,
+            peak: debt
+        }];
 
         // FIX V23: Charge-System für das mehrtägige Nirwana-Echo
         let reboundCharges = 0;
@@ -257,10 +259,9 @@ function simulateCycle(cycle, skipEchoCheck = false) {
                 debt += penalty;
                 totalDebtEver += penalty;
 
-                // FIX V31: Peak für den Ausgleich festhalten
-                lastEventAdded = penalty;
-                lastEventPeakDebt = debt;
-                lastEventDateStr = dStr;
+                // FIX V34: Peak für den Ausgleich im Array festhalten
+                recentEvents.unshift({ date: dStr, added: penalty, peak: debt });
+                if (recentEvents.length > 3) recentEvents.pop();
 
                 finalDebtZeroDate = null;
 
@@ -379,7 +380,7 @@ function simulateCycle(cycle, skipEchoCheck = false) {
             }
 
             if (dStr === lastRealDayStr && cycle.status === 'active') {
-                dashState = { debt, totalDebtEver, state, bewTimer, gotBonusToday: (isToday) ? gotBonusForToday : false, pendingBonus: false, activeReboundCharges: reboundCharges, lastEventAdded: lastEventAdded, lastEventPeakDebt: lastEventPeakDebt, lastEventDateStr: lastEventDateStr };
+                dashState = { debt, totalDebtEver, state, bewTimer, gotBonusToday: (isToday) ? gotBonusForToday : false, pendingBonus: false, activeReboundCharges: reboundCharges, recentEvents: JSON.parse(JSON.stringify(recentEvents)) };
             }
 
             if (isToday && !isLogged && cycle.status === 'active') {
@@ -403,7 +404,7 @@ function simulateCycle(cycle, skipEchoCheck = false) {
         if (!dashState && cycle.status === 'active') {
             let initialBewTimer = isBaseSmall ? 0 : 3;
             let initialState = isBaseSmall ? 'REGEN' : 'BEWAEHRUNG';
-            dashState = { debt: initialDebtTotal + manualSurcharge, totalDebtEver: initialDebtTotal + manualSurcharge, state: initialState, bewTimer: initialBewTimer, gotBonusToday: false, pendingBonus: false, activeReboundCharges: 0, lastEventAdded: initialDebtTotal + manualSurcharge, lastEventPeakDebt: initialDebtTotal + manualSurcharge, lastEventDateStr: cycle.base.end };
+            dashState = { debt: initialDebtTotal + manualSurcharge, totalDebtEver: initialDebtTotal + manualSurcharge, state: initialState, bewTimer: initialBewTimer, gotBonusToday: false, pendingBonus: false, activeReboundCharges: 0, recentEvents: JSON.parse(JSON.stringify(recentEvents)) };
         }
 
         let mFreeCurrent = 0;

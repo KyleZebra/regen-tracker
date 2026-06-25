@@ -285,6 +285,18 @@ function updateUI() {
 }
 
 // --- Dashboard & Vorschau ---
+// FIX V34: Globaler State & Klick-Handler für das Ausgleichs-Widget
+window.currentCompDepth = 1;
+window.cycleCompensationDepth = function() {
+    const res = activeSimResult;
+    if (!res || !res.dashState || !res.dashState.recentEvents) return;
+    const maxDepth = res.dashState.recentEvents.length;
+    if (maxDepth <= 1) return; // Nichts zu blättern
+    
+    window.currentCompDepth = (window.currentCompDepth % maxDepth) + 1;
+    if (typeof updateUI === 'function') updateUI();
+};
+
 function renderDashboard() {
     const res = activeSimResult; 
     const activeCycle = getActiveCycle();
@@ -612,32 +624,60 @@ function renderDashboard() {
         safeDisplay('dash-budget-box', 'none');
     }
 
-    // FIX V33: Ästhetische Anzeige für den Ausgleich des letzten Konsums
+    // FIX V34: Interaktives Multi-Event Widget für den Ausgleich
     const compBox = document.getElementById('dash-compensation-box');
-    if (!isSandbox && !res.isOpen && ds.lastEventAdded !== undefined) {
-        let regenSince = ds.lastEventPeakDebt - displayDebt;
-        let balance = regenSince - ds.lastEventAdded;
-        let progressPercent = ds.lastEventAdded > 0 ? Math.min(100, (regenSince / ds.lastEventAdded) * 100) : 100;
+    if (!isSandbox && !res.isOpen && ds.recentEvents && ds.recentEvents.length > 0) {
+        
+        // Tiefe absichern, falls Array kleiner wird
+        if (window.currentCompDepth > ds.recentEvents.length) window.currentCompDepth = ds.recentEvents.length;
+        
+        let depth = window.currentCompDepth;
+        let targetEventIndex = depth - 1; // Array ist 0-basiert
+        
+        // 1. Strafen aufsummieren
+        let combinedPenalty = 0;
+        for (let i = 0; i < depth; i++) {
+            combinedPenalty += ds.recentEvents[i].added;
+        }
+        
+        // 2. Regeneration seit dem ÄLTESTEN betrachteten Vorfall
+        let regenSince = ds.recentEvents[targetEventIndex].peak - displayDebt;
+        let balance = regenSince - combinedPenalty;
+        let progressPercent = combinedPenalty > 0 ? Math.min(100, (regenSince / combinedPenalty) * 100) : 100;
         let isDone = balance >= 0;
         
-        let dObj = parseLocal(ds.lastEventDateStr);
-        let dateLabel = dObj ? dObj.toLocaleDateString('de-DE', {day: '2-digit', month: '2-digit'}) : ds.lastEventDateStr;
+        let dObj = parseLocal(ds.recentEvents[targetEventIndex].date);
+        let dateLabel = dObj ? dObj.toLocaleDateString('de-DE', {day: '2-digit', month: '2-digit'}) : ds.recentEvents[targetEventIndex].date;
         let fmt = v => Number.isInteger(Math.round(v*10)/10) ? Math.round(v*10)/10 : (Math.round(v*10)/10).toFixed(1).replace('.', ',');
         
         let boxColor = isDone ? '#27ae60' : '#e74c3c';
         let boxBg = isDone ? '#f0fdf4' : '#fff5f5';
         let boxBorder = isDone ? '#c3e6cb' : '#f5c6cb';
+        
+        // Paginierungs-Punkte generieren
+        let depthDots = '';
+        if (ds.recentEvents.length > 1) {
+            for (let i = 1; i <= ds.recentEvents.length; i++) {
+                let dotColor = (i === depth) ? boxColor : 'rgba(0,0,0,0.15)';
+                depthDots += `<span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:${dotColor}; margin: 0 4px; transition: background 0.3s;"></span>`;
+            }
+        }
+        
+        let headerText = isDone ? '✅ Ausgleich abgeschlossen!' : '⏳ Ausgleich läuft...';
+        let konsumLabel = depth === 1 ? 'Letzter Konsum' : `Letzte ${depth} Konsumtage`;
 
         safeHTML('dash-compensation-box', `
             <div class="outlook-title" style="color: ${boxColor}; justify-content: center; font-size: 1rem; margin-bottom: 15px;">
-                ${isDone ? '✅ Konsum ausgeglichen!' : '⏳ Ausgleich läuft...'}
+                ${headerText}
             </div>
             
             <div style="display: flex; justify-content: space-between; text-align: center; margin-bottom: 12px; gap: 10px;">
-                <div style="flex: 1; background: rgba(255,255,255,0.7); border: 1px solid ${boxBorder}; padding: 10px 5px; border-radius: 8px;">
-                    <div style="font-size: 0.7rem; color: #7f8c8d; text-transform: uppercase; font-weight: 800; margin-bottom: 4px;">Letzter Konsum</div>
-                    <div style="font-weight: 800; font-size: 0.9rem; color: #2c3e50;">${dateLabel}</div>
-                    <div style="font-size: 0.75rem; color: #e74c3c; font-weight: 700; margin-top: 2px;">Strafe: ${fmt(ds.lastEventAdded)} Tag(e)</div>
+                <div onclick="cycleCompensationDepth()" style="flex: 1; background: rgba(255,255,255,0.7); border: 1px solid ${boxBorder}; padding: 10px 5px; border-radius: 8px; cursor: pointer; transition: transform 0.1s; box-shadow: 0 2px 5px rgba(0,0,0,0.02);" onmousedown="this.style.transform='scale(0.96)'" onmouseup="this.style.transform='scale(1)'" title="Klicken für weitere Historie">
+                    <div style="font-size: 0.7rem; color: #7f8c8d; text-transform: uppercase; font-weight: 800; margin-bottom: 4px; display:flex; align-items:center; justify-content:center; gap:4px;">
+                        ${konsumLabel} <span style="font-size:0.6rem;">🔄</span>
+                    </div>
+                    <div style="font-weight: 800; font-size: 0.9rem; color: #2c3e50;">ab ${dateLabel}</div>
+                    <div style="font-size: 0.75rem; color: #e74c3c; font-weight: 700; margin-top: 2px;">Strafe: ${fmt(combinedPenalty)} Tag(e)</div>
                 </div>
                 
                 <div style="flex: 1; background: rgba(255,255,255,0.7); border: 1px solid ${boxBorder}; padding: 10px 5px; border-radius: 8px;">
@@ -646,16 +686,17 @@ function renderDashboard() {
                 </div>
             </div>
             
-            <div style="width: 100%; height: 8px; background: rgba(0,0,0,0.05); border-radius: 4px; margin-bottom: 10px; overflow: hidden; position: relative; border: 1px solid rgba(0,0,0,0.05);">
+            <div style="width: 100%; height: 8px; background: rgba(0,0,0,0.05); border-radius: 4px; margin-bottom: 8px; overflow: hidden; position: relative; border: 1px solid rgba(0,0,0,0.05);">
                 <div style="width: ${progressPercent}%; height: 100%; background: ${isDone ? '#27ae60' : '#f39c12'}; transition: width 0.5s ease-out;"></div>
             </div>
             
-            <div style="text-align: center; font-size: 0.85rem; font-weight: 700; color: #555;">
+            <div style="text-align: center; font-size: 0.85rem; font-weight: 700; color: #555; margin-bottom: ${depthDots ? '8px' : '0'};">
                 ${isDone 
                     ? `Zusätzlich abgebaut: <span style="color: #8e44ad;">+ ${fmt(balance)} Tag(e)</span>` 
                     : `Es sind noch <span style="color: #e74c3c;">${fmt(Math.abs(balance))} Tag(e)</span> Strafe offen`
                 }
             </div>
+            ${depthDots ? `<div style="text-align: center; margin-top: 6px;">${depthDots}</div>` : ''}
         `);
         
         if (compBox) { compBox.style.display = 'block'; compBox.style.borderColor = boxBorder; compBox.style.background = boxBg; }
