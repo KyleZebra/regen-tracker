@@ -117,15 +117,17 @@
 
   <div id="tab-historie" class="tab-content">
     
-    <div class="card" id="monthly-notes-card">
-      <h3 id="monthly-notes-title">📝 Gedanken zum Monat</h3>
-      <p style="font-size:0.8rem; color:#666; margin-top:-10px;">Diese Notizen werden zyklusübergreifend in deinem Archiv gesammelt.</p>
-      <textarea id="current-month-note" rows="15" placeholder="Was beschäftigt dich in diesem Monat?..." onblur="saveCurrentMonthlyNote()"></textarea>
-      <div style="display:flex; justify-content:flex-end; margin-top:10px;">
-          <button class="btn-tool" style="padding:8px 15px; min-width:auto;" onclick="saveCurrentMonthlyNote(this)">💾 Speichern</button>
-          <span id="monthly-note-saved-msg" style="display:none; color:#27ae60; font-weight:bold; font-size:0.85rem; margin-left:10px; align-self:center;">✅ Gespeichert</span>
+    <details class="card" id="monthly-notes-card" open>
+      <summary id="monthly-notes-title" style="font-size: 1.1rem; font-weight: 800; cursor: pointer; color: #2c3e50; outline: none; margin-bottom: 5px;">📝 Gedanken zum Monat</summary>
+      <div style="margin-top: 15px; border-top: 1px solid #eee; padding-top: 15px;">
+          <p style="font-size:0.8rem; color:#666; margin-top:0;">Diese Notizen werden zyklusübergreifend in deinem Archiv gesammelt.</p>
+          <textarea id="current-month-note" rows="16" placeholder="Was beschäftigt dich in diesem Monat?..." onblur="saveCurrentMonthlyNote()"></textarea>
+          <div style="display:flex; justify-content:flex-end; margin-top:10px;">
+              <button class="btn-tool" style="padding:8px 15px; min-width:auto;" onclick="saveCurrentMonthlyNote(this)">💾 Speichern</button>
+              <span id="monthly-note-saved-msg" style="display:none; color:#27ae60; font-weight:bold; font-size:0.85rem; margin-left:10px; align-self:center;">✅ Gespeichert</span>
+          </div>
       </div>
-    </div>
+    </details>
 
     <details class="card" id="base-form-card">
       <summary style="font-size: 1.1rem; font-weight: 800; cursor: pointer; color: #2c3e50; outline: none; margin-bottom: 5px;">⚙️ Basis-Einstellungen</summary>
@@ -354,7 +356,7 @@
     <div id="arch-echo" class="outlook-box" style="display:none; margin-top: 2rem;"></div>
 
     <details style="margin-top: 2rem; margin-bottom: 1.5rem;">
-        <summary style="font-size: 1.1rem; font-weight: 800; cursor: pointer; color: #7f8c8d; outline: none; margin-bottom: 15px; margin-left: 5px;">📂 Abgeschlossene Zyklen</summary>
+        <summary style="font-size: 1.1rem; font-weight: 800; cursor: pointer; color: #7f8c8d; outline: none; margin-bottom: 15px; margin-left: 5px; border-bottom: 2px solid #fcf3cf">📂 Abgeschlossene Zyklen</summary>
         <div id="archive-container"></div>
     </details>
         
