@@ -1001,6 +1001,12 @@ function renderHistorie() {
         if (targetObj > rawMaxDate) rawMaxDate = targetObj; 
     }
     
+    // FIX V39: Kalender automatisch für die Schutzzone erweitern
+    if (active && active.base && active.base.safeEnd) {
+        const safeEndObj = parseLocal(active.base.safeEnd);
+        if (safeEndObj > rawMaxDate) rawMaxDate = safeEndObj;
+    }
+    
     let current = new Date(minDate.getFullYear(), minDate.getMonth(), 1);
     const realEnd = new Date(rawMaxDate.getFullYear(), rawMaxDate.getMonth() + 1, 0);
     const todayStr = new Date().toDateString(); 
@@ -1064,7 +1070,13 @@ function renderHistorie() {
           }
       }
 
-      calHtml += `<td class="active-month ${isTodayClass}" style="${tdStyle}"><span class="date-num">${current.getDate()}.</span>${tagText ? `<span class="tag ${tagClass}">${tagText.trim()}</span>` : ''}</td>`;
+      // FIX V39: Monatsnamen als kleinen Text anzeigen
+      let dayText = current.getDate() + ".";
+      if (current.getDate() === 1 || current.getTime() === new Date(minDate.getFullYear(), minDate.getMonth(), 1).getTime()) {
+          dayText += " <span style='color: #2c3e50; opacity: 0.7; font-weight: 800; font-size: 0.7rem;'>" + current.toLocaleDateString('de-DE', { month: 'short' }) + "</span>";
+      }
+
+      calHtml += `<td class="active-month ${isTodayClass}" style="${tdStyle}"><span class="date-num">${dayText}</span>${tagText ? `<span class="tag ${tagClass}">${tagText.trim()}</span>` : ''}</td>`;
       
       if (current.getDay() === 0 && current < realEnd) {
           calHtml += "</tr><tr>"; 
