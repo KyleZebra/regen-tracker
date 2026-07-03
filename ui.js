@@ -126,6 +126,36 @@ function calcBaseT() {
     } 
 }
 
+// FIX V38: Logik für die Schutzzone
+function saveSafeZone() {
+    const active = getActiveCycle();
+    if (!active || !active.base) return customAlert("Kein aktiver Zyklus gefunden.");
+    
+    const s = safeVal('safe-zone-start');
+    const e = safeVal('safe-zone-end');
+    
+    if (!s || !e) return customAlert("Bitte Start und Ende der Schutzzone eintragen.");
+    if (s > e) return customAlert("Das Startdatum darf nicht nach dem Enddatum liegen.");
+    
+    active.base.safeStart = s;
+    active.base.safeEnd = e;
+    saveData(true);
+    customAlert("Schutzzone aktiviert! Sieh dir den Kalender an.");
+    if(typeof updateUI === 'function') updateUI();
+}
+
+function clearSafeZone() {
+    const active = getActiveCycle();
+    if (active && active.base) {
+        delete active.base.safeStart;
+        delete active.base.safeEnd;
+        safeSetVal('safe-zone-start', "");
+        safeSetVal('safe-zone-end', "");
+        saveData(true);
+        if(typeof updateUI === 'function') updateUI();
+    }
+}
+
 function populateBaseForm() {
     const active = getActiveCycle(); 
     if (!active || !active.base) return;
@@ -137,6 +167,10 @@ function populateBaseForm() {
     safeSetVal('base-s', active.base.sLevel || 0); 
     safeSetVal('base-a', active.base.aLevel || 0); 
     safeSetVal('base-m', active.base.mLevel || 0);
+
+    // FIX V38: Schutzzone befüllen
+    safeSetVal('safe-zone-start', active.base.safeStart || "");
+    safeSetVal('safe-zone-end', active.base.safeEnd || "");
     
     // Befüllt das neue, statische Feld für den Aufschlag (Extrem-Fallback auf 0)
     let safeSurcharge = active.manualSurcharge !== undefined && active.manualSurcharge !== null ? active.manualSurcharge : 0;
@@ -1022,7 +1056,15 @@ function renderHistorie() {
           tagClass += " bonus-drop";
       }
 
-      calHtml += `<td class="active-month ${isTodayClass}"><span class="date-num">${current.getDate()}.</span>${tagText ? `<span class="tag ${tagClass}">${tagText.trim()}</span>` : ''}</td>`;
+      // FIX V38: Schutzzonen-Highlighting
+      let tdStyle = "";
+      if (active && active.base && active.base.safeStart && active.base.safeEnd) {
+          if (isoDStr >= active.base.safeStart && isoDStr <= active.base.safeEnd) {
+              tdStyle = "background-color: #fff0f5; box-shadow: inset 0 0 0 2px #fd79a8;";
+          }
+      }
+
+      calHtml += `<td class="active-month ${isTodayClass}" style="${tdStyle}"><span class="date-num">${current.getDate()}.</span>${tagText ? `<span class="tag ${tagClass}">${tagText.trim()}</span>` : ''}</td>`;
       
       if (current.getDay() === 0 && current < realEnd) {
           calHtml += "</tr><tr>"; 

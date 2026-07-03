@@ -2,7 +2,7 @@
 // data.js - State Management & Core Helpers
 // ==========================================
 
-const APP_VERSION = '37 (NewBalance)';
+const APP_VERSION = '38 (SafeZone)'; // V38: Schutzzonen-Feature
 
 // --- Defensive DOM Helpers ---
 const safeVal = (id) => { 

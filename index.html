@@ -193,7 +193,32 @@
               <button class="btn-tool" style="background: var(--header-bg); color: white; border: none; padding: 8px 15px; flex: none; font-weight: bold; border-radius: 8px;" onclick="saveManualSurcharge()">OK</button>
           </div>
       </div>
+
+       <!-- FIX V38: Die neue Schutzzone -->
+    <details class="card" id="safe-zone-card" style="border-left-color: #fd79a8; background: #fffafb;">
+      <summary style="font-size: 1.1rem; font-weight: 800; cursor: pointer; color: #d63031; outline: none; margin-bottom: 5px;">🛡️ Schutzzone (Ziel)</summary>
+      <div style="margin-top: 15px; border-top: 1px dashed #fd79a8; padding-top: 15px;">
+          <p style="font-size: 0.8rem; color: #e84393; margin-top: 0; margin-bottom: 15px;">Setze dir ein Zeitfenster, in dem du auf keinen Fall rauchen möchtest. Diese Zone wird im Kalender hellrosa markiert.</p>
+          <div class="form-grid">
+              <div>
+                  <label>Startdatum</label>
+                  <input type="date" id="safe-zone-start">
+              </div>
+              <div>
+                  <label>Enddatum</label>
+                  <input type="date" id="safe-zone-end">
+              </div>
+          </div>
+          <div style="display: flex; gap: 10px; margin-top: 15px;">
+              <button class="btn-tool" style="border-color:#fadbd8; color:var(--danger); flex: 0.3;" onclick="clearSafeZone()" title="Zone löschen">🗑️</button>
+              <button class="btn-tool" style="background: #e84393; border: none; color: white; flex: 1; font-weight: bold;" onclick="saveSafeZone()">🛡️ Schutzzone aktivieren</button>
+          </div>
+      </div>
     </details>
+
+    </details>
+
+   
 
     <div class="card" id="sandbox-planner-card">
         <h3 style="color:#9b59b6; border-bottom-color:#e8daef;">🔮 Zukunfts-Simulator</h3>
