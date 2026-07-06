@@ -1695,7 +1695,8 @@ function renderArchiv() {
             
             if(!cycle.base?.start) return; 
             
-            const allArchDates = [...res.history.t, ...res.history.a, ...res.history.b, ...res.history.r, ...res.history.n];
+            // FIX V42: Chronologische Sortierung, damit das letzte Element wirklich das Enddatum ist!
+            const allArchDates = [...res.history.t, ...res.history.a, ...res.history.b, ...res.history.r, ...res.history.n].sort((a,b) => a - b);
             
             // --- Mathematische Aufbereitung der exakten Zyklus-Stats ---
             const totalDays = allArchDates.length;
