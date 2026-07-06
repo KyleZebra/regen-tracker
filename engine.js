@@ -86,21 +86,25 @@ function simulateCycle(cycle, skipEchoCheck = false) {
             return { failed: true, cycleId: cycle ? cycle.id : 'unknown', errorMessage: "Daten unvollständig." };
         }
 
-        let baseT = cycle.base.tDays || 1;
+        // FIX V40: Isolvenz-Erkennung
+        let isInsolvency = cycle.base.isInsolvency === true;
+        let baseT = isInsolvency ? 0 : (cycle.base.tDays || 1);
         let isBaseSmall = cycle.base.isSmall === true;
 
-        let baseVal = isBaseSmall ? (baseT * 2) : (baseT * 3);
+        let baseVal = isInsolvency ? 21 : (isBaseSmall ? (baseT * 2) : (baseT * 3));
         let expectedBaseDebt = baseVal;
 
-        let sAdd = 0, aAdd = 0;
-        if (baseT < 4) {
-            sAdd = (cycle.base.sLevel === 1 ? 1 : cycle.base.sLevel === 2 ? 2 : 0);
-            aAdd = (cycle.base.aLevel === 1 ? 1 : cycle.base.aLevel === 2 ? 2 : 0);
-        } else {
-            sAdd = Math.ceil(baseVal * (cycle.base.sLevel === 1 ? 0.1 : cycle.base.sLevel === 2 ? 0.25 : 0));
-            aAdd = Math.ceil(baseVal * (cycle.base.aLevel === 1 ? 0.1 : cycle.base.aLevel === 2 ? 0.25 : 0));
+        let sAdd = 0, aAdd = 0, comboAdd = 0;
+        if (!isInsolvency) {
+            if (baseT < 4) {
+                sAdd = (cycle.base.sLevel === 1 ? 1 : cycle.base.sLevel === 2 ? 2 : 0);
+                aAdd = (cycle.base.aLevel === 1 ? 1 : cycle.base.aLevel === 2 ? 2 : 0);
+            } else {
+                sAdd = Math.ceil(baseVal * (cycle.base.sLevel === 1 ? 0.1 : cycle.base.sLevel === 2 ? 0.25 : 0));
+                aAdd = Math.ceil(baseVal * (cycle.base.aLevel === 1 ? 0.1 : cycle.base.aLevel === 2 ? 0.25 : 0));
+            }
+            comboAdd = (cycle.base.sLevel === 2 && cycle.base.aLevel === 2) ? 1 : 0;
         }
-        let comboAdd = (cycle.base.sLevel === 2 && cycle.base.aLevel === 2) ? 1 : 0;
 
         // FIX V25.1: Extrem robuste Absicherung des manuellen Aufschlags
         let manualSurcharge = 0;
@@ -130,14 +134,14 @@ function simulateCycle(cycle, skipEchoCheck = false) {
 
         let initialDebtTotal = baseVal + sAdd + aAdd + comboAdd;
         let smallTxt = isBaseSmall ? " (Kleiner Tag)" : " (Standardtag)";
-        let basePenaltyStr = `Initiale Schuld: ${initialDebtTotal} Tage (Basis: ${baseVal}${smallTxt}, Stress: ${sAdd}, Alk: ${aAdd}, Kombi: ${comboAdd})`;
+        let basePenaltyStr = isInsolvency ? `Initiale Schuld: 21 Tage (Insolvenz-Neustart)` : `Initiale Schuld: ${initialDebtTotal} Tage (Basis: ${baseVal}${smallTxt}, Stress: ${sAdd}, Alk: ${aAdd}, Kombi: ${comboAdd})`;
 
         let debt = initialDebtTotal + manualSurcharge;
         let totalDebtEver = debt;
         let totalTDaysEver = baseT;
 
-        // FIX V22: Kleine Tage generieren 0 Bewährung.
-        let currentBlockTargetBew = isBaseSmall ? 0 : 3;
+        // FIX V40: Insolvenz generiert (wie kleine Tage) sofort den Start ins Nirwana/Regeneration
+        let currentBlockTargetBew = (isBaseSmall || isInsolvency) ? 0 : 3;
         let currentBlockServed = 0;
         let bewTimer = currentBlockTargetBew - currentBlockServed;
         

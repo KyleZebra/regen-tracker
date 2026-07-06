@@ -194,7 +194,18 @@ function populateBaseForm() {
     safeProp('base-a', 'disabled', lock); 
     safeProp('base-m', 'disabled', lock);
     
-    if (active.base.isOpen) {
+    // FIX V40: Insolvenz-Sperre
+    if (active.base.isInsolvency) {
+        safeDisplay('open-base-warning', 'block');
+        safeHTML('open-base-warning', "💸 <strong>Insolvenz-Zyklus aktiv!</strong> Du baust 21 Tage harte Regeneration ab. Die Basis-Einstellungen sind gesperrt.");
+        lock = true;
+        safeProp('base-start', 'readOnly', lock); 
+        safeProp('base-end', 'readOnly', lock); 
+        safeProp('base-small', 'disabled', lock);
+        safeProp('base-s', 'disabled', lock); 
+        safeProp('base-a', 'disabled', lock); 
+        safeProp('base-m', 'disabled', lock);
+    } else if (active.base.isOpen) {
         safeDisplay('open-base-warning', 'block');
         safeHTML('open-base-warning', "⚠️ Initiale Konsumphase ist noch offen! Drücke auf 'Pause', um sie abzuschließen.");
     } else {
@@ -329,6 +340,46 @@ window.cycleCompensationDepth = function() {
     
     window.currentCompDepth = (window.currentCompDepth % maxDepth) + 1;
     if (typeof updateUI === 'function') updateUI();
+};
+
+// FIX V40: Die Insolvenz Logik
+window.declareInsolvency = function() {
+    const active = getActiveCycle();
+    if (!active) return customAlert("Kein aktiver Zyklus gefunden.");
+    
+    customConfirm("Willst du wirklich Insolvenz anmelden? Dieser Zyklus wird beendet und ins Archiv verschoben. Du startest HEUTE einen völlig neuen Zyklus mit exakt 21 Tagen harter Regenerationsschuld.", () => {
+        const todayStr = toIsoString(new Date());
+        const yesterdayStr = toIsoString(addDays(new Date(), -1));
+        
+        // Alten Zyklus versiegeln
+        active.status = 'archived';
+        active.isInsolvent = true;
+        if (active.base && active.base.isOpen) active.base.isOpen = false;
+        
+        // Neuen Insolvenz-Zyklus anlegen (Ende auf Gestern trickst den Kalender aus!)
+        const newCycle = {
+            id: Date.now(),
+            status: 'active',
+            base: { 
+                isInsolvency: true, 
+                start: todayStr, 
+                end: yesterdayStr, 
+                tDays: 0, 
+                isSmall: false, 
+                sLevel: 0, 
+                aLevel: 0, 
+                mLevel: 0, 
+                isOpen: false 
+            },
+            logs: {}
+        };
+        
+        getApp().cycles.push(newCycle);
+        saveData(false);
+        switchTab('dashboard');
+        if(typeof updateUI === 'function') updateUI();
+        customAlert("💸 Insolvenz angemeldet. Dein 21-Tage-Neustart hat begonnen.");
+    });
 };
 
 function renderDashboard() {
@@ -1684,11 +1735,14 @@ function renderArchiv() {
             
             let echoBadge = (smokedDays > 0 && nirvanaDays >= smokedDays) ? `<span style="background:#f5eef8; color:#8e44ad; font-size:0.7rem; padding:3px 8px; border-radius:12px; font-weight:800; border:1px solid #d2b4de; margin-left:8px;">🌠 Echo verdient</span>` : "";
             
+            // FIX V40: Insolvenz-Badge
+            let insolvBadge = cycle.isInsolvent ? `<span style="background:var(--danger); color:white; font-size:0.7rem; padding:3px 8px; border-radius:12px; font-weight:800; border:1px solid #c0392b; margin-left:8px;">💸 INSOLVENT</span>` : "";
+            
             const card = document.createElement('div'); 
             card.className = 'archive-card';
             card.innerHTML = `
                 <div class="archive-header">
-                    <div class="archive-title" style="display:flex; align-items:center; flex-wrap:wrap; gap:5px;">Zyklus: ${parseLocal(cycle.base.start).toLocaleDateString('de-DE', {day:'2-digit', month:'short', year:'numeric'})} – ${allArchDates.length>0 ? allArchDates[allArchDates.length-1].toLocaleDateString('de-DE', {day:'2-digit', month:'short'}) : "Unbekannt"} ${echoBadge}</div>
+                    <div class="archive-title" style="display:flex; align-items:center; flex-wrap:wrap; gap:5px;">Zyklus: ${parseLocal(cycle.base.start).toLocaleDateString('de-DE', {day:'2-digit', month:'short', year:'numeric'})} – ${allArchDates.length>0 ? allArchDates[allArchDates.length-1].toLocaleDateString('de-DE', {day:'2-digit', month:'short'}) : "Unbekannt"} ${echoBadge} ${insolvBadge}</div>
                     <div style="display:flex; align-items:center; gap:10px;">
                         <div class="archive-badge">${totalDays} Tage Total</div>
                         <button class="btn-tool" style="padding:4px 8px; border:1px solid var(--danger); color:var(--danger); min-width:auto;" onclick="if(typeof deleteArchivedCycle==='function')deleteArchivedCycle(${cycle.id})" title="Zyklus löschen">🗑️</button>
@@ -1781,6 +1835,136 @@ function renderArchiv() {
         });
     }
     safeHTML('archive-months-container', archMonthsHtml);
+
+    // FIX V41: The Over 5s - Globale Streak-Auswertung
+    let dayData = {};
+    let minDateStr = "9999-99-99";
+    
+    // 1. Alle Tage (inkl. Lücken) in einem globalen Zeitstrahl mappen
+    (getApp().cycles || []).forEach(cycle => {
+        if (cycle.base && cycle.base.start) {
+            if (cycle.base.start < minDateStr) minDateStr = cycle.base.start;
+            let bStart = parseLocal(cycle.base.start);
+            let bEnd = parseLocal(cycle.base.end);
+            if (bStart && bEnd) {
+                for (let d = new Date(bStart); d <= bEnd; d.setDate(d.getDate()+1)) {
+                    let s = toIsoString(d);
+                    dayData[s] = { smoked: true, a: cycle.base.aLevel || 0, m: cycle.base.mLevel || 0 };
+                }
+            }
+        }
+        Object.entries(cycle.logs || {}).forEach(([lDate, log]) => {
+            if (lDate < minDateStr) minDateStr = lDate;
+            let lD = parseLocal(lDate);
+            if (!lD) return;
+            let t = log.t || 1;
+            for (let i=0; i<t; i++) {
+                let s = toIsoString(lD);
+                if (!dayData[s]) dayData[s] = { smoked: false, a: 0, m: 0 };
+                if (log.type === 'ausrutscher') dayData[s].smoked = true;
+                dayData[s].a = Math.max(dayData[s].a || 0, log.a || 0); // Höchste Strafe blockiert den Tag
+                dayData[s].m = Math.max(dayData[s].m || 0, log.m || 0);
+                lD.setDate(lD.getDate()+1);
+            }
+        });
+    });
+
+    // 2. Streaks errechnen
+    if (minDateStr !== "9999-99-99") {
+        let startD = parseLocal(minDateStr);
+        let todayD = parseLocal(todayStr); 
+        
+        let over5 = { smoke: [], alc: [], m: [] };
+        let curSmoke = { start: null, count: 0 };
+        let curAlc = { start: null, count: 0 };
+        let curM = { start: null, count: 0 };
+        
+        for (let d = new Date(startD); d < todayD; d.setDate(d.getDate()+1)) {
+            let s = toIsoString(d);
+            let dat = dayData[s] || { smoked: false, a: 0, m: 0 }; // Lücken sind automatisch cleane Tage!
+            
+            // Smoke Tracker
+            if (!dat.smoked) {
+                if (curSmoke.count === 0) curSmoke.start = s;
+                curSmoke.count++;
+            } else {
+                if (curSmoke.count > 5) over5.smoke.push({start: curSmoke.start, end: toIsoString(addDays(d, -1)), count: curSmoke.count});
+                curSmoke.count = 0;
+            }
+            
+            // Alc Tracker
+            if (dat.a === 0) {
+                if (curAlc.count === 0) curAlc.start = s;
+                curAlc.count++;
+            } else {
+                if (curAlc.count > 5) over5.alc.push({start: curAlc.start, end: toIsoString(addDays(d, -1)), count: curAlc.count});
+                curAlc.count = 0;
+            }
+            
+            // M Tracker
+            if (dat.m === 0) {
+                if (curM.count === 0) curM.start = s;
+                curM.count++;
+            } else {
+                if (curM.count > 5) over5.m.push({start: curM.start, end: toIsoString(addDays(d, -1)), count: curM.count});
+                curM.count = 0;
+            }
+        }
+        
+        // Die bis gestern laufenden Streaks noch abschließen
+        if (curSmoke.count > 5) over5.smoke.push({start: curSmoke.start, end: toIsoString(addDays(todayD, -1)), count: curSmoke.count});
+        if (curAlc.count > 5) over5.alc.push({start: curAlc.start, end: toIsoString(addDays(todayD, -1)), count: curAlc.count});
+        if (curM.count > 5) over5.m.push({start: curM.start, end: toIsoString(addDays(todayD, -1)), count: curM.count});
+        
+        // 3. UI-Rendering
+        let over5Html = '';
+        const categories = [
+            { id: 'smoke', title: '🚭 Nichtrauchen', color: '#27ae60' },
+            { id: 'alc', title: '🍷 Nicht Trinken', color: '#8e44ad' },
+            { id: 'm', title: '✊ Nicht Masturbieren', color: '#f39c12' }
+        ];
+
+        categories.forEach(cat => {
+            let streaks = over5[cat.id];
+            if (streaks.length === 0) return;
+            
+            // Von neu nach alt sortieren
+            streaks.sort((a,b) => b.start.localeCompare(a.start));
+            
+            over5Html += `<div style="margin-bottom: 20px; background: #fff; border-radius: 12px; border: 1px solid #eee; padding: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
+                        <h4 style="color: ${cat.color}; border-bottom: 2px solid ${cat.color}33; padding-bottom: 8px; margin-top: 0; margin-bottom: 10px; display:flex; align-items:center; gap:8px;">${cat.title} <span style="font-size:0.75rem; background:#f0f0f0; color:#555; padding:2px 8px; border-radius:12px;">${streaks.length} Serien</span></h4>`;
+            
+            let currentMonthYear = "";
+            
+            streaks.forEach((streak, idx) => {
+                let startDObj = parseLocal(streak.start);
+                let endDObj = parseLocal(streak.end);
+                let myKey = startDObj.getFullYear() + '-' + String(startDObj.getMonth()+1).padStart(2,'0');
+                let myLabel = monthNames[startDObj.getMonth()] + ' ' + startDObj.getFullYear();
+                
+                // Gruppieren nach Monaten
+                if (myKey !== currentMonthYear) {
+                    currentMonthYear = myKey;
+                    over5Html += `<div style="font-weight: 800; font-size: 0.8rem; color: #7f8c8d; margin-top: 15px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px;">${myLabel}</div>`;
+                }
+                
+                let startStr = startDObj.toLocaleDateString('de-DE', {day: '2-digit', month: '2-digit'});
+                let endStr = endDObj.toLocaleDateString('de-DE', {day: '2-digit', month: '2-digit'});
+                let streakNumber = streaks.length - idx; // "All-Time" Nummerierung
+                
+                over5Html += `<div style="display: flex; justify-content: space-between; align-items: center; background: #fdfafb; padding: 10px 12px; border-radius: 8px; margin-bottom: 6px; border: 1px solid #f0f0f0; font-size: 0.85rem; transition: background 0.2s;" onmouseover="this.style.background='#fff'" onmouseout="this.style.background='#fdfafb'">
+                            <div><strong style="color:#bdc3c7; display:inline-block; width:25px;">#${streakNumber}</strong><span style="color:#2c3e50; font-weight:600;">${startStr} – ${endStr}</span></div>
+                            <div style="font-weight: 800; color: ${cat.color}; background: ${cat.color}15; padding: 4px 10px; border-radius: 8px;">${streak.count} Tage</div>
+                         </div>`;
+            });
+            
+            over5Html += `</div>`;
+        });
+        
+        if (over5Html === '') over5Html = `<p style="color:#7f8c8d; text-align:center; font-size:0.85rem; padding: 20px; border: 1px dashed #ccc; border-radius: 12px;">Bisher noch keine Serien über 5 Tage gesammelt. Bleib dran!</p>`;
+        
+        safeHTML('over-5s-container', over5Html);
+    }
 
     let debugIds = (getApp().cycles || []).map(c=>c.id).join(', ');
     let debugRes = globalSimResults.map(r => r ? (r.failed ? '[FAILED: ' + r.cycleId + ']' : r.cycleId) : '[NULL]').join(', ');

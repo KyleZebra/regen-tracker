@@ -299,6 +299,8 @@
             <button class="btn-tool" onclick="downloadICS()">📅 als Kalender (.ics)</button>
             <button class="btn-tool" onclick="exportDiaryTxt()">📝 als Tagebuch (.txt)</button>
             <button class="btn-tool" onclick="downloadImage()">📷 als Bild (.png)</button>
+            <!-- FIX V40: Insolvenz Button -->
+            <button class="btn-tool" style="background:#fadbd8; color:#c0392b; border-color:#f5c6cb; font-weight:800;" onclick="declareInsolvency()">💸 Insolvenz</button>
         </div>
     </div>
   </div>
@@ -386,6 +388,12 @@
     <details style="margin-bottom: 2rem;">
         <summary style="font-size: 1.1rem; font-weight: 800; cursor: pointer; color: #7f8c8d; outline: none; margin-bottom: 15px; margin-left: 5px; border-bottom: 2px solid #fcf3cf; padding-bottom: 10px;">📅 Kalendarischer Jahres-Rückblick</summary>
         <div id="archive-months-container" style="margin-top: 15px;"></div>
+    </details>
+
+    <!-- FIX V41: The Over 5s -->
+    <details style="margin-bottom: 2rem;">
+        <summary style="font-size: 1.1rem; font-weight: 800; cursor: pointer; color: #7f8c8d; outline: none; margin-bottom: 15px; margin-left: 5px; border-bottom: 2px solid #fcf3cf; padding-bottom: 10px;">🌟 The Over 5s</summary>
+        <div id="over-5s-container" style="margin-top: 15px;"></div>
     </details>
     
     <div class="tool-grid" style="margin-top:2rem;">

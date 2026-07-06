@@ -2,7 +2,7 @@
 // data.js - State Management & Core Helpers
 // ==========================================
 
-const APP_VERSION = '38 (SafeZone)'; // V38: Schutzzonen-Feature
+const APP_VERSION = '40 (Over5)';
 
 // --- Defensive DOM Helpers ---
 const safeVal = (id) => { 
