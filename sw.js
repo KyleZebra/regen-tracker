@@ -2,7 +2,7 @@
 // sw.js - Service Worker & Offline Cache
 // ==========================================
 
-const CACHE_NAME = 'retrack-cache-v40.000';
+const CACHE_NAME = 'retrack-cache-v40.111';
 
 const urlsToCache = [
     './',

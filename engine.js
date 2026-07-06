@@ -222,7 +222,8 @@ function simulateCycle(cycle, skipEchoCheck = false) {
         let reboundCharges = 0;
         let currentAusrutscherIsSmall = false;
 
-        while ((debt > 0 || toIsoString(simDate) <= endSimLimit) && safety < 25000) {
+        // FIX V40.2: Archivierte Zyklen dürfen niemals in die Zukunft "fabulieren" (nur der aktive Zyklus darf das)
+        while ((toIsoString(simDate) <= endSimLimit || (cycle.status === 'active' && debt > 0)) && safety < 25000) {
             safety++;
             dStr = toIsoString(simDate);
             log = cLogs[dStr];
@@ -406,8 +407,9 @@ function simulateCycle(cycle, skipEchoCheck = false) {
         }
 
         if (!dashState && cycle.status === 'active') {
-            let initialBewTimer = isBaseSmall ? 0 : 3;
-            let initialState = isBaseSmall ? 'REGEN' : 'BEWAEHRUNG';
+            // FIX V40.1: Insolvenz-Prüfung im Fallback des Dashboards ergänzt!
+            let initialBewTimer = (isBaseSmall || isInsolvency) ? 0 : 3;
+            let initialState = (isBaseSmall || isInsolvency) ? 'REGEN' : 'BEWAEHRUNG';
             dashState = { debt: initialDebtTotal + manualSurcharge, totalDebtEver: initialDebtTotal + manualSurcharge, state: initialState, bewTimer: initialBewTimer, gotBonusToday: false, pendingBonus: false, activeReboundCharges: 0, recentEvents: JSON.parse(JSON.stringify(recentEvents)) };
         }
 
