@@ -124,8 +124,8 @@ function simulateCycle(cycle, skipEchoCheck = false) {
                 if (prevRes && !prevRes.failed) {
                     let prevSmoked = prevRes.history.t.length + prevRes.history.a.length;
                     let prevNirvana = prevRes.history.n.length;
-                    // Echo zündet, wenn es Nüchternheit gab und diese >= den Rauchtagen war!
-                    if (prevSmoked > 0 && prevNirvana >= prevSmoked) {
+                    // FIX V44.1: Das Echo zündet auch bei makellosen Zyklen (z.B. nach Insolvenz)
+                    if (prevNirvana > 0 && prevNirvana >= prevSmoked) {
                         hasNirvanaEcho = true;
                     }
                 }
