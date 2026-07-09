@@ -1917,54 +1917,66 @@ function renderArchiv() {
         if (curAlc.count > 5) over5.alc.push({start: curAlc.start, end: toIsoString(addDays(todayD, -1)), count: curAlc.count});
         if (curM.count > 5) over5.m.push({start: curM.start, end: toIsoString(addDays(todayD, -1)), count: curM.count});
         
-        // 3. UI-Rendering
-        let over5Html = '';
+        // FIX V43: 3. UI-Rendering (Erweitert für 5s, 10s und 15s)
         const categories = [
             { id: 'smoke', title: '🚭 Nichtrauchen', color: '#27ae60' },
             { id: 'alc', title: '🍷 Nicht Trinken', color: '#8e44ad' },
             { id: 'm', title: '✊ Nicht Masturbieren', color: '#f39c12' }
         ];
 
-        categories.forEach(cat => {
-            let streaks = over5[cat.id];
-            if (streaks.length === 0) return;
+        // Die drei Abstufungen definieren
+        const thresholds = [
+            { limit: 5, container: 'over-5s-container', emptyMsg: 'Bisher noch keine Serien über 5 Tage gesammelt. Bleib dran!' },
+            { limit: 10, container: 'over-10s-container', emptyMsg: 'Bisher noch keine Serien über 10 Tage gesammelt. Weiter so!' },
+            { limit: 15, container: 'over-15s-container', emptyMsg: 'Bisher noch keine Serien über 15 Tage gesammelt. Du schaffst das!' }
+        ];
+
+        thresholds.forEach(t => {
+            let tHtml = '';
             
-            // Von neu nach alt sortieren
-            streaks.sort((a,b) => b.start.localeCompare(a.start));
-            
-            over5Html += `<div style="margin-bottom: 20px; background: #fff; border-radius: 12px; border: 1px solid #eee; padding: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
-                        <h4 style="color: ${cat.color}; border-bottom: 2px solid ${cat.color}33; padding-bottom: 8px; margin-top: 0; margin-bottom: 10px; display:flex; align-items:center; gap:8px;">${cat.title} <span style="font-size:0.75rem; background:#f0f0f0; color:#555; padding:2px 8px; border-radius:12px;">${streaks.length} Serien</span></h4>`;
-            
-            let currentMonthYear = "";
-            
-            streaks.forEach((streak, idx) => {
-                let startDObj = parseLocal(streak.start);
-                let endDObj = parseLocal(streak.end);
-                let myKey = startDObj.getFullYear() + '-' + String(startDObj.getMonth()+1).padStart(2,'0');
-                let myLabel = monthNames[startDObj.getMonth()] + ' ' + startDObj.getFullYear();
+            categories.forEach(cat => {
+                // Nur Streaks filtern, die größer als das aktuelle Limit der Schleife (5, 10, 15) sind
+                let streaks = over5[cat.id].filter(s => s.count > t.limit);
+                if (streaks.length === 0) return;
                 
-                // Gruppieren nach Monaten
-                if (myKey !== currentMonthYear) {
-                    currentMonthYear = myKey;
-                    over5Html += `<div style="font-weight: 800; font-size: 0.8rem; color: #7f8c8d; margin-top: 15px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px;">${myLabel}</div>`;
-                }
+                // Kopie erstellen und von neu nach alt sortieren
+                let sortedStreaks = [...streaks].sort((a,b) => b.start.localeCompare(a.start));
                 
-                let startStr = startDObj.toLocaleDateString('de-DE', {day: '2-digit', month: '2-digit'});
-                let endStr = endDObj.toLocaleDateString('de-DE', {day: '2-digit', month: '2-digit'});
-                let streakNumber = streaks.length - idx; // "All-Time" Nummerierung
+                tHtml += `<div style="margin-bottom: 20px; background: #fff; border-radius: 12px; border: 1px solid #eee; padding: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
+                            <h4 style="color: ${cat.color}; border-bottom: 2px solid ${cat.color}33; padding-bottom: 8px; margin-top: 0; margin-bottom: 10px; display:flex; align-items:center; gap:8px;">${cat.title} <span style="font-size:0.75rem; background:#f0f0f0; color:#555; padding:2px 8px; border-radius:12px;">${sortedStreaks.length} Serien</span></h4>`;
                 
-                over5Html += `<div style="display: flex; justify-content: space-between; align-items: center; background: #fdfafb; padding: 10px 12px; border-radius: 8px; margin-bottom: 6px; border: 1px solid #f0f0f0; font-size: 0.85rem; transition: background 0.2s;" onmouseover="this.style.background='#fff'" onmouseout="this.style.background='#fdfafb'">
-                            <div><strong style="color:#bdc3c7; display:inline-block; width:25px;">#${streakNumber}</strong><span style="color:#2c3e50; font-weight:600;">${startStr} – ${endStr}</span></div>
-                            <div style="font-weight: 800; color: ${cat.color}; background: ${cat.color}15; padding: 4px 10px; border-radius: 8px;">${streak.count} Tage</div>
-                         </div>`;
+                let currentMonthYear = "";
+                
+                sortedStreaks.forEach((streak, idx) => {
+                    let startDObj = parseLocal(streak.start);
+                    let endDObj = parseLocal(streak.end);
+                    let myKey = startDObj.getFullYear() + '-' + String(startDObj.getMonth()+1).padStart(2,'0');
+                    let myLabel = monthNames[startDObj.getMonth()] + ' ' + startDObj.getFullYear();
+                    
+                    // Gruppieren nach Monaten
+                    if (myKey !== currentMonthYear) {
+                        currentMonthYear = myKey;
+                        tHtml += `<div style="font-weight: 800; font-size: 0.8rem; color: #7f8c8d; margin-top: 15px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px;">${myLabel}</div>`;
+                    }
+                    
+                    let startStr = startDObj.toLocaleDateString('de-DE', {day: '2-digit', month: '2-digit'});
+                    let endStr = endDObj.toLocaleDateString('de-DE', {day: '2-digit', month: '2-digit'});
+                    let streakNumber = sortedStreaks.length - idx; // "All-Time" Nummerierung für diese Kategorie
+                    
+                    tHtml += `<div style="display: flex; justify-content: space-between; align-items: center; background: #fdfafb; padding: 10px 12px; border-radius: 8px; margin-bottom: 6px; border: 1px solid #f0f0f0; font-size: 0.85rem; transition: background 0.2s;" onmouseover="this.style.background='#fff'" onmouseout="this.style.background='#fdfafb'">
+                                <div><strong style="color:#bdc3c7; display:inline-block; width:25px;">#${streakNumber}</strong><span style="color:#2c3e50; font-weight:600;">${startStr} – ${endStr}</span></div>
+                                <div style="font-weight: 800; color: ${cat.color}; background: ${cat.color}15; padding: 4px 10px; border-radius: 8px;">${streak.count} Tage</div>
+                             </div>`;
+                });
+                
+                tHtml += `</div>`;
             });
             
-            over5Html += `</div>`;
+            // Eigener Leer-Text je nach Stufe
+            if (tHtml === '') tHtml = `<p style="color:#7f8c8d; text-align:center; font-size:0.85rem; padding: 20px; border: 1px dashed #ccc; border-radius: 12px;">${t.emptyMsg}</p>`;
+            
+            safeHTML(t.container, tHtml);
         });
-        
-        if (over5Html === '') over5Html = `<p style="color:#7f8c8d; text-align:center; font-size:0.85rem; padding: 20px; border: 1px dashed #ccc; border-radius: 12px;">Bisher noch keine Serien über 5 Tage gesammelt. Bleib dran!</p>`;
-        
-        safeHTML('over-5s-container', over5Html);
     }
 
     let debugIds = (getApp().cycles || []).map(c=>c.id).join(', ');
