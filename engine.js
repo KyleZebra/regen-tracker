@@ -218,9 +218,9 @@ function simulateCycle(cycle, skipEchoCheck = false) {
             regenAtEvent: 0
         }];
 
-        // FIX V23: Charge-System für das mehrtägige Nirwana-Echo
-        let reboundCharges = 0;
-        let currentAusrutscherIsSmall = false;
+        // FIX V44: Charge-System für das Nirwana-Echo (Zündet jetzt auch korrekt für die initiale Basis-Phase!)
+        let reboundCharges = (hasNirvanaEcho && isBaseSmall) ? 2 : 0;
+        let currentAusrutscherIsSmall = isBaseSmall;
 
         // FIX V40.2: Archivierte Zyklen dürfen niemals in die Zukunft "fabulieren" (nur der aktive Zyklus darf das)
         while ((toIsoString(simDate) <= endSimLimit || (cycle.status === 'active' && debt > 0)) && safety < 25000) {
