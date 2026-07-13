@@ -164,6 +164,7 @@ function populateBaseForm() {
     safeSetVal('base-end', active.base.end || ""); 
     safeSetVal('base-t', active.base.tDays || "");
     safeProp('base-small', 'checked', active.base.isSmall || false);
+    safeProp('base-active', 'checked', active.base.isActive || false); // NEU
     safeSetVal('base-s', active.base.sLevel || 0); 
     safeSetVal('base-a', active.base.aLevel || 0); 
     safeSetVal('base-m', active.base.mLevel || 0);
@@ -190,6 +191,7 @@ function populateBaseForm() {
     safeProp('base-start', 'readOnly', lock); 
     safeProp('base-end', 'readOnly', lock); 
     safeProp('base-small', 'disabled', lock);
+    safeProp('base-active', 'disabled', lock); // NEU
     safeProp('base-s', 'disabled', lock); 
     safeProp('base-a', 'disabled', lock); 
     safeProp('base-m', 'disabled', lock);
@@ -245,6 +247,8 @@ function saveBase(force = false) {
     if (!active.base.isOpen) { 
         const baseSmallCheckbox = document.getElementById('base-small');
         active.base.isSmall = baseSmallCheckbox ? baseSmallCheckbox.checked : false;
+        const baseActiveCheckbox = document.getElementById('base-active');
+        active.base.isActive = baseActiveCheckbox ? baseActiveCheckbox.checked : false;
         active.base.sLevel = parseInt(safeVal('base-s')) || 0; 
         active.base.aLevel = parseInt(safeVal('base-a')) || 0; 
         active.base.mLevel = parseInt(safeVal('base-m')) || 0; 
@@ -1079,16 +1083,18 @@ function renderHistorie() {
       let isTodayClass = (dStr === todayStr) ? "today-highlight" : "";
 
       if (res.history.t.some(d => d.toDateString() === dStr)) { 
+          let actT = (active && active.base && active.base.isActive) ? " 🏃‍♂️" : ""; // NEU
           if (active && active.base && active.base.isSmall) {
-              tagClass = "tday-small"; tagText="1. Konsum (Kl.)"; 
+              tagClass = "tday-small"; tagText="1. Konsum (Kl.)" + actT; 
           } else {
-              tagClass = "tday"; tagText="1. Konsum"; 
+              tagClass = "tday"; tagText="1. Konsum" + actT; 
           }
       } else if (res.history.a.some(d => d.toDateString() === dStr)) { 
+          let actA = (log && log.isActive) ? " 🏃‍♂️" : ""; // NEU
           if (log && log.isSmall) {
-              tagClass = "ausrutscher-small"; tagText="Rauchen (Kl.)"; 
+              tagClass = "ausrutscher-small"; tagText="Rauchen (Kl.)" + actA; 
           } else {
-              tagClass = "ausrutscher"; tagText="weiteres Rauchen"; 
+              tagClass = "ausrutscher"; tagText="weiteres Rauchen" + actA; 
           }
       } else if (res.history.b.some(d => d.toDateString() === dStr)) {
           tagClass = "bewaehrung"; tagText="Bewährung"; 
@@ -1230,11 +1236,13 @@ function renderDiaryList() {
                 
                 if (item.isBase) { 
                     let smallText = active.base.isSmall ? ' (Kleiner Tag)' : ' (Standardtag)';
+                    let actText = active.base.isActive ? ' | 🏃‍♂️ Aktiv' : ''; // NEU
                     badge = `<span class="diary-badge badge-base">⭐ Basis-Phase</span>`; 
                     meta = `S:${sLevels[active.base.sLevel||0]} | A:${aLevels[active.base.aLevel||0]} | M:${mLevels[active.base.mLevel||0]} | Mood: ${moodStr}${breatheStr} <span style="font-weight:bold; color:#f39c12;">${smallText}</span>`; 
                 } else if (!item.isImplicit) { 
                     if (item.log.type === 'ausrutscher') {
                         let smallText = item.log.isSmall ? ' (Kleiner Tag)' : ' (Standardtag)';
+                        let actText = item.log.isActive ? ' | 🏃‍♂️ Aktiv' : ''; // NEU
                         badge = `<span class="diary-badge badge-aus">🔴 Rauchen (${item.log.t}d)</span>`; 
                         meta = `S:${sLevels[item.log.s||0]} | A:${aLevels[item.log.a||0]} | M:${mLevels[item.log.m||0]} | Mood: ${moodStr}${breatheStr} <span style="font-weight:bold; color:#c0392b;">${smallText}</span>`; 
                     } else {

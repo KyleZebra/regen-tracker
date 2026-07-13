@@ -116,6 +116,7 @@ function clearSandboxForm() {
     safeSetVal('sim-a-a', '0'); 
     safeSetVal('sim-a-m', '0'); 
     safeProp('sim-a-small', 'checked', false);
+    safeProp('sim-a-active', 'checked', false); // FIX V44
 }
 
 function closeSandbox() { 
@@ -138,6 +139,7 @@ function openHistoricalModal() {
     safeSetVal('hist-base-end',''); 
     safeSetVal('hist-base-t',''); 
     safeProp('hist-base-small','checked', false);
+    safeProp('hist-base-active', 'checked', false); // FIX V44
     safeSetVal('hist-base-s','0'); 
     safeSetVal('hist-base-a','0'); 
     safeSetVal('hist-base-m','0'); 
@@ -173,10 +175,14 @@ function addHistLogRow() {
                     <label>Datum (1 Tag)</label>
                     <input type="date" class="hist-row-date" style="width:100%;">
                 </div>
-                <div style="margin-left:15px; padding-top:20px;">
+                <div style="margin-left:15px; padding-top:20px; display:flex; flex-direction:column; gap:5px;">
                     <label class="checkbox-wrapper">
                         <input type="checkbox" class="hist-row-small">
                         <span>Kleiner Tag</span>
+                    </label>
+                    <label class="checkbox-wrapper">
+                        <input type="checkbox" class="hist-row-active">
+                        <span>Aktivtag 🏃‍♂️</span>
                     </label>
                 </div>
             </div>
@@ -199,6 +205,7 @@ function saveHistorical() {
     const aL = parseInt(safeVal('hist-base-a')) || 0;
     const mL = parseInt(safeVal('hist-base-m')) || 0;
     const baseSmall = document.getElementById('hist-base-small')?.checked || false;
+    const baseActive = document.getElementById('hist-base-active')?.checked || false; // FIX V44
     
     if (!s || !e || isNaN(t)) return customAlert("Basisphase unvollständig."); 
     if (t < 1 || s > e) return customAlert("Ungültige Basisphase."); 
@@ -229,6 +236,7 @@ function saveHistorical() {
                 type: 'ausrutscher', 
                 t: 1, 
                 isSmall: row.querySelector('.hist-row-small')?.checked || false,
+                isActive: row.querySelector('.hist-row-active')?.checked || false, // FIX V44
                 s: parseInt(row.querySelector('.hist-row-s').value) || 0, 
                 a: parseInt(row.querySelector('.hist-row-a').value) || 0, 
                 m: parseInt(row.querySelector('.hist-row-m').value) || 0, 
@@ -244,7 +252,7 @@ function saveHistorical() {
     app.cycles.push({ 
         id: Date.now(), 
         status: 'archived', 
-        base: { start: s, end: e, tDays: t, isSmall: baseSmall, sLevel: sL, aLevel: aL, mLevel: mL, isOpen: false }, 
+        base: { start: s, end: e, tDays: t, isSmall: baseSmall, isActive: baseActive, sLevel: sL, aLevel: aL, mLevel: mL, isOpen: false }, 
         logs: logsToSave 
     });
     
@@ -302,6 +310,7 @@ function editToday() {
 function openAusrutscherModal(isPast = false) { 
     safeSetVal('modal-a-t', 1); 
     safeProp('modal-a-small', 'checked', false);
+    safeProp('modal-a-active', 'checked', false); // FIX V44
     safeSetVal('modal-a-s', 0); 
     safeSetVal('modal-a-a', 0); 
     safeSetVal('modal-a-m', 0); 
@@ -316,6 +325,7 @@ function submitAusrutscher() {
     const dStr = safeVal('modal-a-date');
     const t = parseInt(safeVal('modal-a-t')) || 1;
     const isSmall = document.getElementById('modal-a-small')?.checked || false;
+    const isActive = document.getElementById('modal-a-active')?.checked || false; // FIX V44
     const s = parseInt(safeVal('modal-a-s')) || 0;
     const a = parseInt(safeVal('modal-a-a')) || 0;
     const m = parseInt(safeVal('modal-a-m')) || 0;
@@ -337,11 +347,11 @@ function submitAusrutscher() {
             const newCycle = { 
                 id: Date.now(), 
                 status: 'active', 
-                base: { start: dStr, end: newEndStr, tDays: t, isSmall: isSmall, sLevel: s, aLevel: a, mLevel: m, isOpen: true }, 
+                base: { start: dStr, end: newEndStr, tDays: t, isSmall: isSmall, isActive: isActive, sLevel: s, aLevel: a, mLevel: m, isOpen: true }, 
                 logs: {} 
             };
             if (mood > 0 || note !== "") {
-                newCycle.logs[dStr] = { type: 'ausrutscher', t: t, isSmall: isSmall, s: s, a: a, m: m, mood: mood, note: note };
+                newCycle.logs[dStr] = { type: 'ausrutscher', t: t, isSmall: isSmall, isActive: isActive, s: s, a: a, m: m, mood: mood, note: note };
             }
             const app = getApp(); 
             if (app && Array.isArray(app.cycles)) app.cycles.push(newCycle); 
@@ -362,6 +372,7 @@ function submitAusrutscher() {
             active.base.tDays += t; 
             
             if (!isSmall) active.base.isSmall = false; 
+            if (!isActive) active.base.isActive = false; // FIX V44
             
             active.base.sLevel = Math.max(active.base.sLevel || 0, s); 
             active.base.aLevel = Math.max(active.base.aLevel || 0, a); 
@@ -369,7 +380,7 @@ function submitAusrutscher() {
 
             // FIX V19.3: Log explizit anlegen, damit es im Tagebuch erscheint!
             if (!active.logs) active.logs = {};
-            active.logs[dStr] = { type: 'ausrutscher', t: t, isSmall: isSmall, s: s, a: a, m: m, mood: mood, note: note };
+            active.logs[dStr] = { type: 'ausrutscher', t: t, isSmall: isSmall, isActive: isActive, s: s, a: a, m: m, mood: mood, note: note };
             
             closeModal('modal-ausrutscher'); 
             saveData(); 
@@ -381,7 +392,7 @@ function submitAusrutscher() {
     }
     
     if (!active.logs) active.logs = {}; 
-    active.logs[dStr] = { type: 'ausrutscher', t: t, isSmall: isSmall, s: s, a: a, m: m, mood: mood, note: note }; 
+    active.logs[dStr] = { type: 'ausrutscher', t: t, isSmall: isSmall, isActive: isActive, s: s, a: a, m: m, mood: mood, note: note }; 
     
     closeModal('modal-ausrutscher'); 
     saveData();
@@ -393,6 +404,7 @@ function submitFutureSim() {
     const dStr = safeVal('sim-a-date');
     const t = parseInt(safeVal('sim-a-t')) || 1;
     const isSmall = document.getElementById('sim-a-small')?.checked || false;
+    const isActive = document.getElementById('sim-a-active')?.checked || false; // FIX V44
     const s = parseInt(safeVal('sim-a-s')) || 0;
     const a = parseInt(safeVal('sim-a-a')) || 0;
     const m = parseInt(safeVal('sim-a-m')) || 0;
@@ -412,10 +424,10 @@ function submitFutureSim() {
             const newCycle = { 
                 id: Date.now(), 
                 status: 'active', 
-                base: { start: dStr, end: newEndStr, tDays: t, isSmall: isSmall, sLevel: s, aLevel: a, mLevel: m, isOpen: true }, 
+                base: { start: dStr, end: newEndStr, tDays: t, isSmall: isSmall, isActive: isActive, sLevel: s, aLevel: a, mLevel: m, isOpen: true }, 
                 logs: {} 
             };
-            newCycle.logs[dStr] = { type: 'ausrutscher', t: t, isSmall: isSmall, s: s, a: a, m: m, mood: 0, note: "🔮 Zukunft", isSimulated: true };
+            newCycle.logs[dStr] = { type: 'ausrutscher', t: t, isSmall: isSmall, isActive: isActive, s: s, a: a, m: m, mood: 0, note: "🔮 Zukunft", isSimulated: true };
             getApp().cycles.push(newCycle); 
             saveData(); 
             customAlert("Zukunft berechnet! Ein neuer Zyklus wurde gestartet."); 
@@ -424,7 +436,7 @@ function submitFutureSim() {
     }
     
     if (!active.logs) active.logs = {}; 
-    active.logs[dStr] = { type: 'ausrutscher', t: t, isSmall: isSmall, s: s, a: a, m: m, mood: 0, note: "🔮 Zukunft", isSimulated: true }; 
+    active.logs[dStr] = { type: 'ausrutscher', t: t, isSmall: isSmall, isActive: isActive, s: s, a: a, m: m, mood: 0, note: "🔮 Zukunft", isSimulated: true }; 
     saveData(); 
     customAlert("Zukunft berechnet! Siehe Kalender.");
 }
@@ -457,6 +469,7 @@ function openDiaryEdit(dateStr) {
             safeSetVal('edit-day-type', 'ausrutscher');
             safeSetVal('edit-day-t', active.base.tDays || 1); 
             safeProp('edit-day-small', 'checked', active.base.isSmall || false);
+            safeProp('edit-day-active', 'checked', active.base.isActive || false); // FIX V44
             safeSetVal('edit-day-s', active.base.sLevel || 0); 
             safeSetVal('edit-day-a', active.base.aLevel || 0); 
             safeSetVal('edit-day-m', active.base.mLevel || 0);
@@ -464,6 +477,7 @@ function openDiaryEdit(dateStr) {
             safeSetVal('edit-day-type', log.type || 'pause');
             safeSetVal('edit-day-t', log.t || 1); 
             safeProp('edit-day-small', 'checked', log.isSmall || false);
+            safeProp('edit-day-active', 'checked', log.isActive || false); // FIX V44
             safeSetVal('edit-day-s', log.s || 0); 
             safeSetVal('edit-day-a', log.a || 0); 
             safeSetVal('edit-day-m', log.m || 0);
@@ -475,6 +489,7 @@ function openDiaryEdit(dateStr) {
         safeProp('edit-day-type', 'disabled', isBase); 
         safeProp('edit-day-t', 'disabled', isBase); 
         safeProp('edit-day-small', 'disabled', isBase);
+        safeProp('edit-day-active', 'disabled', isBase); // FIX V44
         safeProp('edit-day-s', 'disabled', isBase); 
         safeProp('edit-day-a', 'disabled', isBase);
         safeProp('edit-day-m', 'disabled', isBase);
@@ -504,6 +519,7 @@ function submitEditDay() {
     const type = safeVal('edit-day-type'); 
     const t = parseInt(safeVal('edit-day-t')) || 1; 
     const isSmall = document.getElementById('edit-day-small')?.checked || false;
+    const isActive = document.getElementById('edit-day-active')?.checked || false; // FIX V44
 
     if (type === 'ausrutscher' && !isBase && t > 21) {
         customAlert("Eine initiale Konsumphase von mehr als drei Wochen überlastet die Simulation.");
@@ -513,7 +529,7 @@ function submitEditDay() {
     if (!active.logs) active.logs = {};
 
     if (isBase) { 
-        const existing = active.logs[dStr] || { type: 'ausrutscher', t: 1, isSmall: active.base.isSmall, s: active.base.sLevel, a: active.base.aLevel, m: active.base.mLevel }; 
+        const existing = active.logs[dStr] || { type: 'ausrutscher', t: 1, isSmall: active.base.isSmall, isActive: active.base.isActive, s: active.base.sLevel, a: active.base.aLevel, m: active.base.mLevel }; 
         active.logs[dStr] = { ...existing, mood, note };
     } else {
         const s = parseInt(safeVal('edit-day-s')) || 0; 
@@ -521,7 +537,7 @@ function submitEditDay() {
         const m = parseInt(safeVal('edit-day-m')) || 0;
         
         if (type === 'ausrutscher') { 
-            active.logs[dStr] = { type: 'ausrutscher', t, isSmall, s, a, m, mood, note }; 
+            active.logs[dStr] = { type: 'ausrutscher', t, isSmall, isActive, s, a, m, mood, note }; 
         } else { 
             active.logs[dStr] = { type: 'pause', s, a, m, mood, note }; 
         }

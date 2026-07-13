@@ -2,7 +2,7 @@
 // data.js - State Management & Core Helpers
 // ==========================================
 
-const APP_VERSION = '41 (Over5)';
+const APP_VERSION = '44 (Aktivtag)';
 
 // --- Defensive DOM Helpers ---
 const safeVal = (id) => { 
@@ -106,14 +106,16 @@ function loadData() {
                     appData.cycles.forEach(c => { 
                         if (c.base.mLevel === undefined) c.base.mLevel = 0; 
                         if (c.base.isSmall === undefined) c.base.isSmall = false; 
+                        if (c.base.isActive === undefined) c.base.isActive = false; // NEU
                         
                         if (!c.logs) c.logs = {}; 
                         Object.values(c.logs).forEach(l => {
                             if (l && typeof l === 'object') {
                                 if (l.m === undefined) l.m = 0;
                                 if (l.isSmall === undefined) l.isSmall = false; 
+                                if (l.isActive === undefined) l.isActive = false; // NEU
                             }
-                        }); 
+                        });
                         if (!c.monthlyNotes) c.monthlyNotes = {}; 
                     });
                 }
