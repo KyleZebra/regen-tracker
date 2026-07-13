@@ -202,8 +202,8 @@ td.active-month .date-num { color: var(--text-main); }
 .tag { display: block; padding: 3px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; color: white; margin-top: 2px; line-height: 1.2; word-break: break-word; }
 
 .tag.tday { background-color: #c0392b; } 
-.tag.tday-small { background-color: #e60b0bd5; } /* NEU: Koralle für kleinen Start */
-.tag.ausrutscher-small { background-color: #e60b0bd5; } /* NEU: Koralle für kleinen Log */
+.tag.tday-small { background-color: #c03a2bb7; } /* NEU: Koralle für kleinen Start */
+.tag.ausrutscher-small { background-color: #e74d3cbd; } /* NEU: Koralle für kleinen Log */
 .tag.regen { background-color: #27ae60; }
 .tag.bewaehrung { background-color: #f39c12; color: #fff; } 
 .tag.ausrutscher { background-color: #e74c3c; } 
