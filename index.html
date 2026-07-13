@@ -144,24 +144,19 @@
                 <label>Enddatum</label>
                 <input type="date" id="base-end" onchange="calcBaseT()">
             </div>
-            <div class="form-group-tday" style="display:flex; gap:15px; align-items:center;">
-                <div style="flex:1">
-                    <label>Dauer (Tage)</label>
-                    <!-- ID bleibt jeweils erhalten: base-t, sim-a-t, modal-a-t, edit-day-t, hist-base-t -->
-                    <input type="number" id="base-t" readonly>
-                </div>
-                <div style="flex:1; padding-top:20px; display:flex; flex-direction:column; gap:5px;">
-                    <label class="checkbox-wrapper">
-                        <!-- ID bleibt jeweils erhalten -->
-                        <input type="checkbox" id="base-small">
-                        <span>Kleiner Tag</span>
-                    </label>
-                    <label class="checkbox-wrapper">
-                        <!-- NEU: Die zugehörige -active ID -->
-                        <input type="checkbox" id="base-active">
-                        <span>Aktivtag 🏃‍♂️</span>
-                    </label>
-                </div>
+            <div class="form-group-full">
+                <label>Dauer (Tage)</label>
+                <input type="number" id="base-t" readonly>
+            </div>
+            <div class="form-group-full" style="display:flex; justify-content:space-around; background:#f9f9f9; padding:10px; border-radius:8px; border:1px solid #eee;">
+                <label class="checkbox-wrapper" style="margin:0;">
+                    <input type="checkbox" id="base-small">
+                    <span>Kleiner Tag</span>
+                </label>
+                <label class="checkbox-wrapper" style="margin:0;">
+                    <input type="checkbox" id="base-active">
+                    <span>Aktivtag 🏃‍♂️</span>
+                </label>
             </div>
             <div>
                 <label>Stress (Max)</label>
@@ -233,21 +228,19 @@
                 <label>Zukunfts-Datum</label>
                 <input type="date" id="sim-a-date">
             </div>
-            <div class="form-group-full" style="display:flex; gap:15px; align-items:center;">
-                <div style="flex:1">
-                    <label>Dauer (Tage)</label>
-                    <input type="number" id="sim-a-t" value="1" min="1">
-                </div>
-                <div style="flex:1; padding-top:20px; display:flex; flex-direction:column; gap:5px;">
-                    <label class="checkbox-wrapper">
-                        <input type="checkbox" id="sim-a-small">
-                        <span>Kleiner Tag</span>
-                    </label>
-                    <label class="checkbox-wrapper">
-                        <input type="checkbox" id="sim-a-active">
-                        <span>Aktivtag 🏃‍♂️</span>
-                    </label>
-                </div>
+            <div class="form-group-full">
+                <label>Dauer (Tage)</label>
+                <input type="number" id="sim-a-t" value="1" min="1">
+            </div>
+            <div class="form-group-full" style="display:flex; justify-content:space-around; background:#f9f9f9; padding:10px; border-radius:8px; border:1px solid #eee;">
+                <label class="checkbox-wrapper" style="margin:0;">
+                    <input type="checkbox" id="sim-a-small">
+                    <span>Kleiner Tag</span>
+                </label>
+                <label class="checkbox-wrapper" style="margin:0;">
+                    <input type="checkbox" id="sim-a-active">
+                    <span>Aktivtag 🏃‍♂️</span>
+                </label>
             </div>
             <div>
                 <label>Stress</label>
@@ -606,23 +599,20 @@
               </select>
           </div>
           
-          <div class="form-group-full" id="edit-t-wrapper" style="display:flex; gap:15px; align-items:center;">
-              <div style="flex:1">
-                  <label>Dauer (Tage)</label>
-                  <input type="number" id="edit-day-t" value="1" min="1">
-              </div>
-              <div style="flex:1; padding-top:20px; display:flex; flex-direction:column; gap:5px;">
-                  <label class="checkbox-wrapper">
+          <div class="form-group-full" id="edit-t-wrapper">
+              <label>Dauer (Tage)</label>
+              <input type="number" id="edit-day-t" value="1" min="1" style="margin-bottom:10px;">
+              <div style="display:flex; justify-content:space-around; background:#f9f9f9; padding:10px; border-radius:8px; border:1px solid #eee;">
+                  <label class="checkbox-wrapper" style="margin:0;">
                       <input type="checkbox" id="edit-day-small">
                       <span>Kleiner Tag</span>
                   </label>
-                  <label class="checkbox-wrapper">
+                  <label class="checkbox-wrapper" style="margin:0;">
                       <input type="checkbox" id="edit-day-active">
                       <span>Aktivtag 🏃‍♂️</span>
                   </label>
               </div>
           </div>
-
           <div>
               <label>Stress</label>
               <select id="edit-day-s">
@@ -685,22 +675,21 @@
             <label>Enddatum</label>
             <input type="date" id="hist-base-end" onchange="calcHistBaseT()">
         </div>
-        <div class="form-group-tday" style="display:flex; gap:15px; align-items:center;">
-            <div style="flex:1">
-                <label>Dauer (Tage)</label>
-                <input type="number" id="hist-base-t" readonly>
-            </div>
-            <div style="flex:1; padding-top:20px; display:flex; flex-direction:column; gap:5px;">
-                <label class="checkbox-wrapper">
-                    <input type="checkbox" id="hist-base-small">
-                    <span>Kleiner Tag</span>
-                </label>
-                <label class="checkbox-wrapper">
-                    <input type="checkbox" id="hist-base-active">
-                    <span>Aktivtag 🏃‍♂️</span>
-                </label>
-            </div>
+        <div class="form-group-full">
+            <label>Dauer (Tage)</label>
+            <input type="number" id="hist-base-t" readonly>
         </div>
+        <div class="form-group-full" style="display:flex; justify-content:space-around; background:#f9f9f9; padding:10px; border-radius:8px; border:1px solid #eee;">
+            <label class="checkbox-wrapper" style="margin:0;">
+                <input type="checkbox" id="hist-base-small">
+                <span>Kleiner Tag</span>
+            </label>
+            <label class="checkbox-wrapper" style="margin:0;">
+                <input type="checkbox" id="hist-base-active">
+                <span>Aktivtag 🏃‍♂️</span>
+            </label>
+        </div>
+        <div>
             <label>Stress (Max)</label>
             <select id="hist-base-s">
                 <option value="0">0</option>

@@ -170,19 +170,17 @@ function addHistLogRow() {
         <div id="${rId}" style="background:#f9f9f9; padding:15px 10px 10px; border-radius:8px; position:relative; border:1px solid #e8daef; margin-bottom:8px;">
             <span style="position:absolute; top:5px; right:10px; color:var(--danger); font-weight:bold; cursor:pointer; font-size:1.2rem; line-height:1;" onclick="document.getElementById('${rId}').remove()">&times;</span>
             
-            <div class="form-group-full" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0;">
-                <div style="flex:1;">
-                    <label>Datum (1 Tag)</label>
-                    <input type="date" class="hist-row-date" style="width:100%;">
-                </div>
-                <div style="margin-left:15px; padding-top:20px; display:flex; flex-direction:column; gap:5px;">
-                    <label class="checkbox-wrapper">
+            <div class="form-group-full" style="margin-bottom:10px;">
+                <label>Datum (1 Tag)</label>
+                <input type="date" class="hist-row-date" style="width:100%; margin-bottom: 10px;">
+                <div style="display:flex; justify-content:space-around; background:#fff; padding:8px; border-radius:8px; border:1px solid #eee;">
+                    <label class="checkbox-wrapper" style="margin:0;">
                         <input type="checkbox" class="hist-row-small">
-                        <span>Kleiner Tag</span>
+                        <span style="font-size: 0.85rem;">Kleiner Tag</span>
                     </label>
-                    <label class="checkbox-wrapper">
+                    <label class="checkbox-wrapper" style="margin:0;">
                         <input type="checkbox" class="hist-row-active">
-                        <span>Aktivtag 🏃‍♂️</span>
+                        <span style="font-size: 0.85rem;">Aktivtag 🏃‍♂️</span>
                     </label>
                 </div>
             </div>
