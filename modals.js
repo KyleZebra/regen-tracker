@@ -503,7 +503,13 @@ function openDiaryEdit(dateStr) {
 function toggleEditFields() { 
     const type = safeVal('edit-day-type'); 
     const isBase = safeVal('edit-is-base') === "1"; 
-    safeDisplay('edit-t-wrapper', (type === 'ausrutscher' && !isBase) ? 'flex' : 'none'); 
+    const currentT = parseInt(safeVal('edit-day-t')) || 1;
+    
+    // Gesamten Block (inkl. Checkboxen) anzeigen, wenn Ausrutscher
+    safeDisplay('edit-t-wrapper', (type === 'ausrutscher' && !isBase) ? 'block' : 'none'); 
+    
+    // Dauer-Feld nur anzeigen, wenn der alte Log schon aus > 1 Tag bestand!
+    safeDisplay('edit-duration-container', (currentT > 1) ? 'block' : 'none');
 }
 
 function submitEditDay() {

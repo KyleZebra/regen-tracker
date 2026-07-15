@@ -462,8 +462,10 @@
               <input type="date" id="modal-a-date">
           </div>
           <div class="form-group-full">
-              <label>Dauer (Tage)</label>
-              <input type="number" id="modal-a-t" value="1" min="1" style="margin-bottom:10px;">
+              <div style="display: none;">
+                  <label>Dauer (Tage)</label>
+                  <input type="number" id="modal-a-t" value="1" min="1" style="margin-bottom:10px;">
+              </div>
               <div style="display:flex; justify-content:space-around; background:#f9f9f9; padding:10px; border-radius:8px; border:1px solid #eee;">
                   <label class="checkbox-wrapper" style="margin:0;">
                       <input type="checkbox" id="modal-a-small">
@@ -597,8 +599,10 @@
           </div>
           
           <div class="form-group-full" id="edit-t-wrapper">
-              <label>Dauer (Tage)</label>
-              <input type="number" id="edit-day-t" value="1" min="1" style="margin-bottom:10px;">
+              <div id="edit-duration-container">
+                  <label>Dauer (Tage)</label>
+                  <input type="number" id="edit-day-t" value="1" min="1" style="margin-bottom:10px;">
+              </div>
               <div style="display:flex; justify-content:space-around; background:#f9f9f9; padding:10px; border-radius:8px; border:1px solid #eee;">
                   <label class="checkbox-wrapper" style="margin:0;">
                       <input type="checkbox" id="edit-day-small">
