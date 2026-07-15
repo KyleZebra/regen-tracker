@@ -958,7 +958,7 @@ function renderHistorie() {
     <div style="margin-top:0.5rem; font-weight:bold; color:#2c3e50; margin-bottom: 10px;">📊 Gesamtbilanz dieses Zyklus</div>
     <div class="stat-grid" style="margin-bottom: 1rem; grid-template-columns: 1fr 1fr;">
         <div class="stat-box" style="padding: 10px;"><div class="stat-val" style="font-size: 1.4rem;">${totalT}</div><div class="stat-label" style="font-size: 0.65rem;">T-Tage</div></div>
-        <div class="stat-box" style="padding: 10px;"><div class="stat-val" style="font-size: 1.4rem;">${expectedBaseDebt}</div><div class="stat-label" style="font-size: 0.65rem;">Rohe Basis</div></div>
+        <div class="stat-box" style="padding: 10px;"><div class="stat-val" style="font-size: 1.4rem;">${expectedBaseDebt}</div><div class="stat-label" style="font-size: 0.65rem;">Rohe Grundschuld</div></div>
         <div class="stat-box" style="padding: 10px;"><div class="stat-val" style="font-size: 1.4rem; color: #e67e22;">${currentSmallSmoked}</div><div class="stat-label" style="font-size: 0.65rem;">Davon Klein</div></div>
         <div class="stat-box" style="padding: 10px;"><div class="stat-val" style="font-size: 1.4rem; color: #c0392b;">${currentLargeSmoked}</div><div class="stat-label" style="font-size: 0.65rem;">Davon Groß</div></div>
         <div class="stat-box" style="padding: 10px;"><div class="stat-val danger" style="font-size: 1.4rem; color: var(--danger);">+${systemAufschlag}</div><div class="stat-label" style="font-size: 0.65rem;">System-Strafe</div></div>
@@ -1771,7 +1771,7 @@ function renderArchiv() {
                     <div><strong>Davon Klein:</strong> <span style="color:#e67e22;">${cycleSmallSmoked} Tage</span></div>
                     <div><strong>Davon Groß:</strong> <span style="color:#c0392b;">${cycleLargeSmoked} Tage</span></div>
 
-                    <div><strong>Rohe Basis:</strong> ${baseDebt} Tage</div>
+                    <div><strong>Rohe Grundschuld:</strong> ${baseDebt} Tage</div>
                     <div><strong>System-Strafe:</strong> <span style="color:var(--danger);">+${surcharge} Tage</span></div>
                     
                     <div><strong>Manuell:</strong> <span style="color:#8e44ad;">+${manualS} Tage</span></div>
