@@ -926,7 +926,8 @@ function renderHistorie() {
     const totalRegenDebt = res.totalDebtEver || 0; 
     const expectedBaseDebt = res.expectedBaseDebt || 0;
     const manualS = res.manualSurcharge || 0;
-    const systemAufschlag = totalRegenDebt - expectedBaseDebt - manualS;
+    const totalActiveDiscount = res.totalActiveDiscountEver || 0;
+    const systemAufschlag = totalRegenDebt + totalActiveDiscount - expectedBaseDebt - manualS;
     
     // FIX V26.4: Berechnung der kleinen und großen Tage für den aktuellen Zyklus
     let currentSmallSmoked = 0;
@@ -957,12 +958,13 @@ function renderHistorie() {
     <div style="margin-top:0.5rem; font-weight:bold; color:#2c3e50; margin-bottom: 10px;">📊 Gesamtbilanz dieses Zyklus</div>
     <div class="stat-grid" style="margin-bottom: 1rem; grid-template-columns: 1fr 1fr;">
         <div class="stat-box" style="padding: 10px;"><div class="stat-val" style="font-size: 1.4rem;">${totalT}</div><div class="stat-label" style="font-size: 0.65rem;">T-Tage</div></div>
-        <div class="stat-box" style="padding: 10px;"><div class="stat-val" style="font-size: 1.4rem;">${expectedBaseDebt}</div><div class="stat-label" style="font-size: 0.65rem;">Basis Schuld</div></div>
+        <div class="stat-box" style="padding: 10px;"><div class="stat-val" style="font-size: 1.4rem;">${expectedBaseDebt}</div><div class="stat-label" style="font-size: 0.65rem;">Rohe Basis</div></div>
         <div class="stat-box" style="padding: 10px;"><div class="stat-val" style="font-size: 1.4rem; color: #e67e22;">${currentSmallSmoked}</div><div class="stat-label" style="font-size: 0.65rem;">Davon Klein</div></div>
         <div class="stat-box" style="padding: 10px;"><div class="stat-val" style="font-size: 1.4rem; color: #c0392b;">${currentLargeSmoked}</div><div class="stat-label" style="font-size: 0.65rem;">Davon Groß</div></div>
         <div class="stat-box" style="padding: 10px;"><div class="stat-val danger" style="font-size: 1.4rem; color: var(--danger);">+${systemAufschlag}</div><div class="stat-label" style="font-size: 0.65rem;">System-Strafe</div></div>
         <div class="stat-box" style="padding: 10px;"><div class="stat-val" style="font-size: 1.4rem; color: #8e44ad;">+${manualS}</div><div class="stat-label" style="font-size: 0.65rem;">Manuell</div></div>
-        <div class="stat-box" style="padding: 10px; grid-column: span 2;"><div class="stat-val blue" style="font-size: 1.4rem; color: var(--nirvana-blue);">${totalRegenDebt}</div><div class="stat-label" style="font-size: 0.65rem;">Gesamtschuld</div></div>
+        <div class="stat-box" style="padding: 10px;"><div class="stat-val" style="font-size: 1.4rem; color: #27ae60;">-${totalActiveDiscount}</div><div class="stat-label" style="font-size: 0.65rem;">Aktivbonus</div></div>
+        <div class="stat-box" style="padding: 10px;"><div class="stat-val blue" style="font-size: 1.4rem; color: var(--nirvana-blue);">${totalRegenDebt}</div><div class="stat-label" style="font-size: 0.65rem;">Gesamtschuld</div></div>
     </div>`;
     
     // --- NEU: Schatten-Rechner für das Regen-o-Meter ---
@@ -1737,7 +1739,9 @@ function renderArchiv() {
             let cycleSlRatio = cycleLargeSmoked > 0 ? (cycleSmallSmoked / cycleLargeSmoked).toFixed(1).replace('.', ',') + ':1' : cycleSmallSmoked + ':0';
 
             const baseDebt = res.expectedBaseDebt || 0;
-            const surcharge = (res.totalDebtEver || 0) - baseDebt;
+            const manualS = res.manualSurcharge || 0;
+            const totalActiveDiscount = res.totalActiveDiscountEver || 0;
+            const surcharge = (res.totalDebtEver || 0) + totalActiveDiscount - baseDebt - manualS;
             
             const nirvanaDays = res.history.n.length;
             const ratio = smokedDays > 0 ? (cleanDays / smokedDays).toFixed(1).replace('.', ',') : cleanDays;
@@ -1767,8 +1771,11 @@ function renderArchiv() {
                     <div><strong>Davon Klein:</strong> <span style="color:#e67e22;">${cycleSmallSmoked} Tage</span></div>
                     <div><strong>Davon Groß:</strong> <span style="color:#c0392b;">${cycleLargeSmoked} Tage</span></div>
 
-                    <div><strong>Basis-Schuld:</strong> ${baseDebt} Tage</div>
-                    <div><strong>Aufschlag:</strong> <span style="color:var(--danger);">+${surcharge} Tage</span></div>
+                    <div><strong>Rohe Basis:</strong> ${baseDebt} Tage</div>
+                    <div><strong>System-Strafe:</strong> <span style="color:var(--danger);">+${surcharge} Tage</span></div>
+                    
+                    <div><strong>Manuell:</strong> <span style="color:#8e44ad;">+${manualS} Tage</span></div>
+                    <div><strong>Aktivbonus:</strong> <span style="color:#27ae60;">-${totalActiveDiscount} Tage</span></div>
                     
                     <div style="grid-column: span 2; border-top: 1px solid rgba(0,0,0,0.1); padding-top: 8px; margin-top: 4px;">
                         <strong>Verhältnis (Rauchen : Clean):</strong> 1 : ${ratio} <br>

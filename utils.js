@@ -136,13 +136,17 @@ function downloadICS() {
     const totalT = res.totalTDaysEver; 
     const totalRegenDebt = res.totalDebtEver; 
     const expectedBaseDebtICS = res.expectedBaseDebt || 0;
-    const aufschlag = totalRegenDebt - expectedBaseDebtICS;
+    const manualSICS = res.manualSurcharge || 0;
+    const activeDiscountICS = res.totalActiveDiscountEver || 0;
+    const aufschlag = totalRegenDebt + activeDiscountICS - expectedBaseDebtICS - manualSICS;
     
     desc += `\n--- Gesamtbilanz ---\n`;
     desc += `T-Tage (Konsum) gesamt: ${totalT}\n`; 
-    desc += `Basis Schuld gesamt: ${expectedBaseDebtICS} Tage\n`;
-    desc += `Zusätzlicher Aufschlag: +${aufschlag} Tage\n`;
-    desc += `Regenerationsschuld gesamt: ${totalRegenDebt} Tage\n`;
+    desc += `Rohe Grundschuld: ${expectedBaseDebtICS} Tage\n`;
+    desc += `System-Strafe: +${aufschlag} Tage\n`;
+    if (manualSICS > 0) desc += `Manueller Aufschlag: +${manualSICS} Tage\n`;
+    if (activeDiscountICS > 0) desc += `Aktivbonus: -${activeDiscountICS} Tage\n`;
+    desc += `Regenerationsschuld (Netto): ${totalRegenDebt} Tage\n`;
     desc += `\nEmpfohlene M-freie Tage: ${res.mFreeGoal}\n`;
     desc += `Ziel: ${res.finalEnd.toLocaleDateString('de-DE')}\n`;
 

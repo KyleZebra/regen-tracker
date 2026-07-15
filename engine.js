@@ -133,20 +133,26 @@ function simulateCycle(cycle, skipEchoCheck = false) {
             }
         }
 
+        let totalActiveDiscountEver = 0; // NEU: Kumulierter Reporting-Wert für den Aktivbonus
+        
         let initialDebtTotal = baseVal + sAdd + aAdd + comboAdd;
         let activeDiscount = 0;
+        let appliedBaseDiscount = 0;
         
         // FIX V44: Aktiv-Rabatt für die Basisphase (1 Tag Rabatt pro Basis-Tag)
         if (!isInsolvency && isBaseActive) {
             activeDiscount = baseT; 
+            let grossInitialDebt = initialDebtTotal;
             // Die Schuld für die gesamte Basis-Phase darf nie kleiner werden als die Anzahl der Konsumtage
             initialDebtTotal = Math.max(baseT, initialDebtTotal - activeDiscount);
+            appliedBaseDiscount = grossInitialDebt - initialDebtTotal;
+            totalActiveDiscountEver += appliedBaseDiscount;
         }
         
         let smallTxt = isBaseSmall ? " (Kleiner Tag)" : " (Standardtag)";
         let activeTxt = isBaseActive ? " 🏃‍♂️" : "";
-        let activeBonusStr = activeDiscount > 0 ? `, Aktiv-Bonus: -${activeDiscount}` : "";
-        let basePenaltyStr = isInsolvency ? `Initiale Schuld: 21 Tage (Insolvenz-Neustart)` : `Initiale Schuld: ${initialDebtTotal} Tage (Basis: ${baseVal}${smallTxt}${activeTxt}, Stress: ${sAdd}, Alk: ${aAdd}, Kombi: ${comboAdd}${activeBonusStr})`;
+        let activeBonusStr = appliedBaseDiscount > 0 ? `, Aktivbonus enthalten: -${appliedBaseDiscount}` : "";
+        let basePenaltyStr = isInsolvency ? `Initiale Schuld: 21 Tage (Insolvenz-Neustart)` : `Initiale Schuld: ${initialDebtTotal} Tage netto (Basis: ${baseVal}${smallTxt}${activeTxt}, Stress: ${sAdd}, Alk: ${aAdd}, Kombi: ${comboAdd}${activeBonusStr})`;
 
         let debt = initialDebtTotal + manualSurcharge;
         let totalDebtEver = debt;
@@ -276,9 +282,13 @@ function simulateCycle(cycle, skipEchoCheck = false) {
                 
                 // FIX V44: Aktiv-Rabatt für das Log (darf Strafe nie unter die Anzahl der Konsumtage drücken)
                 let logActiveDiscount = 0;
+                let actualLogDiscount = 0;
                 if (isLogActive) {
                     logActiveDiscount = log.t;
+                    let grossPenalty = penalty;
                     penalty = Math.max(log.t, penalty - logActiveDiscount);
+                    actualLogDiscount = grossPenalty - penalty;
+                    totalActiveDiscountEver += actualLogDiscount;
                 }
 
                 debt += penalty;
@@ -319,8 +329,8 @@ function simulateCycle(cycle, skipEchoCheck = false) {
                 if (!isPhantom) {
                     history.logDetails.push({ date: dStr, p: penalty, t: log.t, b: iBase, s: iS, a: iA, f: pauschale, active: isLogActive });
                     let smallInfo = isLogSmall ? " (Kleiner Tag)" : " (Standardtag)";
-                    let activeInfo = isLogActive ? ` 🏃‍♂️ (-${logActiveDiscount})` : "";
-                    pStr = `+${penalty} Tage`;
+                    let activeInfo = isLogActive ? ` 🏃‍♂️ (Aktivbonus enthalten: -${actualLogDiscount})` : "";
+                    pStr = actualLogDiscount > 0 ? `+${penalty} Tage netto` : `+${penalty} Tage`;
                     history.penaltyDict[dStr] = pauschale > 0 ? pStr + ` (inkl. Setup)${smallInfo}${activeInfo}` : pStr + ` (Stottern)${smallInfo}${activeInfo}`;
                 }
 
@@ -452,6 +462,7 @@ function simulateCycle(cycle, skipEchoCheck = false) {
             totalDebtEver: totalDebtEver,
             expectedBaseDebt: expectedBaseDebt,
             manualSurcharge: manualSurcharge, // FIX V20.1: Exportiert für UI
+            totalActiveDiscountEver: totalActiveDiscountEver, // NEU: Exportiert für Reporting
             dashState: dashState,
             nirvanaStreak: history.n.length,
             initialDebtTotal: initialDebtTotal,
