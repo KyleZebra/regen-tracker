@@ -751,14 +751,28 @@ function renderDashboard() {
         let datesHtml = '';
         
         events.forEach((e, i) => {
-            let widthPct = (e.added / totalPenalty) * 100; 
+            let widthPct = (e.added / totalPenalty) * 100; // Breite entspricht Anteil an Gesamtstrafe
             let isLast = i === (numEvents - 1);
             let dObj = parseLocal(e.date);
             let dStr = dObj ? dObj.toLocaleDateString('de-DE', {day: '2-digit', month: '2-digit'}) : e.date;
             
-            segmentsHtml += `<div style="width: ${widthPct}%; height: 100%; border-right: ${isLast ? 'none' : '2px solid rgba(255,255,255,0.9)'}; box-sizing: border-box;"></div>`;
+            // NEU: Exakt berechnen, wie viel in DIESEM Becken schon getilgt ist
+            let clearedForThis = e.added - debts[i];
+            let segmentProgress = (clearedForThis / e.added) * 100;
+            let isSegmentDone = clearedForThis >= e.added;
+            let segmentColor = isSegmentDone ? '#27ae60' : '#f39c12';
+            let textColor = isSegmentDone ? '#27ae60' : '#7f8c8d';
+            
+            // Jedes Segment hat nun seinen eigenen, farbigen Füllstand
+            segmentsHtml += `
+                <div style="width: ${widthPct}%; height: 100%; border-right: ${isLast ? 'none' : '2px solid rgba(255,255,255,0.9)'}; box-sizing: border-box; position: relative; background: rgba(0,0,0,0.05);">
+                    <div style="width: ${segmentProgress}%; height: 100%; background: ${segmentColor}; transition: width 0.5s ease-out;"></div>
+                </div>
+            `;
+            
+            // Beschriftung unter dem Segment (wird ebenfalls grün, wenn getilgt)
             datesHtml += `
-                <div style="width: ${widthPct}%; text-align: center; font-size: 0.65rem; color: #7f8c8d; font-weight: bold; margin-top: 4px; padding: 0 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                <div style="width: ${widthPct}%; text-align: center; font-size: 0.65rem; color: ${textColor}; font-weight: bold; margin-top: 4px; padding: 0 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                     ${dStr}<br><span style="font-size:0.55rem; opacity:0.8;">${fmt(e.added)}T</span>
                 </div>
             `;
@@ -767,7 +781,7 @@ function renderDashboard() {
         let boxColor = isDone ? '#27ae60' : '#e74c3c';
         let boxBg = isDone ? '#f0fdf4' : '#fff5f5';
         let boxBorder = isDone ? '#c3e6cb' : '#f5c6cb';
-        let headerText = isDone ? '✅ Ausgleich abgeschlossen!' : `${numEvents} - Tages Ausgleich`;
+        let headerText = isDone ? '✅ Ausgleich abgeschlossen!' : `${numEvents} - Tages - Ausgleich`;
 
         safeHTML('dash-compensation-box', `
             <div class="outlook-title" style="color: ${boxColor}; justify-content: center; font-size: 1rem; margin-bottom: 15px;">
@@ -787,11 +801,8 @@ function renderDashboard() {
             </div>
             
             <!-- Wasserfall Fortschrittsbalken -->
-            <div style="position: relative; width: 100%; height: 18px; background: rgba(0,0,0,0.05); border-radius: 8px; margin-bottom: 2px; overflow: hidden; border: 1px solid rgba(0,0,0,0.1);">
-                <div style="position: absolute; top: 0; left: 0; height: 100%; width: ${progressPercent}%; background: ${isDone ? '#27ae60' : '#f39c12'}; transition: width 0.5s ease-out;"></div>
-                <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex;">
-                    ${segmentsHtml}
-                </div>
+            <div style="width: 100%; height: 18px; border-radius: 8px; margin-bottom: 2px; overflow: hidden; border: 1px solid rgba(0,0,0,0.1); display: flex;">
+                ${segmentsHtml}
             </div>
             
             <!-- Daten unter den Segmenten -->
