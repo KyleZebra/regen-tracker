@@ -767,7 +767,7 @@ function renderDashboard() {
         let boxColor = isDone ? '#27ae60' : '#e74c3c';
         let boxBg = isDone ? '#f0fdf4' : '#fff5f5';
         let boxBorder = isDone ? '#c3e6cb' : '#f5c6cb';
-        let headerText = isDone ? '✅ Ausgleich abgeschlossen!' : `⏳ Ausgleich der letzten ${numEvents} Konsumtage`;
+        let headerText = isDone ? '✅ Ausgleich abgeschlossen!' : `${numEvents} - Tages Ausgleich`;
 
         safeHTML('dash-compensation-box', `
             <div class="outlook-title" style="color: ${boxColor}; justify-content: center; font-size: 1rem; margin-bottom: 15px;">
