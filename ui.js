@@ -702,7 +702,7 @@ function renderDashboard() {
         safeDisplay('dash-budget-box', 'none');
     }
 
-    // FIX V45: Wasserfall-Modell (Chronologische Tilgung der letzten 1-3 Events)
+    // FIX V46: Strikter Wasserfall-Algorithmus (Isolierte Buckets & Surplus)
     const compBox = document.getElementById('dash-compensation-box');
     if (!isSandbox && !res.isOpen && ds.recentEvents && ds.recentEvents.length > 0) {
         
@@ -714,13 +714,35 @@ function renderDashboard() {
         let totalPenalty = 0;
         events.forEach(e => totalPenalty += e.added);
         
-        // 3. Regeneration seit dem ÄLTESTEN Event berechnen (Wasser-Menge)
+        // 3. Strikte chronologische Tilgung (Wasserfall-Logik)
         let currentTotalRegen = ds.totalDebtEver - displayDebt;
-        let regenSinceOldest = currentTotalRegen - events[0].regenAtEvent;
+        let debts = events.map(e => e.added); // Arbeits-Array der offenen Schulden
+        let totalCleared = 0; // Wie viel Strafe wurde WIRKLICH getilgt
+        let totalSurplus = 0; // Wie viel Regeneration floss ins Leere (Nirwana)
+
+        for (let i = 0; i < numEvents; i++) {
+            // Regeneration in dieser Periode (zwischen Event i und Event i+1, bzw. Heute)
+            let regenEnd = (i === numEvents - 1) ? currentTotalRegen : events[i+1].regenAtEvent;
+            let windowWater = regenEnd - events[i].regenAtEvent;
+
+            // Wasser in die offenen Schulden gießen (immer von links/alt nach rechts/neu)
+            for (let j = 0; j <= i; j++) {
+                if (debts[j] > 0 && windowWater > 0) {
+                    let pour = Math.min(debts[j], windowWater);
+                    debts[j] -= pour;
+                    windowWater -= pour;
+                    totalCleared += pour;
+                }
+            }
+            
+            // Was jetzt noch an Wasser übrig ist, verfällt als Surplus und kann 
+            // zukünftige, noch gar nicht passierte Events nicht mehr decken!
+            totalSurplus += windowWater;
+        }
         
-        let balance = regenSinceOldest - totalPenalty;
-        let isDone = balance >= 0;
-        let progressPercent = totalPenalty > 0 ? Math.min(100, (regenSinceOldest / totalPenalty) * 100) : 100;
+        let openDebt = totalPenalty - totalCleared;
+        let isDone = openDebt <= 0;
+        let progressPercent = totalPenalty > 0 ? Math.min(100, (totalCleared / totalPenalty) * 100) : 100;
         
         let fmt = v => Number.isInteger(Math.round(v*10)/10) ? Math.round(v*10)/10 : (Math.round(v*10)/10).toFixed(1).replace('.', ',');
         
@@ -729,15 +751,12 @@ function renderDashboard() {
         let datesHtml = '';
         
         events.forEach((e, i) => {
-            let widthPct = (e.added / totalPenalty) * 100; // Breite entspricht dem Anteil an der Gesamtstrafe
+            let widthPct = (e.added / totalPenalty) * 100; 
             let isLast = i === (numEvents - 1);
             let dObj = parseLocal(e.date);
             let dStr = dObj ? dObj.toLocaleDateString('de-DE', {day: '2-digit', month: '2-digit'}) : e.date;
             
-            // Teiler-Striche (weiß) für den Balken
             segmentsHtml += `<div style="width: ${widthPct}%; height: 100%; border-right: ${isLast ? 'none' : '2px solid rgba(255,255,255,0.9)'}; box-sizing: border-box;"></div>`;
-            
-            // Beschriftung exakt unter den Segmenten
             datesHtml += `
                 <div style="width: ${widthPct}%; text-align: center; font-size: 0.65rem; color: #7f8c8d; font-weight: bold; margin-top: 4px; padding: 0 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                     ${dStr}<br><span style="font-size:0.55rem; opacity:0.8;">${fmt(e.added)}T</span>
@@ -762,8 +781,8 @@ function renderDashboard() {
                 </div>
                 
                 <div style="flex: 1; background: rgba(255,255,255,0.7); border: 1px solid ${boxBorder}; padding: 10px 5px; border-radius: 8px;">
-                    <div style="font-size: 0.7rem; color: #7f8c8d; text-transform: uppercase; font-weight: 800; margin-bottom: 4px;">Getilgt (Gesamt)</div>
-                    <div style="font-weight: 800; font-size: 1.1rem; color: #27ae60;">+ ${fmt(regenSinceOldest)}<span style="font-size: 0.8rem;"> Tag(e)</span></div>
+                    <div style="font-size: 0.7rem; color: #7f8c8d; text-transform: uppercase; font-weight: 800; margin-bottom: 4px;">Exakt Getilgt</div>
+                    <div style="font-weight: 800; font-size: 1.1rem; color: #27ae60;">${fmt(totalCleared)}<span style="font-size: 0.8rem;"> / ${fmt(totalPenalty)}</span></div>
                 </div>
             </div>
             
@@ -782,8 +801,8 @@ function renderDashboard() {
             
             <div style="text-align: center; font-size: 0.85rem; font-weight: 700; color: #555;">
                 ${isDone 
-                    ? `Zusätzlich abgebaut: <span style="color: #8e44ad;">+ ${fmt(balance)} Tag(e)</span>` 
-                    : `Es sind noch <span style="color: #e74c3c;">${fmt(Math.abs(balance))} Tag(e)</span> Strafe offen`
+                    ? `Zusätzlich abgebaut (Surplus): <span style="color: #8e44ad;">+ ${fmt(totalSurplus)} Tag(e)</span>` 
+                    : `Es sind noch <span style="color: #e74c3c;">${fmt(openDebt)} Tag(e)</span> Strafe offen ${totalSurplus > 0 ? `<br><span style="color:#8e44ad; font-size:0.75rem;">(Bisheriges Surplus: +${fmt(totalSurplus)})</span>` : ''}`
                 }
             </div>
         `);
