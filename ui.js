@@ -334,17 +334,6 @@ function updateUI() {
 }
 
 // --- Dashboard & Vorschau ---
-// FIX V34: Globaler State & Klick-Handler für das Ausgleichs-Widget
-window.currentCompDepth = 1;
-window.cycleCompensationDepth = function() {
-    const res = activeSimResult;
-    if (!res || !res.dashState || !res.dashState.recentEvents) return;
-    const maxDepth = res.dashState.recentEvents.length;
-    if (maxDepth <= 1) return; // Nichts zu blättern
-    
-    window.currentCompDepth = (window.currentCompDepth % maxDepth) + 1;
-    if (typeof updateUI === 'function') updateUI();
-};
 
 // FIX V40: Die Insolvenz Logik
 window.declareInsolvency = function() {
@@ -713,81 +702,90 @@ function renderDashboard() {
         safeDisplay('dash-budget-box', 'none');
     }
 
-    // FIX V35: Interaktives Multi-Event Widget (Mathematisch kugelsicher)
+    // FIX V45: Wasserfall-Modell (Chronologische Tilgung der letzten 1-3 Events)
     const compBox = document.getElementById('dash-compensation-box');
     if (!isSandbox && !res.isOpen && ds.recentEvents && ds.recentEvents.length > 0) {
         
-        // Tiefe absichern, falls Array kleiner wird
-        if (window.currentCompDepth > ds.recentEvents.length) window.currentCompDepth = ds.recentEvents.length;
+        // 1. Array umdrehen: Ältestes Event (links) bis neuestes Event (rechts)
+        let events = [...ds.recentEvents].reverse();
+        let numEvents = events.length;
         
-        let depth = window.currentCompDepth;
-        let targetEventIndex = depth - 1; // Array ist 0-basiert
+        // 2. Gesamte Strafen aufsummieren
+        let totalPenalty = 0;
+        events.forEach(e => totalPenalty += e.added);
         
-        // 1. Strafen aufsummieren
-        let combinedPenalty = 0;
-        for (let i = 0; i < depth; i++) {
-            combinedPenalty += ds.recentEvents[i].added;
-        }
-        
-        // 2. Lebenszeit-Regeneration exakt berechnen (ohne Verfälschung durch neue Strafen)
+        // 3. Regeneration seit dem ÄLTESTEN Event berechnen (Wasser-Menge)
         let currentTotalRegen = ds.totalDebtEver - displayDebt;
-        let regenSince = currentTotalRegen - ds.recentEvents[targetEventIndex].regenAtEvent;
+        let regenSinceOldest = currentTotalRegen - events[0].regenAtEvent;
         
-        let balance = regenSince - combinedPenalty;
-        let progressPercent = combinedPenalty > 0 ? Math.min(100, (regenSince / combinedPenalty) * 100) : 100;
+        let balance = regenSinceOldest - totalPenalty;
         let isDone = balance >= 0;
+        let progressPercent = totalPenalty > 0 ? Math.min(100, (regenSinceOldest / totalPenalty) * 100) : 100;
         
-        let dObj = parseLocal(ds.recentEvents[targetEventIndex].date);
-        let dateLabel = dObj ? dObj.toLocaleDateString('de-DE', {day: '2-digit', month: '2-digit'}) : ds.recentEvents[targetEventIndex].date;
         let fmt = v => Number.isInteger(Math.round(v*10)/10) ? Math.round(v*10)/10 : (Math.round(v*10)/10).toFixed(1).replace('.', ',');
+        
+        // 4. HTML für die Segmente und Daten dynamisch generieren
+        let segmentsHtml = '';
+        let datesHtml = '';
+        
+        events.forEach((e, i) => {
+            let widthPct = (e.added / totalPenalty) * 100; // Breite entspricht dem Anteil an der Gesamtstrafe
+            let isLast = i === (numEvents - 1);
+            let dObj = parseLocal(e.date);
+            let dStr = dObj ? dObj.toLocaleDateString('de-DE', {day: '2-digit', month: '2-digit'}) : e.date;
+            
+            // Teiler-Striche (weiß) für den Balken
+            segmentsHtml += `<div style="width: ${widthPct}%; height: 100%; border-right: ${isLast ? 'none' : '2px solid rgba(255,255,255,0.9)'}; box-sizing: border-box;"></div>`;
+            
+            // Beschriftung exakt unter den Segmenten
+            datesHtml += `
+                <div style="width: ${widthPct}%; text-align: center; font-size: 0.65rem; color: #7f8c8d; font-weight: bold; margin-top: 4px; padding: 0 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    ${dStr}<br><span style="font-size:0.55rem; opacity:0.8;">${fmt(e.added)}T</span>
+                </div>
+            `;
+        });
         
         let boxColor = isDone ? '#27ae60' : '#e74c3c';
         let boxBg = isDone ? '#f0fdf4' : '#fff5f5';
         let boxBorder = isDone ? '#c3e6cb' : '#f5c6cb';
-        
-        // Paginierungs-Punkte generieren
-        let depthDots = '';
-        if (ds.recentEvents.length > 1) {
-            for (let i = 1; i <= ds.recentEvents.length; i++) {
-                let dotColor = (i === depth) ? boxColor : 'rgba(0,0,0,0.15)';
-                depthDots += `<span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:${dotColor}; margin: 0 4px; transition: background 0.3s;"></span>`;
-            }
-        }
-        
-        let headerText = isDone ? '✅ Ausgleich abgeschlossen!' : '⏳ Ausgleich läuft...';
-        let konsumLabel = depth === 1 ? 'Letzter Konsum' : `Letzte ${depth} Konsumtage`;
+        let headerText = isDone ? '✅ Ausgleich abgeschlossen!' : `⏳ Ausgleich der letzten ${numEvents} Konsumtage`;
 
         safeHTML('dash-compensation-box', `
             <div class="outlook-title" style="color: ${boxColor}; justify-content: center; font-size: 1rem; margin-bottom: 15px;">
                 ${headerText}
             </div>
             
-            <div style="display: flex; justify-content: space-between; text-align: center; margin-bottom: 12px; gap: 10px;">
-                <div onclick="cycleCompensationDepth()" style="flex: 1; background: rgba(255,255,255,0.7); border: 1px solid ${boxBorder}; padding: 10px 5px; border-radius: 8px; cursor: pointer; transition: transform 0.1s; box-shadow: 0 2px 5px rgba(0,0,0,0.02);" onmousedown="this.style.transform='scale(0.96)'" onmouseup="this.style.transform='scale(1)'" title="Klicken für weitere Historie">
-                    <div style="font-size: 0.7rem; color: #7f8c8d; text-transform: uppercase; font-weight: 800; margin-bottom: 4px; display:flex; align-items:center; justify-content:center; gap:4px;">
-                        ${konsumLabel} <span style="font-size:0.6rem;">🔄</span>
-                    </div>
-                    <div style="font-weight: 800; font-size: 0.9rem; color: #2c3e50;">ab ${dateLabel}</div>
-                    <div style="font-size: 0.75rem; color: #e74c3c; font-weight: 700; margin-top: 2px;">Strafe: ${fmt(combinedPenalty)} Tag(e)</div>
+            <div style="display: flex; justify-content: space-between; text-align: center; margin-bottom: 15px; gap: 10px;">
+                <div style="flex: 1; background: rgba(255,255,255,0.7); border: 1px solid ${boxBorder}; padding: 10px 5px; border-radius: 8px;">
+                    <div style="font-size: 0.7rem; color: #7f8c8d; text-transform: uppercase; font-weight: 800; margin-bottom: 4px;">Strafe (Gesamt)</div>
+                    <div style="font-weight: 800; font-size: 1.1rem; color: #e74c3c;">${fmt(totalPenalty)}<span style="font-size: 0.8rem;"> Tag(e)</span></div>
                 </div>
                 
                 <div style="flex: 1; background: rgba(255,255,255,0.7); border: 1px solid ${boxBorder}; padding: 10px 5px; border-radius: 8px;">
-                    <div style="font-size: 0.7rem; color: #7f8c8d; text-transform: uppercase; font-weight: 800; margin-bottom: 4px;">Gesamt getilgt</div>
-                    <div style="font-weight: 800; font-size: 1.1rem; color: #27ae60;">+ ${fmt(regenSince)}<span style="font-size: 0.8rem;"> Tag(e)</span></div>
+                    <div style="font-size: 0.7rem; color: #7f8c8d; text-transform: uppercase; font-weight: 800; margin-bottom: 4px;">Getilgt (Gesamt)</div>
+                    <div style="font-weight: 800; font-size: 1.1rem; color: #27ae60;">+ ${fmt(regenSinceOldest)}<span style="font-size: 0.8rem;"> Tag(e)</span></div>
                 </div>
             </div>
             
-            <div style="width: 100%; height: 8px; background: rgba(0,0,0,0.05); border-radius: 4px; margin-bottom: 8px; overflow: hidden; position: relative; border: 1px solid rgba(0,0,0,0.05);">
-                <div style="width: ${progressPercent}%; height: 100%; background: ${isDone ? '#27ae60' : '#f39c12'}; transition: width 0.5s ease-out;"></div>
+            <!-- Wasserfall Fortschrittsbalken -->
+            <div style="position: relative; width: 100%; height: 18px; background: rgba(0,0,0,0.05); border-radius: 8px; margin-bottom: 2px; overflow: hidden; border: 1px solid rgba(0,0,0,0.1);">
+                <div style="position: absolute; top: 0; left: 0; height: 100%; width: ${progressPercent}%; background: ${isDone ? '#27ae60' : '#f39c12'}; transition: width 0.5s ease-out;"></div>
+                <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex;">
+                    ${segmentsHtml}
+                </div>
             </div>
             
-            <div style="text-align: center; font-size: 0.85rem; font-weight: 700; color: #555; margin-bottom: ${depthDots ? '8px' : '0'};">
+            <!-- Daten unter den Segmenten -->
+            <div style="display: flex; width: 100%; margin-bottom: 12px;">
+                ${datesHtml}
+            </div>
+            
+            <div style="text-align: center; font-size: 0.85rem; font-weight: 700; color: #555;">
                 ${isDone 
                     ? `Zusätzlich abgebaut: <span style="color: #8e44ad;">+ ${fmt(balance)} Tag(e)</span>` 
                     : `Es sind noch <span style="color: #e74c3c;">${fmt(Math.abs(balance))} Tag(e)</span> Strafe offen`
                 }
             </div>
-            ${depthDots ? `<div style="text-align: center; margin-top: 6px;">${depthDots}</div>` : ''}
         `);
         
         if (compBox) { compBox.style.display = 'block'; compBox.style.borderColor = boxBorder; compBox.style.background = boxBg; }

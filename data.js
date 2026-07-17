@@ -2,7 +2,7 @@
 // data.js - State Management & Core Helpers
 // ==========================================
 
-const APP_VERSION = '46 (Aktivtag)';
+const APP_VERSION = '47 (Waterfall)';
 
 // --- Defensive DOM Helpers ---
 const safeVal = (id) => { 

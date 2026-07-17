@@ -446,10 +446,12 @@
               <input type="date" id="target-input-date">
           </div>
       </div>
-      <div class="modal-actions-row" style="margin-top: 20px;">
-          <button class="btn-tool" style="border-color:#fadbd8; color:var(--danger); flex: 0.4;" onclick="clearTargetETA()" title="Ziel entfernen">🗑️</button>
-          <button class="btn-tool" onclick="closeModal('modal-target')">Abbrechen</button>
-          <button class="btn-quick" style="background:#8e44ad;" onclick="saveTargetETA()">Speichern</button>
+      <div class="modal-actions" style="margin-top: 20px;">
+          <div class="modal-actions-row">
+              <button class="btn-tool" onclick="closeModal('modal-target')">Abbrechen</button>
+              <button class="btn-quick" style="background:#8e44ad;" onclick="saveTargetETA()">Speichern</button>
+          </div>
+          <button class="btn-tool" style="border-color:#fadbd8; color:var(--danger); width: 100%; margin-top: 5px;" onclick="clearTargetETA()">🗑️ Ziel entfernen</button>
       </div>
     </div>
   </div>
@@ -656,10 +658,12 @@
               <textarea id="edit-day-note" rows="3"></textarea>
           </div>
       </div>
-      <div class="modal-actions-row" style="margin-top: 20px;">
-          <button class="btn-tool" style="border-color:#fadbd8; color:var(--danger); flex: 0.4; padding: 10px 5px;" onclick="deleteEditDay()" title="Eintrag löschen">🗑️</button>
-          <button class="btn-tool" onclick="closeModal('modal-edit-day')">Abbrechen</button>
-          <button class="btn-quick btn-pausiert" style="background:var(--text-main)" onclick="submitEditDay()">Speichern</button>
+      <div class="modal-actions" style="margin-top: 20px;">
+          <div class="modal-actions-row">
+              <button class="btn-tool" onclick="closeModal('modal-edit-day')">Abbrechen</button>
+              <button class="btn-quick btn-pausiert" style="background:var(--text-main)" onclick="submitEditDay()">Speichern</button>
+          </div>
+          <button class="btn-tool" style="border-color:#fadbd8; color:var(--danger); width: 100%; margin-top: 5px;" onclick="deleteEditDay()">🗑️ Eintrag löschen</button>
       </div>
     </div>
   </div>
