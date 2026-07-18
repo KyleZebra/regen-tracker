@@ -707,7 +707,7 @@ function renderDashboard() {
         safeDisplay('dash-budget-box', 'none');
     }
 
-    // FIX V50: Wasserfall + Strategischer Trend-Kompass (Kurzzeit-Waage)
+    // FIX V51: Weichere Optik, einzeiliger Header & Surplus-Integration
     const compBox = document.getElementById('dash-compensation-box');
     if (!isSandbox && !res.isOpen && ds.recentEvents && ds.recentEvents.length > 0) {
         
@@ -717,12 +717,12 @@ function renderDashboard() {
         let totalPenalty = 0;
         events.forEach(e => totalPenalty += e.added);
         
-        // 1. Strikte Wasserfall-Logik (Absolute Tilgung)
         let currentTotalRegen = ds.totalDebtEver - displayDebt;
         let regenSinceOldest = currentTotalRegen - events[0].regenAtEvent;
         
         let debts = events.map(e => e.added); 
         let totalCleared = 0; 
+        let totalSurplus = 0; // Surplus wird wieder gesammelt
 
         for (let i = 0; i < numEvents; i++) {
             let regenEnd = (i === numEvents - 1) ? currentTotalRegen : events[i+1].regenAtEvent;
@@ -736,11 +736,18 @@ function renderDashboard() {
                     totalCleared += pour;
                 }
             }
+            totalSurplus += windowWater; // Das überfließende Wasser ins Surplus schieben
         }
         
         let openDebt = totalPenalty - totalCleared;
         let isDone = openDebt <= 0;
         let fmt = v => Number.isInteger(Math.round(v*10)/10) ? Math.round(v*10)/10 : (Math.round(v*10)/10).toFixed(1).replace('.', ',');
+        
+        // --- Weiche Farbpalette definieren ---
+        const cGreen = '#6eb381'; // Beruhigendes Salbeigrün
+        const cRed = '#e6857a';   // Weiches Terrakotta/Koralle
+        const cOrange = '#e8a961'; // Sanftes Bernstein
+        const cPurple = '#9b76b8'; // Sanftes Violett für Surplus
         
         // --- Ebene 1: Wasserfall HTML generieren ---
         let segmentsHtml = '';
@@ -755,11 +762,12 @@ function renderDashboard() {
             let clearedForThis = e.added - debts[i];
             let segmentProgress = (clearedForThis / e.added) * 100;
             let isSegmentDone = clearedForThis >= e.added;
-            let segmentColor = isSegmentDone ? '#27ae60' : '#e74c3c'; // Offene Schulden rot, getilgte grün
-            let textColor = isSegmentDone ? '#27ae60' : '#7f8c8d';
+            
+            let segmentColor = isSegmentDone ? cGreen : cRed;
+            let textColor = isSegmentDone ? cGreen : '#7f8c8d';
             
             segmentsHtml += `
-                <div style="width: ${widthPct}%; height: 100%; border-right: ${isLast ? 'none' : '2px solid rgba(255,255,255,0.9)'}; box-sizing: border-box; position: relative; background: rgba(0,0,0,0.05);">
+                <div style="width: ${widthPct}%; height: 100%; border-right: ${isLast ? 'none' : '2px solid rgba(255,255,255,0.9)'}; box-sizing: border-box; position: relative; background: rgba(0,0,0,0.03);">
                     <div style="width: ${segmentProgress}%; height: 100%; background: ${segmentColor}; transition: width 0.5s ease-out;"></div>
                 </div>
             `;
@@ -771,66 +779,62 @@ function renderDashboard() {
             `;
         });
 
-        // --- Ebene 2: Strategische Trend-Waage berechnen & generieren ---
-        let netTrend = regenSinceOldest - totalPenalty; // Das ist der magische "Fein-Tuning" Wert
+        // --- Ebene 2: Strategische Trend-Waage ---
+        let netTrend = regenSinceOldest - totalPenalty; 
         
-        // Skalierung für den Tauziehen-Balken (passt sich dynamisch der Strafengröße an)
         let maxScale = Math.max(totalPenalty * 1.5, 10); 
         let markerPos = 50 + (netTrend / maxScale) * 50;
-        markerPos = Math.max(3, Math.min(97, markerPos)); // Hält den Marker innerhalb des sichtbaren Bereichs
+        markerPos = Math.max(3, Math.min(97, markerPos)); 
         
-        let trendColor = netTrend > 0 ? '#27ae60' : (netTrend === 0 ? '#f39c12' : '#c0392b');
-        let trendBg = netTrend > 0 ? '#f0fdf4' : (netTrend === 0 ? '#fff9e6' : '#fff5f5');
-        let trendBorder = netTrend > 0 ? '#c3e6cb' : (netTrend === 0 ? '#fdebd0' : '#f5c6cb');
+        let trendColor = netTrend > 0 ? cGreen : (netTrend === 0 ? cOrange : cRed);
         
         let trendSubtext = netTrend > 0 
-            ? `Mehr abgebaut als aufgebaut!` 
+            ? `Mehr abgebaut als aufgebaut.` 
             : (netTrend === 0 ? `Schulden und Pausen im Gleichgewicht.` : `Achtung: Pausen zu kurz!`);
             
         let waageHtml = `
-            <div style="background: ${trendBg}; border: 1px solid ${trendBorder}; border-radius: 8px; padding: 12px; margin-top: 15px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
+            <div style="background: #fafbfc; border: 1px solid #f0f0f0; border-radius: 12px; padding: 12px; margin-top: 15px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                    <strong style="color: ${trendColor}; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px;">⚖️ Lokaler Trend</strong>
+                    <strong style="color: #555; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px;">⚖️ Lokaler Trend</strong>
                     <span style="font-weight: 900; font-size: 1.1rem; color: ${trendColor};">${netTrend > 0 ? '+' : ''}${fmt(netTrend)} <span style="font-size:0.75rem;">Tage</span></span>
                 </div>
                 
-                <!-- Tauziehen Balken -->
-                <div style="position: relative; width: 100%; height: 14px; background: linear-gradient(90deg, rgba(231,76,60,0.15) 0%, rgba(231,76,60,0.05) 49%, rgba(0,0,0,0.1) 50%, rgba(39,174,96,0.05) 51%, rgba(39,174,96,0.15) 100%); border-radius: 7px; margin-bottom: 8px; border: 1px solid rgba(0,0,0,0.05);">
-                    <!-- Null-Linie (Mitte) -->
-                    <div style="position: absolute; left: 50%; top: -2px; bottom: -2px; width: 2px; background: rgba(0,0,0,0.15);"></div>
-                    <!-- Marker (Wandernd) -->
-                    <div style="position: absolute; left: calc(${markerPos}% - 7px); top: -3px; width: 14px; height: 20px; background: ${trendColor}; border-radius: 7px; border: 2px solid #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.3); transition: left 0.5s ease-out;"></div>
+                <!-- Weicher Tauziehen Balken -->
+                <div style="position: relative; width: 100%; height: 12px; background: linear-gradient(90deg, rgba(230,133,122,0.2) 0%, rgba(230,133,122,0.05) 49%, rgba(0,0,0,0.05) 50%, rgba(110,179,129,0.05) 51%, rgba(110,179,129,0.2) 100%); border-radius: 6px; margin-bottom: 8px;">
+                    <div style="position: absolute; left: 50%; top: -2px; bottom: -2px; width: 2px; background: rgba(0,0,0,0.1);"></div>
+                    <div style="position: absolute; left: calc(${markerPos}% - 6px); top: -2px; width: 12px; height: 16px; background: ${trendColor}; border-radius: 6px; border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2); transition: left 0.5s ease-out;"></div>
                 </div>
                 
-                <div style="text-align: center; font-size: 0.75rem; color: ${trendColor}; font-weight: 800; opacity: 0.9;">
+                <div style="text-align: center; font-size: 0.75rem; color: ${trendColor}; font-weight: bold; opacity: 0.9;">
                     ${trendSubtext}
                 </div>
             </div>
         `;
 
-        let boxColor = isDone ? '#27ae60' : '#e74c3c';
-        let headerText = isDone ? '✅ Ausgleich abgeschlossen!' : `⏳ Ausgleich der letzten ${numEvents} Konsumtage`;
+        // Einzeiliger Header
+        let headerText = isDone ? '✅ Ausgleich abgeschlossen' : `${numEvents} - Tages - Ausgleich`;
+        let headerColor = isDone ? cGreen : '#2c3e50';
 
         safeHTML('dash-compensation-box', `
-            <div class="outlook-title" style="color: ${boxColor}; justify-content: center; font-size: 1rem; margin-bottom: 12px;">
+            <div class="outlook-title" style="color: ${headerColor}; justify-content: center; font-size: 1rem; margin-bottom: 15px;">
                 ${headerText}
             </div>
             
-            <!-- Absolute Bilanz (Kompakt) -->
+            <!-- Absolute Bilanz (Sehr weich hinterlegt) -->
             <div style="display: flex; justify-content: space-between; text-align: center; margin-bottom: 12px; gap: 10px;">
-                <div style="flex: 1; background: rgba(0,0,0,0.02); border: 1px solid rgba(0,0,0,0.05); padding: 8px 5px; border-radius: 8px;">
-                    <div style="font-size: 0.65rem; color: #7f8c8d; text-transform: uppercase; font-weight: 800; margin-bottom: 2px;">Strafe (Gesamt)</div>
-                    <div style="font-weight: 800; font-size: 1rem; color: #e74c3c;">${fmt(totalPenalty)}<span style="font-size: 0.75rem;"> T</span></div>
+                <div style="flex: 1; background: #fffcfc; border: 1px solid #fcf0f0; padding: 8px 5px; border-radius: 8px;">
+                    <div style="font-size: 0.65rem; color: #95a5a6; text-transform: uppercase; font-weight: 800; margin-bottom: 2px;">Strafe (Gesamt)</div>
+                    <div style="font-weight: 800; font-size: 1rem; color: ${cRed};">${fmt(totalPenalty)}<span style="font-size: 0.75rem;"> T</span></div>
                 </div>
                 
-                <div style="flex: 1; background: rgba(0,0,0,0.02); border: 1px solid rgba(0,0,0,0.05); padding: 8px 5px; border-radius: 8px;">
-                    <div style="font-size: 0.65rem; color: #7f8c8d; text-transform: uppercase; font-weight: 800; margin-bottom: 2px;">Exakt Getilgt</div>
-                    <div style="font-weight: 800; font-size: 1rem; color: #27ae60;">${fmt(totalCleared)}<span style="font-size: 0.75rem;"> / ${fmt(totalPenalty)} T</span></div>
+                <div style="flex: 1; background: #f9fdfa; border: 1px solid #f0f9f3; padding: 8px 5px; border-radius: 8px;">
+                    <div style="font-size: 0.65rem; color: #95a5a6; text-transform: uppercase; font-weight: 800; margin-bottom: 2px;">Exakt Getilgt</div>
+                    <div style="font-weight: 800; font-size: 1rem; color: ${cGreen};">${fmt(totalCleared)}<span style="font-size: 0.75rem;"> / ${fmt(totalPenalty)} T</span></div>
                 </div>
             </div>
             
             <!-- Wasserfall Fortschrittsbalken -->
-            <div style="width: 100%; height: 18px; border-radius: 8px; margin-bottom: 2px; overflow: hidden; border: 1px solid rgba(0,0,0,0.1); display: flex;">
+            <div style="width: 100%; height: 16px; border-radius: 8px; margin-bottom: 2px; overflow: hidden; border: 1px solid rgba(0,0,0,0.05); display: flex;">
                 ${segmentsHtml}
             </div>
             
@@ -839,11 +843,18 @@ function renderDashboard() {
                 ${datesHtml}
             </div>
             
-            <!-- NEU: Strategische Trend-Waage -->
+            <!-- Strategische Trend-Waage -->
             ${waageHtml}
+
+            <!-- NEU: Re-integriertes Surplus -->
+            ${totalSurplus > 0 ? `
+            <div style="margin-top: 12px; padding-top: 10px; border-top: 1px dashed rgba(0,0,0,0.05); text-align: center;">
+                <div style="font-size: 0.75rem; color: #7f8c8d; font-weight: bold; text-transform: uppercase; margin-bottom: 2px;">🛡️ Zyklus-Schutzschild</div>
+                <div style="color: ${cPurple}; font-weight: 900; font-size: 1rem;">+${fmt(totalSurplus)} <span style="font-size: 0.75rem;">Tage Surplus</span></div>
+            </div>` : ''}
         `);
         
-        if (compBox) { compBox.style.display = 'block'; compBox.style.borderColor = boxBorder; compBox.style.background = boxBg; }
+        if (compBox) { compBox.style.display = 'block'; compBox.style.borderColor = isDone ? '#eaf4ee' : '#f0f0f0'; compBox.style.background = '#ffffff'; }
     } else {
         if (compBox) compBox.style.display = 'none';
     }
