@@ -445,6 +445,15 @@
               <label>Dein Wunsch-Datum</label>
               <input type="date" id="target-input-date">
           </div>
+          <div class="form-group-full">
+              <label>Budget-Währung (Was kostet 1 Ausrutscher?)</label>
+              <select id="target-budget-type">
+                  <option value="small-active">Kleiner Aktivtag (~ 2 Tage Strafe)</option>
+                  <option value="small">Kleiner Tag (~ 3 Tage Strafe)</option>
+                  <option value="standard" selected>Standardtag (~ 4 Tage Strafe)</option>
+                  <option value="heavy">Schwerer Tag (~ 5 Tage Strafe)</option>
+              </select>
+          </div>
       </div>
       <div class="modal-actions" style="margin-top: 20px;">
           <div class="modal-actions-row">

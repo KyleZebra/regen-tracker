@@ -684,9 +684,14 @@ function renderDashboard() {
                     if (amt) { amt.style.color = 'var(--danger)'; amt.textContent = `-${Math.abs(bRes.budget)}`; }
                     if (sub) { sub.style.color = 'var(--danger)'; sub.textContent = "Tage im Verzug (Ziel gerissen)"; }
                 } else {
+                    let bTypeLabel = "Standardtag";
+                    if (activeCycle.budgetType === "small-active") bTypeLabel = "Kleiner Aktivtag";
+                    else if (activeCycle.budgetType === "small") bTypeLabel = "Kleiner Tag";
+                    else if (activeCycle.budgetType === "heavy") bTypeLabel = "Schwerer Tag";
+                    
                     if (box) { box.style.borderColor = '#9b59b6'; box.style.backgroundColor = '#fdfafb'; }
                     if (amt) { amt.style.color = '#2c3e50'; amt.textContent = bRes.budget >= 50 ? "50+" : bRes.budget; }
-                    if (sub) { sub.style.color = '#7f8c8d'; sub.textContent = "Verfügbare T-Tage (Standard)"; }
+                    if (sub) { sub.style.color = '#7f8c8d'; sub.textContent = `Verfügbare T-Tage (${bTypeLabel})`; }
                 }
             }
         } else { 

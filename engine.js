@@ -17,6 +17,15 @@ function calculateBudget(targetETAStr) {
     // Budget Simulation - STRENG (ohne Phantom-Log für heute!)
     let testCycle = JSON.parse(JSON.stringify(active));
     if (!testCycle.logs) testCycle.logs = {};
+    
+    // Konfiguration für den ausgewählten Phantom-Log
+    let bType = active.budgetType || "standard";
+    let pIsSmall = false, pIsActive = false, pA = 0, jumpDays = 4;
+    
+    if (bType === "small-active") { pIsSmall = true; pIsActive = true; jumpDays = 2; }
+    else if (bType === "small") { pIsSmall = true; pIsActive = false; jumpDays = 3; }
+    else if (bType === "standard") { pIsSmall = false; pIsActive = false; jumpDays = 4; }
+    else if (bType === "heavy") { pIsSmall = false; pIsActive = false; pA = 1; jumpDays = 5; } // Moderater Alk = +1 Strafe
 
     let resCheck = simulateCycle(testCycle);
     let currentEnd = resCheck && !resCheck.failed ? new Date(resCheck.finalEnd) : new Date(activeSimResult.finalEnd);
@@ -43,19 +52,21 @@ function calculateBudget(targetETAStr) {
             type: 'ausrutscher',
             t: 1,
             s: 0,
-            a: 0,
+            a: pA,
             m: 0,
             mood: 0,
             note: "Budget-Test",
             isSimulated: true,
-            isSmall: false 
+            isSmall: pIsSmall,
+            isActive: pIsActive
         };
 
         let res = simulateCycle(testCycle);
 
         if (res && !res.failed && res.finalEnd <= targetDate) {
             budget++;
-            simDate.setDate(simDate.getDate() + 4); 
+            // Der dynamische Sprung verhindert, dass die Phantom-Tage als Ketten-Rauchen zusammengefasst werden
+            simDate.setDate(simDate.getDate() + jumpDays); 
         } else {
             break;
         }

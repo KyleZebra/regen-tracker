@@ -48,6 +48,7 @@ function openTargetModal() {
     let active = getActiveCycle(); 
     if (!active) return; 
     safeSetVal('target-input-date', active.targetETA || ""); 
+    safeSetVal('target-budget-type', active.budgetType || "standard"); 
     const m = document.getElementById('modal-target');
     if (m) m.classList.add('active'); 
 }
@@ -57,9 +58,11 @@ function saveTargetETA() {
     if (!active) return; 
     
     let d = safeVal('target-input-date'); 
+    let bType = safeVal('target-budget-type') || "standard";
     if (!d) return customAlert("Bitte wähle ein Datum aus."); 
     
     active.targetETA = d; 
+    active.budgetType = bType;
     closeModal('modal-target'); 
     saveData(); 
 }
