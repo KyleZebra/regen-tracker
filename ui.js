@@ -707,7 +707,7 @@ function renderDashboard() {
         safeDisplay('dash-budget-box', 'none');
     }
 
-    // FIX V52: 3-Teile-Bilanz, Waage als Fazit & weich-gelber Hintergrund
+    // FIX V53: 3-Teile-Bilanz, knackiger Trend-Balken & weich-gelber Hintergrund
     const compBox = document.getElementById('dash-compensation-box');
     if (!isSandbox && !res.isOpen && ds.recentEvents && ds.recentEvents.length > 0) {
         
@@ -784,10 +784,8 @@ function renderDashboard() {
         
         let trendColor = netTrend > 0 ? '#27ae60' : (netTrend === 0 ? '#f39c12' : '#e74c3c');
         
-        // Das selbsterklärende Fazit
-        let trendText = netTrend > 0 
-            ? `Fazit: Du baust netto mehr ab als auf (+${fmt(netTrend)} Tage).` 
-            : (netTrend === 0 ? `Fazit: Schulden und Pausen im Gleichgewicht.` : `Fazit: Du baust lokal mehr Schulden auf (${fmt(netTrend)} Tage).`);
+        // Das knackige Fazit
+        let trendText = `Trend: ${netTrend > 0 ? '+' : ''}${fmt(netTrend)}`;
 
         let headerText = isDone ? '✅ Ausgleich abgeschlossen!' : `⏳ ${numEvents} - Tages - Ausgleich`;
         let headerColor = isDone ? '#27ae60' : '#2c3e50';
@@ -825,14 +823,16 @@ function renderDashboard() {
             
             <!-- 3. Die Trend-Waage (Das Fazit) -->
             <div style="padding: 0 5px;">
-                <div style="text-align: center; font-size: 0.8rem; color: ${trendColor}; font-weight: 800; margin-bottom: 8px;">
+                <div style="text-align: center; font-size: 0.95rem; color: ${trendColor}; font-weight: 900; margin-bottom: 8px;">
                     ${trendText}
                 </div>
                 
-                <!-- Der kompakte Tauziehen-Marker -->
-                <div style="position: relative; width: 100%; height: 10px; background: linear-gradient(90deg, rgba(231,76,60,0.2) 0%, rgba(231,76,60,0.05) 49%, rgba(0,0,0,0.1) 50%, rgba(39,174,96,0.05) 51%, rgba(39,174,96,0.2) 100%); border-radius: 5px; margin-bottom: 5px;">
-                    <div style="position: absolute; left: 50%; top: -2px; bottom: -2px; width: 2px; background: rgba(0,0,0,0.15);"></div>
-                    <div style="position: absolute; left: calc(${markerPos}% - 5px); top: -2px; width: 10px; height: 14px; background: ${trendColor}; border-radius: 5px; box-shadow: 0 1px 3px rgba(0,0,0,0.3); transition: left 0.5s ease-out;"></div>
+                <!-- Der spürbare Tauziehen-Balken (14px Höhe) -->
+                <div style="position: relative; width: 100%; height: 14px; background: linear-gradient(90deg, rgba(231,76,60,0.15) 0%, rgba(231,76,60,0.05) 49%, rgba(0,0,0,0.1) 50%, rgba(39,174,96,0.05) 51%, rgba(39,174,96,0.15) 100%); border-radius: 7px; margin-bottom: 5px; border: 1px solid rgba(0,0,0,0.05);">
+                    <!-- Null-Linie (Mitte) -->
+                    <div style="position: absolute; left: 50%; top: -2px; bottom: -2px; width: 2px; background: rgba(0,0,0,0.2);"></div>
+                    <!-- Marker (Wandernd) -->
+                    <div style="position: absolute; left: calc(${markerPos}% - 7px); top: -3px; width: 14px; height: 20px; background: ${trendColor}; border-radius: 7px; border: 2px solid #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.3); transition: left 0.5s ease-out;"></div>
                 </div>
             </div>
         `);
@@ -845,6 +845,7 @@ function renderDashboard() {
     } else {
         if (compBox) compBox.style.display = 'none';
     }
+    
     const todayStr = toIsoString(new Date());
     const isLoggedToday = activeCycle.logs && activeCycle.logs[todayStr] && activeCycle.logs[todayStr].type !== undefined;
     
