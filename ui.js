@@ -707,7 +707,7 @@ function renderDashboard() {
         safeDisplay('dash-budget-box', 'none');
     }
 
-    // FIX V57: Verschlankter Header & Zukunfts-Projektion für zulässige Konsumtage
+    // FIX V59: Verschlankter Header (3 TA) und mathematisch korrekte Puffer-Währung
     const forceDisplay = (id, val) => {
         const el = document.getElementById(id);
         if (el) el.style.setProperty('display', val, 'important');
@@ -805,38 +805,35 @@ function renderDashboard() {
             ampelGlow = 'rgba(39, 174, 96, 0.4)';
         }
 
-        // --- NEU: Zukunfts-Projektion für die kleine Anzeige ---
-        let daysBadge = '';
+        // --- NEU: Berechnung der Puffer-Währung (Konsumtage) ---
+        let bufferBadge = '';
         if (ampelText === 'Freigabe') {
-            let keptEvents = (numEvents >= 3) ? events.slice(1) : events;
-            let keptPenalty = 0;
-            keptEvents.forEach(e => keptPenalty += e.added);
+            // Durchschnittskosten für einen Rückfall in diesem Fenster
+            let avgPenalty = totalPenalty / numEvents;
+            if (avgPenalty < 3) avgPenalty = 3; // Harter Mindestwert für Strafe
             
-            let keptRegen = currentTotalRegen - keptEvents[0].regenAtEvent;
-            let trendBase = keptRegen - keptPenalty;
+            let affordableDays = Math.floor(netTrend / avgPenalty);
+            let target = Math.ceil(avgPenalty); // So viel Trend braucht man für 1 Tag
             
-            // X Tage Rauchen kosten: 3X + 1 Strafe. Bedingung: trendBase - (3X + 1) >= 1
-            let maxDays = Math.floor((trendBase - 2) / 3);
-            if (maxDays < 0) maxDays = 0;
-            
-            // Optisches Feedback: Rot wenn Fenster-Kippgefahr (0 Tage), sonst Grün
-            let badgeBg = maxDays > 0 ? 'rgba(39, 174, 96, 0.1)' : 'rgba(231, 76, 60, 0.1)';
-            let badgeBorder = maxDays > 0 ? 'rgba(39, 174, 96, 0.3)' : 'rgba(231, 76, 60, 0.3)';
-            let badgeColor = maxDays > 0 ? '#27ae60' : '#e74c3c';
-            
-            daysBadge = `<span style="margin-left: 4px; background: ${badgeBg}; border: 1px solid ${badgeBorder}; color: ${badgeColor}; padding: 2px 6px; border-radius: 6px; font-size: 0.65rem; font-weight: 800;" title="Zulässige Folgetage ohne Trend-Verlust">🚬 ${maxDays}d Limit</span>`;
+            if (affordableDays >= 1) {
+                // Man hat genug Guthaben für mindestens 1 Tag
+                bufferBadge = `<div style="margin-left: 6px; background: rgba(39, 174, 96, 0.15); border: 1px solid rgba(39, 174, 96, 0.3); color: #27ae60; padding: 2px 6px; border-radius: 6px; font-size: 0.65rem; font-weight: 800;" title="Erspielter Puffer">🚬 ${affordableDays}d Puffer</div>`;
+            } else {
+                // Ampel ist grün, aber Guthaben reicht noch nicht für einen ganzen Tag
+                bufferBadge = `<div style="margin-left: 6px; background: rgba(243, 156, 18, 0.1); border: 1px solid rgba(243, 156, 18, 0.3); color: #e67e22; padding: 2px 6px; border-radius: 6px; font-size: 0.65rem; font-weight: 800;" title="Noch ${fmt(target - netTrend)} Tage bis zum 1d Puffer">⏳ ${fmt(netTrend)}/${target}d</div>`;
+            }
         }
 
         safeHTML('dash-compensation-box', `
-            <!-- Verschlankter Header mit Ampel & Anzeige -->
+            <!-- Verschlankter Header (3 TA, Ampel & Puffer-Badge) -->
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                <div class="outlook-title" style="color: #2c3e50; font-size: 0.95rem; margin: 0; font-weight: 900;">
+                <div class="outlook-title" style="color: #2c3e50; font-size: 1rem; margin: 0; font-weight: 900;">
                     ${numEvents} TA
                 </div>
                 <div style="display: flex; align-items: center; gap: 4px; background: rgba(0,0,0,0.02); padding: 4px 8px; border-radius: 12px; border: 1px solid rgba(0,0,0,0.04);">
                     <div style="width: 8px; height: 8px; border-radius: 50%; background: ${ampelColor}; box-shadow: 0 0 6px ${ampelGlow};"></div>
-                    <span style="font-size: 0.75rem; font-weight: 900; color: ${ampelColor}; text-transform: uppercase;">${ampelText}</span>
-                    ${daysBadge}
+                    <span style="font-size: 0.7rem; font-weight: 900; color: ${ampelColor}; text-transform: uppercase; letter-spacing: 0.5px;">${ampelText}</span>
+                    ${bufferBadge}
                 </div>
             </div>
             
@@ -848,6 +845,7 @@ function renderDashboard() {
                 ${datesHtml}
             </div>
 
+            <!-- Die 3-Teile-Bilanz -->
             <div style="display: flex; justify-content: space-around; text-align: center; margin-bottom: 15px; font-size: 0.8rem; border-top: 1px dashed rgba(0,0,0,0.1); border-bottom: 1px dashed rgba(0,0,0,0.1); padding: 12px 0;">
                 <div style="flex: 1;">
                     <div style="color: #e74c3c; font-weight: 800; font-size: 1.1rem;">${fmt(totalPenalty)}</div>
@@ -863,6 +861,7 @@ function renderDashboard() {
                 </div>
             </div>
             
+            <!-- Die Trend-Waage -->
             <div style="padding: 0 5px;">
                 <div style="text-align: center; font-size: 0.95rem; color: ${trendColor}; font-weight: 900; margin-bottom: 8px;">
                     ${trendText}
