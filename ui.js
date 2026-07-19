@@ -707,10 +707,15 @@ function renderDashboard() {
         safeDisplay('dash-budget-box', 'none');
     }
 
-    // FIX V55: Sandbox-Freigabe für Wasserfall, Ampel und Tagesausblick
+    // FIX V56: Sandbox-Sperren (CSS !important & JS Logik) durchbrechen + Ampel integrieren
+    const forceDisplay = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.style.setProperty('display', val, 'important');
+    };
+
     const compBox = document.getElementById('dash-compensation-box');
     
-    // SCHLOSS ENTFERNT: Wasserfall wird jetzt auch in der Sandbox gerendert
+    // JS-Sperre entfernt: Wasserfall arbeitet nun auch im Labor
     if (!res.isOpen && ds.recentEvents && ds.recentEvents.length > 0) {
         
         let events = [...ds.recentEvents].reverse();
@@ -760,7 +765,6 @@ function renderDashboard() {
             let segmentProgress = (clearedForThis / e.added) * 100;
             let isSegmentDone = clearedForThis >= e.added;
             
-            // In Arbeit = Orange/Gelb, Erledigt = Grün
             let segmentColor = isSegmentDone ? '#27ae60' : '#f39c12';
             let textColor = isSegmentDone ? '#27ae60' : '#7f8c8d';
             
@@ -804,12 +808,12 @@ function renderDashboard() {
             ampelGlow = 'rgba(243, 156, 18, 0.4)';
         } else {
             ampelColor = '#27ae60'; // Grün
-            ampelText = 'Go!';
+            ampelText = 'Freigabe';
             ampelGlow = 'rgba(39, 174, 96, 0.4)';
         }
 
         safeHTML('dash-compensation-box', `
-            <!-- Der neue Header mit integrierter Ampel -->
+            <!-- Der Header mit integrierter Ampel -->
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                 <div class="outlook-title" style="color: ${headerColor}; font-size: 0.95rem; margin: 0;">
                     ${headerText}
@@ -821,17 +825,15 @@ function renderDashboard() {
                 </div>
             </div>
             
-            <!-- 1. Der Wasserfall-Balken -->
             <div style="width: 100%; height: 16px; border-radius: 8px; margin-bottom: 2px; overflow: hidden; border: 1px solid rgba(0,0,0,0.1); display: flex;">
                 ${segmentsHtml}
             </div>
             
-            <!-- Daten unter den Segmenten -->
             <div style="display: flex; width: 100%; margin-bottom: 15px;">
                 ${datesHtml}
             </div>
 
-            <!-- 2. Die 3-Teile-Bilanz -->
+            <!-- Die 3-Teile-Bilanz -->
             <div style="display: flex; justify-content: space-around; text-align: center; margin-bottom: 15px; font-size: 0.8rem; border-top: 1px dashed rgba(0,0,0,0.1); border-bottom: 1px dashed rgba(0,0,0,0.1); padding: 12px 0;">
                 <div style="flex: 1;">
                     <div style="color: #e74c3c; font-weight: 800; font-size: 1.1rem;">${fmt(totalPenalty)}</div>
@@ -847,7 +849,7 @@ function renderDashboard() {
                 </div>
             </div>
             
-            <!-- 3. Die Trend-Waage -->
+            <!-- Die Trend-Waage -->
             <div style="padding: 0 5px;">
                 <div style="text-align: center; font-size: 0.95rem; color: ${trendColor}; font-weight: 900; margin-bottom: 8px;">
                     ${trendText}
@@ -861,18 +863,18 @@ function renderDashboard() {
         `);
         
         if (compBox) { 
-            compBox.style.display = 'block'; 
+            compBox.style.setProperty('display', 'block', 'important'); // CSS-Sperre knacken
             compBox.style.borderColor = '#fdebd0'; 
             compBox.style.background = '#fffcf5';  
         }
     } else {
-        if (compBox) compBox.style.display = 'none';
+        if (compBox) compBox.style.setProperty('display', 'none', 'important');
     }
     
     const todayStr = toIsoString(new Date());
     const isLoggedToday = activeCycle.logs && activeCycle.logs[todayStr] && activeCycle.logs[todayStr].type !== undefined;
     
-    // SCHLOSS ENTFERNT: Der Tagesausblick (Simulation) arbeitet nun auch in der Sandbox
+    // JS-Sperre entfernt: Tagesausblick arbeitet nun auch im Labor
     if (!isLoggedToday && !res.isOpen && displayDebt > 0 && typeof simulateCycle === 'function') {
         let cloneA = JSON.parse(JSON.stringify(activeCycle)); 
         if(!cloneA.logs) cloneA.logs = {}; 
@@ -904,9 +906,9 @@ function renderDashboard() {
                     <span class="outlook-value">Schuld steigt auf ${strB} (Ziel: ${resB.finalEnd.toLocaleDateString('de-DE')})</span>
                 </div>
             `);
-            safeDisplay('dash-outlook', 'block');
+            forceDisplay('dash-outlook', 'block'); // CSS-Sperre knacken
         } else {
-            safeDisplay('dash-outlook', 'none');
+            forceDisplay('dash-outlook', 'none');
         }
         
     } else if (!isLoggedToday && !res.isOpen && displayDebt <= 0) {
@@ -921,7 +923,7 @@ function renderDashboard() {
                 <span class="outlook-value">Startet neuen Zyklus (Min. 3 Tage Schuld)</span>
             </div>
         `);
-        safeDisplay('dash-outlook', 'block');
+        forceDisplay('dash-outlook', 'block');
         
     } else if (!isLoggedToday && res.isOpen && typeof simulateCycle === 'function') {
         
@@ -951,22 +953,22 @@ function renderDashboard() {
                     <span class="outlook-value">Phase verlängert sich auf Tag ${resB.history.t.length}</span>
                 </div>
             `);
-            safeDisplay('dash-outlook', 'block');
+            forceDisplay('dash-outlook', 'block');
         } else {
-            safeDisplay('dash-outlook', 'none');
+            forceDisplay('dash-outlook', 'none');
         }
 
     } else {
-        safeDisplay('dash-outlook', 'none');
+        forceDisplay('dash-outlook', 'none');
     }
 
-    // Die Daily Action Area (Buttons) wird in der Sandbox über CSS verborgen, bleibt logisch aber intakt
-    if (isLoggedToday && !isSandbox) { 
-        safeDisplay('daily-action-area', 'none'); 
-        safeDisplay('daily-done-area', 'block'); 
+    // JS-Sperre entfernt: Bearbeiten-Feld (daily-done-area) arbeitet nun auch im Labor
+    if (isLoggedToday) { 
+        forceDisplay('daily-action-area', 'none'); 
+        forceDisplay('daily-done-area', 'block'); 
     } else { 
-        safeDisplay('daily-action-area', 'block'); 
-        safeDisplay('daily-done-area', 'none'); 
+        forceDisplay('daily-action-area', 'block'); 
+        forceDisplay('daily-done-area', 'none'); 
     }
     
     if (!isSandbox && ds.gotBonusToday && typeof triggerBonusConfetti === 'function') {
