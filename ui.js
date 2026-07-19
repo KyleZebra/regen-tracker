@@ -707,7 +707,7 @@ function renderDashboard() {
         safeDisplay('dash-budget-box', 'none');
     }
 
-    // FIX V56: Sandbox-Sperren (CSS !important & JS Logik) durchbrechen + Ampel integrieren
+    // FIX V57: Verschlankter Header & Zukunfts-Projektion für zulässige Konsumtage
     const forceDisplay = (id, val) => {
         const el = document.getElementById(id);
         if (el) el.style.setProperty('display', val, 'important');
@@ -715,7 +715,6 @@ function renderDashboard() {
 
     const compBox = document.getElementById('dash-compensation-box');
     
-    // JS-Sperre entfernt: Wasserfall arbeitet nun auch im Labor
     if (!res.isOpen && ds.recentEvents && ds.recentEvents.length > 0) {
         
         let events = [...ds.recentEvents].reverse();
@@ -724,7 +723,6 @@ function renderDashboard() {
         let totalPenalty = 0;
         events.forEach(e => totalPenalty += e.added);
         
-        // 1. Strikte Wasserfall-Logik (Absolute Tilgung)
         let currentTotalRegen = ds.totalDebtEver - displayDebt;
         let regenSinceOldest = currentTotalRegen - events[0].regenAtEvent;
         
@@ -751,7 +749,6 @@ function renderDashboard() {
         let isDone = openDebt <= 0;
         let fmt = v => Number.isInteger(Math.round(v*10)/10) ? Math.round(v*10)/10 : (Math.round(v*10)/10).toFixed(1).replace('.', ',');
         
-        // --- Ebene 1: Wasserfall HTML generieren ---
         let segmentsHtml = '';
         let datesHtml = '';
         
@@ -781,7 +778,6 @@ function renderDashboard() {
             `;
         });
 
-        // --- Ebene 2 & 3: Lokaler Trend und Waage ---
         let netTrend = regenSinceOldest - totalPenalty; 
         
         let maxScale = Math.max(totalPenalty * 1.5, 10); 
@@ -791,37 +787,56 @@ function renderDashboard() {
         let trendColor = netTrend > 0 ? '#27ae60' : (netTrend === 0 ? '#f39c12' : '#e74c3c');
         let trendText = `Trend: ${netTrend > 0 ? '+' : ''}${fmt(netTrend)}`;
 
-        let headerText = isDone ? '✅ Ausgleich abgeschlossen' : `⏳ ${numEvents} - Tages - Ausgleich`;
-        let headerColor = isDone ? '#27ae60' : '#2c3e50';
-
         // --- Die 3-Phasen Ampel-Logik ---
-        let isOldestCleared = debts[0] <= 0; // Check, ob das älteste Becken grün ist
+        let isOldestCleared = debts[0] <= 0; 
         let ampelColor, ampelText, ampelGlow;
         
         if (!isOldestCleared) {
-            ampelColor = '#e74c3c'; // Rot
+            ampelColor = '#e74c3c';
             ampelText = 'Sperre';
             ampelGlow = 'rgba(231, 76, 60, 0.4)';
         } else if (isOldestCleared && netTrend < 1) {
-            ampelColor = '#f39c12'; // Orange
+            ampelColor = '#f39c12';
             ampelText = 'Warten';
             ampelGlow = 'rgba(243, 156, 18, 0.4)';
         } else {
-            ampelColor = '#27ae60'; // Grün
+            ampelColor = '#27ae60';
             ampelText = 'Freigabe';
             ampelGlow = 'rgba(39, 174, 96, 0.4)';
         }
 
+        // --- NEU: Zukunfts-Projektion für die kleine Anzeige ---
+        let daysBadge = '';
+        if (ampelText === 'Freigabe') {
+            let keptEvents = (numEvents >= 3) ? events.slice(1) : events;
+            let keptPenalty = 0;
+            keptEvents.forEach(e => keptPenalty += e.added);
+            
+            let keptRegen = currentTotalRegen - keptEvents[0].regenAtEvent;
+            let trendBase = keptRegen - keptPenalty;
+            
+            // X Tage Rauchen kosten: 3X + 1 Strafe. Bedingung: trendBase - (3X + 1) >= 1
+            let maxDays = Math.floor((trendBase - 2) / 3);
+            if (maxDays < 0) maxDays = 0;
+            
+            // Optisches Feedback: Rot wenn Fenster-Kippgefahr (0 Tage), sonst Grün
+            let badgeBg = maxDays > 0 ? 'rgba(39, 174, 96, 0.1)' : 'rgba(231, 76, 60, 0.1)';
+            let badgeBorder = maxDays > 0 ? 'rgba(39, 174, 96, 0.3)' : 'rgba(231, 76, 60, 0.3)';
+            let badgeColor = maxDays > 0 ? '#27ae60' : '#e74c3c';
+            
+            daysBadge = `<span style="margin-left: 4px; background: ${badgeBg}; border: 1px solid ${badgeBorder}; color: ${badgeColor}; padding: 2px 6px; border-radius: 6px; font-size: 0.65rem; font-weight: 800;" title="Zulässige Folgetage ohne Trend-Verlust">🚬 ${maxDays}d Limit</span>`;
+        }
+
         safeHTML('dash-compensation-box', `
-            <!-- Der Header mit integrierter Ampel -->
+            <!-- Verschlankter Header mit Ampel & Anzeige -->
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                <div class="outlook-title" style="color: ${headerColor}; font-size: 0.95rem; margin: 0;">
-                    ${headerText}
+                <div class="outlook-title" style="color: #2c3e50; font-size: 0.95rem; margin: 0; font-weight: 900;">
+                    ${numEvents} TA
                 </div>
-                <div style="display: flex; align-items: center; gap: 6px; background: rgba(0,0,0,0.02); padding: 4px 10px; border-radius: 12px; border: 1px solid rgba(0,0,0,0.04);">
-                    <span style="font-size: 0.65rem; font-weight: 800; color: #95a5a6; text-transform: uppercase;">Status:</span>
+                <div style="display: flex; align-items: center; gap: 4px; background: rgba(0,0,0,0.02); padding: 4px 8px; border-radius: 12px; border: 1px solid rgba(0,0,0,0.04);">
                     <div style="width: 8px; height: 8px; border-radius: 50%; background: ${ampelColor}; box-shadow: 0 0 6px ${ampelGlow};"></div>
-                    <span style="font-size: 0.75rem; font-weight: 900; color: ${ampelColor};">${ampelText}</span>
+                    <span style="font-size: 0.75rem; font-weight: 900; color: ${ampelColor}; text-transform: uppercase;">${ampelText}</span>
+                    ${daysBadge}
                 </div>
             </div>
             
@@ -833,7 +848,6 @@ function renderDashboard() {
                 ${datesHtml}
             </div>
 
-            <!-- Die 3-Teile-Bilanz -->
             <div style="display: flex; justify-content: space-around; text-align: center; margin-bottom: 15px; font-size: 0.8rem; border-top: 1px dashed rgba(0,0,0,0.1); border-bottom: 1px dashed rgba(0,0,0,0.1); padding: 12px 0;">
                 <div style="flex: 1;">
                     <div style="color: #e74c3c; font-weight: 800; font-size: 1.1rem;">${fmt(totalPenalty)}</div>
@@ -849,7 +863,6 @@ function renderDashboard() {
                 </div>
             </div>
             
-            <!-- Die Trend-Waage -->
             <div style="padding: 0 5px;">
                 <div style="text-align: center; font-size: 0.95rem; color: ${trendColor}; font-weight: 900; margin-bottom: 8px;">
                     ${trendText}
@@ -863,7 +876,7 @@ function renderDashboard() {
         `);
         
         if (compBox) { 
-            compBox.style.setProperty('display', 'block', 'important'); // CSS-Sperre knacken
+            compBox.style.setProperty('display', 'block', 'important'); 
             compBox.style.borderColor = '#fdebd0'; 
             compBox.style.background = '#fffcf5';  
         }
