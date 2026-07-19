@@ -707,9 +707,11 @@ function renderDashboard() {
         safeDisplay('dash-budget-box', 'none');
     }
 
-    // FIX V54: Elegantes Widget mit 3-Phasen Ampel zur Konsum-Steuerung
+    // FIX V55: Sandbox-Freigabe für Wasserfall, Ampel und Tagesausblick
     const compBox = document.getElementById('dash-compensation-box');
-    if (!isSandbox && !res.isOpen && ds.recentEvents && ds.recentEvents.length > 0) {
+    
+    // SCHLOSS ENTFERNT: Wasserfall wird jetzt auch in der Sandbox gerendert
+    if (!res.isOpen && ds.recentEvents && ds.recentEvents.length > 0) {
         
         let events = [...ds.recentEvents].reverse();
         let numEvents = events.length;
@@ -788,7 +790,7 @@ function renderDashboard() {
         let headerText = isDone ? '✅ Ausgleich abgeschlossen' : `⏳ ${numEvents} - Tages - Ausgleich`;
         let headerColor = isDone ? '#27ae60' : '#2c3e50';
 
-        // --- NEU: Die 3-Phasen Ampel-Logik ---
+        // --- Die 3-Phasen Ampel-Logik ---
         let isOldestCleared = debts[0] <= 0; // Check, ob das älteste Becken grün ist
         let ampelColor, ampelText, ampelGlow;
         
@@ -802,7 +804,7 @@ function renderDashboard() {
             ampelGlow = 'rgba(243, 156, 18, 0.4)';
         } else {
             ampelColor = '#27ae60'; // Grün
-            ampelText = 'Freigabe';
+            ampelText = 'Go!';
             ampelGlow = 'rgba(39, 174, 96, 0.4)';
         }
 
@@ -870,7 +872,8 @@ function renderDashboard() {
     const todayStr = toIsoString(new Date());
     const isLoggedToday = activeCycle.logs && activeCycle.logs[todayStr] && activeCycle.logs[todayStr].type !== undefined;
     
-    if (!isSandbox && !isLoggedToday && !res.isOpen && displayDebt > 0 && typeof simulateCycle === 'function') {
+    // SCHLOSS ENTFERNT: Der Tagesausblick (Simulation) arbeitet nun auch in der Sandbox
+    if (!isLoggedToday && !res.isOpen && displayDebt > 0 && typeof simulateCycle === 'function') {
         let cloneA = JSON.parse(JSON.stringify(activeCycle)); 
         if(!cloneA.logs) cloneA.logs = {}; 
         cloneA.logs[todayStr] = { type: 'pause', s:0, a:0, m:0, mood:0, note:'Phantom', isSimulated: true }; 
@@ -888,7 +891,6 @@ function renderDashboard() {
             let strA = Number.isInteger(dA) ? dA : dA.toFixed(1).replace('.', ',');
             let strB = Number.isInteger(dB) ? dB : dB.toFixed(1).replace('.', ',');
             
-            // FIX V26.2: Doppelte Absicherung für den Text-Boost
             let pauseLabel = (res.hasNirvanaEcho && ds.activeReboundCharges > 0) ? "🟢 Bei Pause <span style='color:#8e44ad;font-size:0.8rem;'>(🌠 -2.0 Boost)</span>:" : "🟢 Bei Pause:";
             
             safeHTML('dash-outlook', `
@@ -907,8 +909,7 @@ function renderDashboard() {
             safeDisplay('dash-outlook', 'none');
         }
         
-    // --- NEU: Der statische Ausblick für das Nirwana ---
-    } else if (!isSandbox && !isLoggedToday && !res.isOpen && displayDebt <= 0) {
+    } else if (!isLoggedToday && !res.isOpen && displayDebt <= 0) {
         safeHTML('dash-outlook', `
             <div class="outlook-title">📊 Tagesausblick für heute</div>
             <div class="outlook-row good">
@@ -922,17 +923,14 @@ function renderDashboard() {
         `);
         safeDisplay('dash-outlook', 'block');
         
-    // --- NEU: Dynamischer Ausblick für die offene Initialphase ---
-    } else if (!isSandbox && !isLoggedToday && res.isOpen && typeof simulateCycle === 'function') {
+    } else if (!isLoggedToday && res.isOpen && typeof simulateCycle === 'function') {
         
-        // Klon A: Du pausierst heute -> Phase wird geschlossen
         let cloneA = JSON.parse(JSON.stringify(activeCycle));
         if(!cloneA.logs) cloneA.logs = {};
         cloneA.logs[todayStr] = { type: 'pause', s:0, a:0, m:0, mood:0, note:'Phantom', isSimulated: true };
         cloneA.base.isOpen = false; 
         let resA = simulateCycle(cloneA);
 
-        // Klon B: Du rauchst heute -> Phase wird um 1 Tag verlängert
         let cloneB = JSON.parse(JSON.stringify(activeCycle));
         cloneB.base.end = todayStr;
         cloneB.base.tDays += 1;
@@ -962,6 +960,7 @@ function renderDashboard() {
         safeDisplay('dash-outlook', 'none');
     }
 
+    // Die Daily Action Area (Buttons) wird in der Sandbox über CSS verborgen, bleibt logisch aber intakt
     if (isLoggedToday && !isSandbox) { 
         safeDisplay('daily-action-area', 'none'); 
         safeDisplay('daily-done-area', 'block'); 
