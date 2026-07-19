@@ -707,7 +707,7 @@ function renderDashboard() {
         safeDisplay('dash-budget-box', 'none');
     }
 
-    // FIX V53: 3-Teile-Bilanz, knackiger Trend-Balken & weich-gelber Hintergrund
+    // FIX V54: Elegantes Widget mit 3-Phasen Ampel zur Konsum-Steuerung
     const compBox = document.getElementById('dash-compensation-box');
     if (!isSandbox && !res.isOpen && ds.recentEvents && ds.recentEvents.length > 0) {
         
@@ -758,7 +758,7 @@ function renderDashboard() {
             let segmentProgress = (clearedForThis / e.added) * 100;
             let isSegmentDone = clearedForThis >= e.added;
             
-            // NEU: In Arbeit = Orange/Gelb, Erledigt = Grün
+            // In Arbeit = Orange/Gelb, Erledigt = Grün
             let segmentColor = isSegmentDone ? '#27ae60' : '#f39c12';
             let textColor = isSegmentDone ? '#27ae60' : '#7f8c8d';
             
@@ -783,16 +783,40 @@ function renderDashboard() {
         markerPos = Math.max(3, Math.min(97, markerPos)); 
         
         let trendColor = netTrend > 0 ? '#27ae60' : (netTrend === 0 ? '#f39c12' : '#e74c3c');
-        
-        // Das knackige Fazit
         let trendText = `Trend: ${netTrend > 0 ? '+' : ''}${fmt(netTrend)}`;
 
-        let headerText = isDone ? '✅ Ausgleich abgeschlossen!' : `⏳ ${numEvents} - Tages - Ausgleich`;
+        let headerText = isDone ? '✅ Ausgleich abgeschlossen' : `⏳ ${numEvents} - Tages - Ausgleich`;
         let headerColor = isDone ? '#27ae60' : '#2c3e50';
 
+        // --- NEU: Die 3-Phasen Ampel-Logik ---
+        let isOldestCleared = debts[0] <= 0; // Check, ob das älteste Becken grün ist
+        let ampelColor, ampelText, ampelGlow;
+        
+        if (!isOldestCleared) {
+            ampelColor = '#e74c3c'; // Rot
+            ampelText = 'Sperre';
+            ampelGlow = 'rgba(231, 76, 60, 0.4)';
+        } else if (isOldestCleared && netTrend < 1) {
+            ampelColor = '#f39c12'; // Orange
+            ampelText = 'Warten';
+            ampelGlow = 'rgba(243, 156, 18, 0.4)';
+        } else {
+            ampelColor = '#27ae60'; // Grün
+            ampelText = 'Freigabe';
+            ampelGlow = 'rgba(39, 174, 96, 0.4)';
+        }
+
         safeHTML('dash-compensation-box', `
-            <div class="outlook-title" style="color: ${headerColor}; justify-content: center; font-size: 1rem; margin-bottom: 12px;">
-                ${headerText}
+            <!-- Der neue Header mit integrierter Ampel -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <div class="outlook-title" style="color: ${headerColor}; font-size: 0.95rem; margin: 0;">
+                    ${headerText}
+                </div>
+                <div style="display: flex; align-items: center; gap: 6px; background: rgba(0,0,0,0.02); padding: 4px 10px; border-radius: 12px; border: 1px solid rgba(0,0,0,0.04);">
+                    <span style="font-size: 0.65rem; font-weight: 800; color: #95a5a6; text-transform: uppercase;">Status:</span>
+                    <div style="width: 8px; height: 8px; border-radius: 50%; background: ${ampelColor}; box-shadow: 0 0 6px ${ampelGlow};"></div>
+                    <span style="font-size: 0.75rem; font-weight: 900; color: ${ampelColor};">${ampelText}</span>
+                </div>
             </div>
             
             <!-- 1. Der Wasserfall-Balken -->
@@ -805,7 +829,7 @@ function renderDashboard() {
                 ${datesHtml}
             </div>
 
-            <!-- 2. Die 3-Teile-Bilanz (cleanes Text-Layout ohne klobige Boxen) -->
+            <!-- 2. Die 3-Teile-Bilanz -->
             <div style="display: flex; justify-content: space-around; text-align: center; margin-bottom: 15px; font-size: 0.8rem; border-top: 1px dashed rgba(0,0,0,0.1); border-bottom: 1px dashed rgba(0,0,0,0.1); padding: 12px 0;">
                 <div style="flex: 1;">
                     <div style="color: #e74c3c; font-weight: 800; font-size: 1.1rem;">${fmt(totalPenalty)}</div>
@@ -821,17 +845,14 @@ function renderDashboard() {
                 </div>
             </div>
             
-            <!-- 3. Die Trend-Waage (Das Fazit) -->
+            <!-- 3. Die Trend-Waage -->
             <div style="padding: 0 5px;">
                 <div style="text-align: center; font-size: 0.95rem; color: ${trendColor}; font-weight: 900; margin-bottom: 8px;">
                     ${trendText}
                 </div>
                 
-                <!-- Der spürbare Tauziehen-Balken (14px Höhe) -->
                 <div style="position: relative; width: 100%; height: 14px; background: linear-gradient(90deg, rgba(231,76,60,0.15) 0%, rgba(231,76,60,0.05) 49%, rgba(0,0,0,0.1) 50%, rgba(39,174,96,0.05) 51%, rgba(39,174,96,0.15) 100%); border-radius: 7px; margin-bottom: 5px; border: 1px solid rgba(0,0,0,0.05);">
-                    <!-- Null-Linie (Mitte) -->
                     <div style="position: absolute; left: 50%; top: -2px; bottom: -2px; width: 2px; background: rgba(0,0,0,0.2);"></div>
-                    <!-- Marker (Wandernd) -->
                     <div style="position: absolute; left: calc(${markerPos}% - 7px); top: -3px; width: 14px; height: 20px; background: ${trendColor}; border-radius: 7px; border: 2px solid #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.3); transition: left 0.5s ease-out;"></div>
                 </div>
             </div>
@@ -839,8 +860,8 @@ function renderDashboard() {
         
         if (compBox) { 
             compBox.style.display = 'block'; 
-            compBox.style.borderColor = '#fdebd0'; // Warmer, leicht goldener Rand
-            compBox.style.background = '#fffcf5';  // Sehr weiches Elfenbein-Gelb
+            compBox.style.borderColor = '#fdebd0'; 
+            compBox.style.background = '#fffcf5';  
         }
     } else {
         if (compBox) compBox.style.display = 'none';
