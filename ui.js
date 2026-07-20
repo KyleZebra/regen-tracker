@@ -707,7 +707,7 @@ function renderDashboard() {
         safeDisplay('dash-budget-box', 'none');
     }
 
-    // FIX V59: Verschlankter Header (3 TA) und mathematisch korrekte Puffer-Währung
+    // FIX V60: Angepasste Puffer-Logik (Sicherer Erhalt der grünen Ampel)
     const forceDisplay = (id, val) => {
         const el = document.getElementById(id);
         if (el) el.style.setProperty('display', val, 'important');
@@ -787,7 +787,6 @@ function renderDashboard() {
         let trendColor = netTrend > 0 ? '#27ae60' : (netTrend === 0 ? '#f39c12' : '#e74c3c');
         let trendText = `Trend: ${netTrend > 0 ? '+' : ''}${fmt(netTrend)}`;
 
-        // --- Die 3-Phasen Ampel-Logik ---
         let isOldestCleared = debts[0] <= 0; 
         let ampelColor, ampelText, ampelGlow;
         
@@ -805,27 +804,27 @@ function renderDashboard() {
             ampelGlow = 'rgba(39, 174, 96, 0.4)';
         }
 
-        // --- NEU: Berechnung der Puffer-Währung (Konsumtage) ---
+        // --- NEU: Berechnung der Puffer-Währung (Sicherer Erhalt der grünen Ampel) ---
         let bufferBadge = '';
         if (ampelText === 'Freigabe') {
-            // Durchschnittskosten für einen Rückfall in diesem Fenster
             let avgPenalty = totalPenalty / numEvents;
-            if (avgPenalty < 3) avgPenalty = 3; // Harter Mindestwert für Strafe
+            if (avgPenalty < 3) avgPenalty = 3; 
             
-            let affordableDays = Math.floor(netTrend / avgPenalty);
-            let target = Math.ceil(avgPenalty); // So viel Trend braucht man für 1 Tag
+            // Um die Ampel nach dem Rauchen auf Grün zu halten, MUSS am Ende 1 Punkt übrig bleiben.
+            // Wir ziehen also 1 vom Trend ab, um das sichere Budget zu berechnen.
+            let safeBufferDays = Math.floor((netTrend - 1) / avgPenalty);
+            let targetForOne = Math.ceil(avgPenalty + 1); // So viele Trend-Punkte braucht man für 1 sicheren Tag
             
-            if (affordableDays >= 1) {
-                // Man hat genug Guthaben für mindestens 1 Tag
-                bufferBadge = `<div style="margin-left: 6px; background: rgba(39, 174, 96, 0.15); border: 1px solid rgba(39, 174, 96, 0.3); color: #27ae60; padding: 2px 6px; border-radius: 6px; font-size: 0.65rem; font-weight: 800;" title="Erspielter Puffer">🚬 ${affordableDays}d Puffer</div>`;
+            if (safeBufferDays >= 1) {
+                // Man hat genug Guthaben, um zu rauchen UND grün zu bleiben
+                bufferBadge = `<div style="margin-left: 6px; background: rgba(39, 174, 96, 0.15); border: 1px solid rgba(39, 174, 96, 0.3); color: #27ae60; padding: 2px 6px; border-radius: 6px; font-size: 0.65rem; font-weight: 800;" title="Sicherer Puffer (Ampel bleibt auch nach Konsum auf Freigabe)">🚬 ${safeBufferDays}d Puffer</div>`;
             } else {
-                // Ampel ist grün, aber Guthaben reicht noch nicht für einen ganzen Tag
-                bufferBadge = `<div style="margin-left: 6px; background: rgba(243, 156, 18, 0.1); border: 1px solid rgba(243, 156, 18, 0.3); color: #e67e22; padding: 2px 6px; border-radius: 6px; font-size: 0.65rem; font-weight: 800;" title="Noch ${fmt(target - netTrend)} Tage bis zum 1d Puffer">⏳ ${fmt(netTrend)}/${target}d</div>`;
+                // Ampel ist grün, aber Rauchen leert das Konto und erzwingt danach Pause
+                bufferBadge = `<div style="margin-left: 6px; background: rgba(243, 156, 18, 0.1); border: 1px solid rgba(243, 156, 18, 0.3); color: #e67e22; padding: 2px 6px; border-radius: 6px; font-size: 0.65rem; font-weight: 800;" title="Rauchen erlaubt, erzwingt aber Pause. Noch ${fmt(targetForOne - netTrend)} Tage bis zum sicheren Puffer.">⏳ ${fmt(netTrend)}/${targetForOne}d</div>`;
             }
         }
 
         safeHTML('dash-compensation-box', `
-            <!-- Verschlankter Header (3 TA, Ampel & Puffer-Badge) -->
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                 <div class="outlook-title" style="color: #2c3e50; font-size: 1rem; margin: 0; font-weight: 900;">
                     ${numEvents} TA
@@ -845,7 +844,6 @@ function renderDashboard() {
                 ${datesHtml}
             </div>
 
-            <!-- Die 3-Teile-Bilanz -->
             <div style="display: flex; justify-content: space-around; text-align: center; margin-bottom: 15px; font-size: 0.8rem; border-top: 1px dashed rgba(0,0,0,0.1); border-bottom: 1px dashed rgba(0,0,0,0.1); padding: 12px 0;">
                 <div style="flex: 1;">
                     <div style="color: #e74c3c; font-weight: 800; font-size: 1.1rem;">${fmt(totalPenalty)}</div>
@@ -861,7 +859,6 @@ function renderDashboard() {
                 </div>
             </div>
             
-            <!-- Die Trend-Waage -->
             <div style="padding: 0 5px;">
                 <div style="text-align: center; font-size: 0.95rem; color: ${trendColor}; font-weight: 900; margin-bottom: 8px;">
                     ${trendText}
