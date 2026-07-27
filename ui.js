@@ -707,7 +707,7 @@ function renderDashboard() {
         safeDisplay('dash-budget-box', 'none');
     }
 
-    // FIX V60: Angepasste Puffer-Logik (Sicherer Erhalt der grünen Ampel)
+    // FIX V61: Verhinderung des "Nirwana-Freezes" durch Einbezug echter Plus-Tage
     const forceDisplay = (id, val) => {
         const el = document.getElementById(id);
         if (el) el.style.setProperty('display', val, 'important');
@@ -723,7 +723,9 @@ function renderDashboard() {
         let totalPenalty = 0;
         events.forEach(e => totalPenalty += e.added);
         
-        let currentTotalRegen = ds.totalDebtEver - displayDebt;
+        // DIE KORREKTUR: Wir addieren die echten Nirwana-Tage zum Basis-Wasser!
+        let nirvanaBonus = (res.history && res.history.n) ? res.history.n.length : 0;
+        let currentTotalRegen = (ds.totalDebtEver - displayDebt) + nirvanaBonus;
         let regenSinceOldest = currentTotalRegen - events[0].regenAtEvent;
         
         let debts = events.map(e => e.added); 
@@ -804,22 +806,17 @@ function renderDashboard() {
             ampelGlow = 'rgba(39, 174, 96, 0.4)';
         }
 
-        // --- NEU: Berechnung der Puffer-Währung (Sicherer Erhalt der grünen Ampel) ---
         let bufferBadge = '';
         if (ampelText === 'Freigabe') {
             let avgPenalty = totalPenalty / numEvents;
             if (avgPenalty < 3) avgPenalty = 3; 
             
-            // Um die Ampel nach dem Rauchen auf Grün zu halten, MUSS am Ende 1 Punkt übrig bleiben.
-            // Wir ziehen also 1 vom Trend ab, um das sichere Budget zu berechnen.
             let safeBufferDays = Math.floor((netTrend - 1) / avgPenalty);
-            let targetForOne = Math.ceil(avgPenalty + 1); // So viele Trend-Punkte braucht man für 1 sicheren Tag
+            let targetForOne = Math.ceil(avgPenalty + 1); 
             
             if (safeBufferDays >= 1) {
-                // Man hat genug Guthaben, um zu rauchen UND grün zu bleiben
                 bufferBadge = `<div style="margin-left: 6px; background: rgba(39, 174, 96, 0.15); border: 1px solid rgba(39, 174, 96, 0.3); color: #27ae60; padding: 2px 6px; border-radius: 6px; font-size: 0.65rem; font-weight: 800;" title="Sicherer Puffer (Ampel bleibt auch nach Konsum auf Freigabe)">🚬 ${safeBufferDays}d Puffer</div>`;
             } else {
-                // Ampel ist grün, aber Rauchen leert das Konto und erzwingt danach Pause
                 bufferBadge = `<div style="margin-left: 6px; background: rgba(243, 156, 18, 0.1); border: 1px solid rgba(243, 156, 18, 0.3); color: #e67e22; padding: 2px 6px; border-radius: 6px; font-size: 0.65rem; font-weight: 800;" title="Rauchen erlaubt, erzwingt aber Pause. Noch ${fmt(targetForOne - netTrend)} Tage bis zum sicheren Puffer.">⏳ ${fmt(netTrend)}/${targetForOne}d</div>`;
             }
         }
