@@ -707,7 +707,7 @@ function renderDashboard() {
         safeDisplay('dash-budget-box', 'none');
     }
 
-    // FIX V64: Radar (Vorher vs Aktuell) & Intuitiver Netto-Trend mit X-1 Garantie
+    // FIX V65: Radar auf gesamtes Fenster (Variante B) & Intuitiver Netto-Trend
     const forceDisplay = (id, val) => {
         const el = document.getElementById(id);
         if (el) el.style.setProperty('display', val, 'important');
@@ -756,15 +756,10 @@ function renderDashboard() {
         
         let effectiveDebt = displayDebt - nirvanaBonus; 
         
-        // Der Trend ist jetzt super simpel: Schulden vorher minus Schulden nachher.
+        // Der Trend ist simpel: Schulden vorher minus Schulden nachher.
         // +1 bedeutet, wir haben exakt 1 Tag Schulden abgebaut (Freigabe erreicht).
         // 0 bedeutet Nullrunde. -2 bedeutet, wir haben mehr Schulden als vorher.
         let netTrend = debtBeforeOldest - effectiveDebt; 
-        
-        // --- 3. Der neue Radar: Fokus letzter Ausrutscher (Vorher vs Aktuell) ---
-        let newestEvent = events[numEvents - 1];
-        let debtAfterNewest = ds.totalDebtEver - newestEvent.regenAtEvent;
-        let debtBeforeNewest = Math.max(0, debtAfterNewest - newestEvent.added);
         
         let fmt = v => Number.isInteger(Math.round(v*10)/10) ? Math.round(v*10)/10 : (Math.round(v*10)/10).toFixed(1).replace('.', ',');
         
@@ -875,18 +870,18 @@ function renderDashboard() {
                 </div>
             </div>
             
-            <!-- NEU: Radar (Vorher vs Aktuell) -->
+            <!-- NEU: Radar (Fokus auf gesamtes Fenster) -->
             <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(0,0,0,0.02); border-radius: 8px; border: 1px solid rgba(0,0,0,0.05); margin-bottom: 15px; font-size: 0.75rem;">
-                <div style="color: #7f8c8d; font-weight: 800; text-transform: uppercase;">Radar:</div>
+                <div style="color: #7f8c8d; font-weight: 800; text-transform: uppercase;">Radar (Fenster):</div>
                 <div style="font-weight: 900; display: flex; align-items: center; gap: 10px;">
                     <div style="text-align: right;">
                         <span style="color: #7f8c8d; font-size: 0.55rem; display: block; text-transform: uppercase; line-height: 1; margin-bottom: 2px;">Vorher</span>
-                        <span style="color: #2c3e50; font-size: 1rem;">${fmt(debtBeforeNewest)}</span>
+                        <span style="color: #2c3e50; font-size: 1rem;">${fmt(debtBeforeOldest)}</span>
                     </div>
                     <div style="color: #bdc3c7; font-size: 1.2rem; margin-top: 4px;">&rarr;</div>
                     <div style="text-align: left;">
                         <span style="color: #7f8c8d; font-size: 0.55rem; display: block; text-transform: uppercase; line-height: 1; margin-bottom: 2px;">Aktuell</span>
-                        <span style="color: ${effectiveDebt < debtBeforeNewest ? '#27ae60' : (effectiveDebt > debtBeforeNewest ? '#e74c3c' : '#f39c12')}; font-size: 1rem;">${fmt(effectiveDebt)}</span>
+                        <span style="color: ${effectiveDebt < debtBeforeOldest ? '#27ae60' : (effectiveDebt > debtBeforeOldest ? '#e74c3c' : '#f39c12')}; font-size: 1rem;">${fmt(effectiveDebt)}</span>
                     </div>
                 </div>
             </div>
