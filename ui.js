@@ -707,7 +707,7 @@ function renderDashboard() {
         safeDisplay('dash-budget-box', 'none');
     }
 
-    // FIX V61: Verhinderung des "Nirwana-Freezes" durch Einbezug echter Plus-Tage
+    // FIX V63: 3TA-Bilanz + X-1 Garantie + Puffer-Badge + "Seit letztem Konsum"-Radar
     const forceDisplay = (id, val) => {
         const el = document.getElementById(id);
         if (el) el.style.setProperty('display', val, 'important');
@@ -717,17 +717,17 @@ function renderDashboard() {
     
     if (!res.isOpen && ds.recentEvents && ds.recentEvents.length > 0) {
         
-        let events = [...ds.recentEvents].reverse();
+        let events = [...ds.recentEvents].reverse(); // Ältestes zuerst
         let numEvents = events.length;
         
         let totalPenalty = 0;
         events.forEach(e => totalPenalty += e.added);
         
-        // DIE KORREKTUR: Wir addieren die echten Nirwana-Tage zum Basis-Wasser!
+        // Echte Nirwana-Tage werden als vollwertige Tilgung verbucht
         let nirvanaBonus = (res.history && res.history.n) ? res.history.n.length : 0;
         let currentTotalRegen = (ds.totalDebtEver - displayDebt) + nirvanaBonus;
-        let regenSinceOldest = currentTotalRegen - events[0].regenAtEvent;
         
+        // --- 1. Die lokale 3-Teile-Bilanz (Wasserfall) ---
         let debts = events.map(e => e.added); 
         let totalCleared = 0; 
         let totalSurplus = 0;
@@ -746,9 +746,28 @@ function renderDashboard() {
             }
             totalSurplus += windowWater;
         }
+
+        // --- 2. Die X-1 Garantie (Globales Ziel) ---
+        // Rekonstruktion der Schulden direkt VOR dem ältesten sichtbaren Fehler
+        let penaltiesAfterOldest = 0;
+        for(let i=1; i<numEvents; i++) penaltiesAfterOldest += events[i].added;
+        let totalDebtEverAtOldest = ds.totalDebtEver - penaltiesAfterOldest;
+        let debtAfterOldest = totalDebtEverAtOldest - events[0].regenAtEvent;
+        let debtBeforeOldest = debtAfterOldest - events[0].added;
         
-        let openDebt = totalPenalty - totalCleared;
-        let isDone = openDebt <= 0;
+        // Das Ziel ist eisern: Mindestens 1 Tag weniger Schulden als vor dem Start des Clusters!
+        let strictTargetDebt = debtBeforeOldest - 1; 
+        let effectiveDebt = displayDebt - nirvanaBonus; 
+        
+        // Der netTrend wird so skaliert, dass +1 exakt das Erreichen des Ziels bedeutet
+        let netTrend = strictTargetDebt - effectiveDebt + 1; 
+        let distanceToTarget = effectiveDebt - strictTargetDebt; // Wie viel fehlt noch zur Freigabe?
+        
+        // --- 3. Radar: Abbau seit letztem Konsum ---
+        let newestEvent = events[numEvents - 1];
+        let debtAfterNewest = ds.totalDebtEver - newestEvent.regenAtEvent;
+        let regenSinceNewest = currentTotalRegen - newestEvent.regenAtEvent;
+        
         let fmt = v => Number.isInteger(Math.round(v*10)/10) ? Math.round(v*10)/10 : (Math.round(v*10)/10).toFixed(1).replace('.', ',');
         
         let segmentsHtml = '';
@@ -780,23 +799,20 @@ function renderDashboard() {
             `;
         });
 
-        let netTrend = regenSinceOldest - totalPenalty; 
-        
+        // --- 4. Ampel Logik (Kopplung an globales X-1 Ziel) ---
+        let isOldestCleared = debts[0] <= 0; 
         let maxScale = Math.max(totalPenalty * 1.5, 10); 
         let markerPos = 50 + (netTrend / maxScale) * 50;
         markerPos = Math.max(3, Math.min(97, markerPos)); 
         
         let trendColor = netTrend > 0 ? '#27ae60' : (netTrend === 0 ? '#f39c12' : '#e74c3c');
-        let trendText = `Trend: ${netTrend > 0 ? '+' : ''}${fmt(netTrend)}`;
-
-        let isOldestCleared = debts[0] <= 0; 
         let ampelColor, ampelText, ampelGlow;
         
         if (!isOldestCleared) {
             ampelColor = '#e74c3c';
             ampelText = 'Sperre';
             ampelGlow = 'rgba(231, 76, 60, 0.4)';
-        } else if (isOldestCleared && netTrend < 1) {
+        } else if (isOldestCleared && distanceToTarget > 0) {
             ampelColor = '#f39c12';
             ampelText = 'Warten';
             ampelGlow = 'rgba(243, 156, 18, 0.4)';
@@ -806,6 +822,7 @@ function renderDashboard() {
             ampelGlow = 'rgba(39, 174, 96, 0.4)';
         }
 
+        // --- 5. Puffer-Währung ---
         let bufferBadge = '';
         if (ampelText === 'Freigabe') {
             let avgPenalty = totalPenalty / numEvents;
@@ -822,6 +839,7 @@ function renderDashboard() {
         }
 
         safeHTML('dash-compensation-box', `
+            <!-- Header: 3 TA, Ampel & Puffer -->
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                 <div class="outlook-title" style="color: #2c3e50; font-size: 1rem; margin: 0; font-weight: 900;">
                     ${numEvents} TA
@@ -833,15 +851,18 @@ function renderDashboard() {
                 </div>
             </div>
             
+            <!-- Wasserfall Balken -->
             <div style="width: 100%; height: 16px; border-radius: 8px; margin-bottom: 2px; overflow: hidden; border: 1px solid rgba(0,0,0,0.1); display: flex;">
                 ${segmentsHtml}
             </div>
             
+            <!-- Datum & Strafen der Events -->
             <div style="display: flex; width: 100%; margin-bottom: 15px;">
                 ${datesHtml}
             </div>
 
-            <div style="display: flex; justify-content: space-around; text-align: center; margin-bottom: 15px; font-size: 0.8rem; border-top: 1px dashed rgba(0,0,0,0.1); border-bottom: 1px dashed rgba(0,0,0,0.1); padding: 12px 0;">
+            <!-- Die klassische 3-Teile-Bilanz für das aktuelle Fenster -->
+            <div style="display: flex; justify-content: space-around; text-align: center; margin-bottom: 15px; font-size: 0.8rem; border-top: 1px dashed rgba(0,0,0,0.1); padding-top: 12px;">
                 <div style="flex: 1;">
                     <div style="color: #e74c3c; font-weight: 800; font-size: 1.1rem;">${fmt(totalPenalty)}</div>
                     <div style="color: #7f8c8d; font-weight: 700; text-transform: uppercase; font-size: 0.65rem;">🔴 Strafe</div>
@@ -856,9 +877,22 @@ function renderDashboard() {
                 </div>
             </div>
             
+            <!-- NEU: Radar seit letztem Konsum -->
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(0,0,0,0.02); border-radius: 8px; border: 1px solid rgba(0,0,0,0.05); margin-bottom: 15px; font-size: 0.75rem;">
+                <div style="color: #7f8c8d; font-weight: 800; text-transform: uppercase;">Seit letztem Ausrutscher:</div>
+                <div style="font-weight: 900;">
+                    <span style="color: #e74c3c;" title="Schuldenstand nach dem Konsum">${fmt(debtAfterNewest)}T</span>
+                    <span style="color: #bdc3c7; margin: 0 4px;">&rarr;</span>
+                    <span style="color: #27ae60;" title="Bisher getilgt">-${fmt(regenSinceNewest)}T</span>
+                    <span style="color: #bdc3c7; margin: 0 4px;">=</span>
+                    <span style="color: #2c3e50;" title="Aktuelle Restschuld">${fmt(displayDebt)}T</span>
+                </div>
+            </div>
+            
+            <!-- Trend Waage (Angebunden an X-1) -->
             <div style="padding: 0 5px;">
-                <div style="text-align: center; font-size: 0.95rem; color: ${trendColor}; font-weight: 900; margin-bottom: 8px;">
-                    ${trendText}
+                <div style="text-align: center; font-size: 0.85rem; color: #2c3e50; font-weight: 900; margin-bottom: 8px;">
+                    ${distanceToTarget <= 0 ? `✅ Trend positiv (Ziel: &le; ${fmt(Math.max(0, strictTargetDebt))} erreicht)` : `📉 Ziel für Freigabe: &le; ${fmt(Math.max(0, strictTargetDebt))} (Noch ${fmt(distanceToTarget)} zu tilgen)`}
                 </div>
                 
                 <div style="position: relative; width: 100%; height: 14px; background: linear-gradient(90deg, rgba(231,76,60,0.15) 0%, rgba(231,76,60,0.05) 49%, rgba(0,0,0,0.1) 50%, rgba(39,174,96,0.05) 51%, rgba(39,174,96,0.15) 100%); border-radius: 7px; margin-bottom: 5px; border: 1px solid rgba(0,0,0,0.05);">
