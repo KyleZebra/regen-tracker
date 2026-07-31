@@ -212,7 +212,8 @@ function simulateCycle(cycle, skipEchoCheck = false) {
         }
 
         let activeAusrutscherDays = 0;
-        let history = { t: [], r: [], b: [], a: [], n: [], logDetails: [], penaltyDict: {}, bonusDict: {} };
+        // FIX V66: Tägliches Kassenbuch für das Diagramm
+        let history = { t: [], r: [], b: [], a: [], n: [], logDetails: [], penaltyDict: {}, bonusDict: {}, dailyDebt: {} };
 
         let cBase = parseLocal(cycle.base.start);
         let endBase = parseLocal(cycle.base.end);
@@ -439,7 +440,8 @@ function simulateCycle(cycle, skipEchoCheck = false) {
                 }
             }
 
-            // (Alte yesterdayWasSmallAusrutscher-Logik komplett entfernt)
+            // FIX V66: Den Schuldenstand dieses Tages im Kassenbuch verewigen
+            history.dailyDebt[dStr] = debt;
 
             simDate.setDate(simDate.getDate() + 1);
         }

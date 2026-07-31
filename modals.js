@@ -707,3 +707,101 @@ function openArchiveDiary() {
     const m = document.getElementById('modal-archive-diary');
     if (m) m.classList.add('active');
 }
+
+// --- SVG Chart Generator (Letzte 15 Tage) ---
+function openDebtChart() {
+    const res = activeSimResult;
+    if (!res || res.failed || !res.history || !res.history.dailyDebt) {
+        return customAlert("Diagramm-Daten noch nicht bereit. Speichere einmal neu (z.B. im Aktuell-Tab).");
+    }
+
+    let todayStr = toIsoString(new Date());
+    let daysToShow = 15;
+    let chartData = [];
+
+    // Nur Daten bis zum heutigen Tag holen
+    let allDates = Object.keys(res.history.dailyDebt).filter(d => d <= todayStr).sort();
+    if (allDates.length === 0) return customAlert("Noch keine Daten für diesen Zyklus vorhanden.");
+
+    // Die letzten 15 Tage abschneiden
+    let recentDates = allDates.slice(-daysToShow);
+
+    recentDates.forEach(dStr => {
+        let dObj = parseLocal(dStr);
+        let formattedDate = dObj ? dObj.toLocaleDateString('de-DE', {day: '2-digit', month: '2-digit'}) : dStr;
+        chartData.push({ date: formattedDate, debt: res.history.dailyDebt[dStr] });
+    });
+
+    // --- Dynamische SVG Geometrie ---
+    const svgW = Math.max(500, chartData.length * 40); // Skaliert mit, wird nie gequetscht
+    const svgH = 220; // Kompakte Höhe
+    const padX = 25;
+    const padTop = 35;
+    const padBot = 25;
+
+    // Y-Achse skalieren
+    let maxDebt = Math.max(...chartData.map(d => d.debt), 5); // Mindestens Skala bis 5
+    
+    let getX = (idx) => padX + (idx * ((svgW - 2 * padX) / Math.max(1, chartData.length - 1)));
+    let getY = (val) => svgH - padBot - ((val / maxDebt) * (svgH - padTop - padBot));
+
+    // Vektoren für die Linie und die Schattierung darunter
+    let pathD = `M ${getX(0)},${getY(chartData[0].debt)} `;
+    let areaD = `M ${getX(0)},${svgH - padBot} L ${getX(0)},${getY(chartData[0].debt)} `;
+
+    chartData.forEach((pt, idx) => {
+        if (idx > 0) pathD += `L ${getX(idx)},${getY(pt.debt)} `;
+        areaD += `L ${getX(idx)},${getY(pt.debt)} `;
+    });
+    areaD += `L ${getX(chartData.length - 1)},${svgH - padBot} Z`;
+
+    // Punkte & Texte
+    let pointsHtml = '';
+    let xLabelsHtml = '';
+    
+    chartData.forEach((pt, idx) => {
+        let x = getX(idx);
+        let y = getY(pt.debt);
+        let fmtVal = Number.isInteger(pt.debt) ? pt.debt : pt.debt.toFixed(1).replace('.', ',');
+
+        // Smarte Farbgebung: Hoch=Rot, Runter=Grün, 0=Nirwana-Blau
+        let circleColor = '#e74c3c';
+        if (idx > 0 && pt.debt < chartData[idx-1].debt) circleColor = '#27ae60';
+        else if (idx > 0 && pt.debt === chartData[idx-1].debt) circleColor = '#f39c12';
+        if (pt.debt === 0) circleColor = '#3498db';
+
+        pointsHtml += `
+            <circle cx="${x}" cy="${y}" r="5" fill="${circleColor}" stroke="#fff" stroke-width="2" />
+            <text x="${x}" y="${y - 12}" fill="${circleColor}" font-size="11" font-weight="900" font-family="sans-serif" text-anchor="middle">${fmtVal}</text>
+        `;
+
+        xLabelsHtml += `<text x="${x}" y="${svgH - 8}" fill="#7f8c8d" font-size="10" font-weight="bold" font-family="sans-serif" text-anchor="middle">${pt.date}</text>`;
+    });
+
+    // Hilfslinien im Hintergrund (0, 50%, 100%)
+    let gridHtml = '';
+    [0, 0.5, 1].forEach(frac => {
+        let yGuide = getY(maxDebt * frac);
+        gridHtml += `<line x1="${padX}" y1="${yGuide}" x2="${svgW - padX}" y2="${yGuide}" stroke="#ecf0f1" stroke-width="1.5" stroke-dasharray="4,4" />`;
+    });
+
+    let svgHtml = `
+        <svg width="${svgW}" height="${svgH}" viewBox="0 0 ${svgW} ${svgH}" style="display:block;">
+            <defs>
+                <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="rgba(231, 76, 60, 0.15)" />
+                    <stop offset="100%" stop-color="rgba(231, 76, 60, 0.0)" />
+                </linearGradient>
+            </defs>
+            ${gridHtml}
+            <path d="${areaD}" fill="url(#areaGrad)" />
+            <path d="${pathD}" fill="none" stroke="#e74c3c" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+            ${pointsHtml}
+            ${xLabelsHtml}
+        </svg>
+    `;
+
+    safeHTML('svg-chart-container', svgHtml);
+    const modal = document.getElementById('modal-debt-chart');
+    if(modal) modal.classList.add('active');
+}
