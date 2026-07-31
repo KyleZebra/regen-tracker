@@ -872,7 +872,7 @@ function renderDashboard() {
             
             <!-- NEU: Radar (Fokus auf gesamtes Fenster) -->
             <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(0,0,0,0.02); border-radius: 8px; border: 1px solid rgba(0,0,0,0.05); margin-bottom: 15px; font-size: 0.75rem;">
-                <div style="color: #7f8c8d; font-weight: 800; text-transform: uppercase;">Radar (Fenster):</div>
+                <div style="color: #7f8c8d; font-weight: 800; text-transform: uppercase;">Radar:</div>
                 <div style="font-weight: 900; display: flex; align-items: center; gap: 10px;">
                     <div style="text-align: right;">
                         <span style="color: #7f8c8d; font-size: 0.55rem; display: block; text-transform: uppercase; line-height: 1; margin-bottom: 2px;">Vorher</span>
