@@ -872,7 +872,7 @@ function renderDashboard() {
             
             <!-- NEU: Radar klickbar gemacht für das SVG-Diagramm -->
             <div onclick="if(typeof openDebtChart === 'function') openDebtChart()" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(0,0,0,0.02); border-radius: 8px; border: 1px solid rgba(0,0,0,0.05); margin-bottom: 15px; font-size: 0.75rem; transition: background 0.2s, transform 0.1s;" onmouseover="this.style.background='rgba(0,0,0,0.05)'" onmouseout="this.style.background='rgba(0,0,0,0.02)'" onmousedown="this.style.transform='scale(0.98)'" onmouseup="this.style.transform='scale(1)'">
-                <div style="color: #7f8c8d; font-weight: 800; text-transform: uppercase;">Radar (Fenster) <span style="font-size: 0.85rem;" title="Schulden-Verlauf anzeigen">📈</span></div>
+                <div style="color: #7f8c8d; font-weight: 800; text-transform: uppercase;">Radar <span style="font-size: 0.85rem;" title="Schulden-Verlauf anzeigen">📈</span></div>
                 <div style="font-weight: 900; display: flex; align-items: center; gap: 10px;">
                     <div style="text-align: right;">
                         <span style="color: #7f8c8d; font-size: 0.55rem; display: block; text-transform: uppercase; line-height: 1; margin-bottom: 2px;">Vorher</span>

@@ -708,7 +708,7 @@ function openArchiveDiary() {
     if (m) m.classList.add('active');
 }
 
-// --- SVG Chart Generator (Letzte 15 Tage) ---
+// --- SVG Chart Generator (Dynamischer Zeithorizont) ---
 function openDebtChart() {
     const res = activeSimResult;
     if (!res || res.failed || !res.history || !res.history.dailyDebt) {
@@ -716,14 +716,18 @@ function openDebtChart() {
     }
 
     let todayStr = toIsoString(new Date());
-    let daysToShow = 15;
+    
+    // NEU: Zeithorizont live aus dem Dropdown lesen (Fallback auf 30)
+    let selectEl = document.getElementById('chart-days-select');
+    let daysToShow = selectEl ? parseInt(selectEl.value) : 30;
+    
     let chartData = [];
 
     // Nur Daten bis zum heutigen Tag holen
     let allDates = Object.keys(res.history.dailyDebt).filter(d => d <= todayStr).sort();
     if (allDates.length === 0) return customAlert("Noch keine Daten für diesen Zyklus vorhanden.");
 
-    // Die letzten 15 Tage abschneiden
+    // Die letzten X Tage abschneiden (wenn 9999 gewählt wurde, bleibt fast alles)
     let recentDates = allDates.slice(-daysToShow);
 
     recentDates.forEach(dStr => {
