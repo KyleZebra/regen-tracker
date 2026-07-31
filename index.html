@@ -789,7 +789,7 @@
   <div id="modal-debt-chart" class="modal-overlay">
     <div class="modal-card" style="max-width: 95vw; width: 600px; padding: 15px;">
       
-      <!-- NEU: Header mit Dropdown für die Live-Aktualisierung -->
+      <!-- Header mit Dropdown für die Live-Aktualisierung -->
       <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
           <div>
               <h3 style="color:#2c3e50; margin-bottom: 5px; margin-top: 5px;">📈 Schulden-Verlauf</h3>
@@ -803,6 +803,17 @@
               <option value="9999">Gesamter Zyklus</option>
           </select>
       </div>
+
+      <!-- Hier ist der Container, der vorhin fehlte! -->
+      <div style="width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; background: #fdfafb; border: 1px solid #eee; border-radius: 8px; padding: 10px 0;">
+          <div id="svg-chart-container" style="min-width: 400px;"></div>
+      </div>
+      
+      <div class="modal-actions-row" style="margin-top:20px;">
+          <button class="btn-quick btn-pausiert" style="width:100%; background: #2c3e50;" onclick="closeModal('modal-debt-chart')">Schließen</button>
+      </div>
+    </div>
+  </div>
 
   <script src="data.js"></script>
   <script src="engine.js"></script>
