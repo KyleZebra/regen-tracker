@@ -746,18 +746,12 @@ function renderDashboard() {
             totalSurplus += windowWater;
         }
 
-        // --- 2. Die X-1 Garantie & Der Sticky Anchor (FIX V67) ---
-        // Der Anker kommt manipulationssicher direkt aus der Engine!
-        let stickyAnchor = ds.stickyAnchor !== undefined ? ds.stickyAnchor : (ds.totalDebtEver - totalPenalty); 
-        let strictTargetDebt = stickyAnchor - 1;
-        
+        // --- 2. Der Manuelle Fokus-Anker ---
         let effectiveDebt = displayDebt - nirvanaBonus; 
-        let distanceToTarget = effectiveDebt - strictTargetDebt;
         
-        // Der Trend ist simpel: Eingefrorener Anker minus Aktuelle Schuld.
-        // +1 bedeutet Freigabe erreicht. 0 bedeutet Nullrunde. Minus bedeutet Schuldenfalle.
-        let netTrend = stickyAnchor - effectiveDebt; 
-
+        let isAnchorSet = activeCycle.base && activeCycle.base.manualAnchor !== undefined;
+        let manualAnchor = isAnchorSet ? activeCycle.base.manualAnchor : 0;
+        
         // Schulden direkt VOR dem Start des sichtbaren 3TA-Clusters (für den Radar)
         let penaltiesAfterOldest = 0;
         for(let i=1; i<numEvents; i++) penaltiesAfterOldest += events[i].added;
@@ -796,47 +790,93 @@ function renderDashboard() {
             `;
         });
 
-        // --- 4. Ampel Logik (Kopplung an den strengen Netto-Trend) ---
+        // --- 4. Ampel Logik (Kopplung an den manuellen Anker oder Leerlauf) ---
         let isOldestCleared = debts[0] <= 0; 
-        let maxScale = Math.max(totalPenalty * 1.5, 10); 
-        let markerPos = 50 + (netTrend / maxScale) * 50;
-        markerPos = Math.max(3, Math.min(97, markerPos)); 
-        
-        let trendColor = netTrend > 0 ? '#27ae60' : (netTrend === 0 ? '#f39c12' : '#e74c3c');
-        let trendText = `Trend: ${netTrend > 0 ? '+' : ''}${fmt(netTrend)}`;
-
+        let netTrend = 0;
         let ampelColor, ampelText, ampelGlow;
         
-        // Die Ampel erzwingt jetzt zwingend netTrend >= 1 für Grün, und netTrend == 0 für Gelb!
-        if (!isOldestCleared || netTrend < 0) {
-            ampelColor = '#e74c3c';
-            ampelText = 'Sperre';
-            ampelGlow = 'rgba(231, 76, 60, 0.4)';
-        } else if (isOldestCleared && netTrend === 0) {
-            ampelColor = '#f39c12';
-            ampelText = 'Warten';
-            ampelGlow = 'rgba(243, 156, 18, 0.4)';
+        if (isAnchorSet) {
+            netTrend = manualAnchor - effectiveDebt;
+            if (!isOldestCleared || netTrend < 0) {
+                ampelColor = '#e74c3c';
+                ampelText = 'Sperre';
+                ampelGlow = 'rgba(231, 76, 60, 0.4)';
+            } else if (isOldestCleared && netTrend === 0) {
+                ampelColor = '#f39c12';
+                ampelText = 'Warten';
+                ampelGlow = 'rgba(243, 156, 18, 0.4)';
+            } else {
+                ampelColor = '#27ae60';
+                ampelText = 'Freigabe';
+                ampelGlow = 'rgba(39, 174, 96, 0.4)';
+            }
         } else {
-            ampelColor = '#27ae60';
-            ampelText = 'Freigabe';
-            ampelGlow = 'rgba(39, 174, 96, 0.4)';
+            // Leerlauf: Ampel schaut nur auf den 3-Tage-Wasserfall
+            if (!isOldestCleared) {
+                ampelColor = '#e74c3c';
+                ampelText = 'Sperre';
+                ampelGlow = 'rgba(231, 76, 60, 0.4)';
+            } else {
+                ampelColor = '#3498db';
+                ampelText = 'Freilauf';
+                ampelGlow = 'rgba(52, 152, 219, 0.4)';
+            }
         }
 
-        // --- 5. Puffer-Währung ---
+        // --- 5. Puffer-Währung (Nur bei aktivem Anker & Freigabe) ---
         let bufferBadge = '';
-        if (ampelText === 'Freigabe') {
+        if (isAnchorSet && ampelText === 'Freigabe') {
             let avgPenalty = totalPenalty / numEvents;
             if (avgPenalty < 3) avgPenalty = 3; 
             
-            // Ab netTrend = 1 ist man auf Freigabe. Jeder Punkt darüber hinaus füllt den Puffer.
             let safeBufferDays = Math.floor((netTrend - 1) / avgPenalty);
             let targetForOne = Math.ceil(avgPenalty + 1); 
             
             if (safeBufferDays >= 1) {
-                bufferBadge = `<div style="margin-left: 6px; background: rgba(39, 174, 96, 0.15); border: 1px solid rgba(39, 174, 96, 0.3); color: #27ae60; padding: 2px 6px; border-radius: 6px; font-size: 0.65rem; font-weight: 800;" title="Sicherer Puffer (Ampel bleibt auch nach Konsum auf Freigabe)">🚬 ${safeBufferDays}d Puffer</div>`;
+                bufferBadge = `<div style="margin-left: 6px; background: rgba(39, 174, 96, 0.15); border: 1px solid rgba(39, 174, 96, 0.3); color: #27ae60; padding: 2px 6px; border-radius: 6px; font-size: 0.65rem; font-weight: 800;" title="Sicherer Puffer">🚬 ${safeBufferDays}d Puffer</div>`;
             } else {
-                bufferBadge = `<div style="margin-left: 6px; background: rgba(243, 156, 18, 0.1); border: 1px solid rgba(243, 156, 18, 0.3); color: #e67e22; padding: 2px 6px; border-radius: 6px; font-size: 0.65rem; font-weight: 800;" title="Rauchen erlaubt, erzwingt aber Pause. Noch ${fmt(targetForOne - netTrend)} Trend-Punkte bis zum sicheren Puffer.">⏳ ${fmt(netTrend)}/${targetForOne}</div>`;
+                bufferBadge = `<div style="margin-left: 6px; background: rgba(243, 156, 18, 0.1); border: 1px solid rgba(243, 156, 18, 0.3); color: #e67e22; padding: 2px 6px; border-radius: 6px; font-size: 0.65rem; font-weight: 800;" title="Noch ${fmt(targetForOne - netTrend)} Punkte bis zum sicheren Puffer.">⏳ ${fmt(netTrend)}/${targetForOne}</div>`;
             }
+        }
+
+        // --- 6. Trend-Box HTML generieren ---
+        let trendBoxHtml = '';
+        if (isAnchorSet) {
+            let strictTargetDebt = manualAnchor - 1;
+            let distanceToTarget = effectiveDebt - strictTargetDebt;
+            let maxScale = Math.max(totalPenalty * 1.5, 10); 
+            let markerPos = 50 + (netTrend / maxScale) * 50;
+            markerPos = Math.max(3, Math.min(97, markerPos)); 
+            let trendColor = netTrend > 0 ? '#27ae60' : (netTrend === 0 ? '#f39c12' : '#e74c3c');
+            let trendText = `Trend: ${netTrend > 0 ? '+' : ''}${fmt(netTrend)}`;
+            
+            trendBoxHtml = `
+                <div style="padding: 0 5px; position: relative;">
+                    <button onclick="if(typeof clearManualAnchor==='function') clearManualAnchor()" style="position: absolute; right: -2px; top: -10px; background: rgba(255,255,255,0.8); border: 1px solid #eee; border-radius: 50%; width: 22px; height: 22px; font-size: 0.65rem; cursor: pointer; color: #e74c3c; z-index: 10; display:flex; justify-content:center; align-items:center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);" title="Anker lösen">❌</button>
+                    <div style="text-align: center; font-size: 0.95rem; color: ${trendColor}; font-weight: 900; margin-bottom: 2px;">
+                        ${trendText}
+                    </div>
+                    <div style="text-align: center; font-size: 0.65rem; color: #7f8c8d; font-weight: 700; margin-bottom: 8px;">
+                        ${distanceToTarget <= 0 ? `Ziel (&le; ${fmt(Math.max(0, strictTargetDebt))}) erreicht` : `Ziel: &le; ${fmt(Math.max(0, strictTargetDebt))} (Noch ${fmt(distanceToTarget)} zu tilgen)`}
+                    </div>
+                    
+                    <div style="position: relative; width: 100%; height: 14px; background: linear-gradient(90deg, rgba(231,76,60,0.15) 0%, rgba(231,76,60,0.05) 49%, rgba(0,0,0,0.1) 50%, rgba(39,174,96,0.05) 51%, rgba(39,174,96,0.15) 100%); border-radius: 7px; margin-bottom: 5px; border: 1px solid rgba(0,0,0,0.05);">
+                        <div style="position: absolute; left: 50%; top: -2px; bottom: -2px; width: 2px; background: rgba(0,0,0,0.2);"></div>
+                        <div style="position: absolute; left: calc(${markerPos}% - 7px); top: -3px; width: 14px; height: 20px; background: ${trendColor}; border-radius: 7px; border: 2px solid #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.3); transition: left 0.5s ease-out;"></div>
+                    </div>
+                </div>
+            `;
+        } else {
+            trendBoxHtml = `
+                <div style="padding: 5px; text-align: center;">
+                    <button onclick="if(typeof setManualAnchor==='function') setManualAnchor()" style="background: #fdfafb; border: 1px dashed #8e44ad; color: #8e44ad; font-weight: bold; font-size: 0.75rem; padding: 6px 12px; border-radius: 8px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#f5eef8'" onmouseout="this.style.background='#fdfafb'">
+                        📍 Fokus-Anker setzen
+                    </button>
+                    <div style="font-size: 0.55rem; color: #95a5a6; margin-top: 6px; text-transform: uppercase; font-weight: bold;">
+                        Freier Modus (Kein globaler Trend)
+                    </div>
+                </div>
+            `;
         }
 
         safeHTML('dash-compensation-box', `
@@ -890,20 +930,8 @@ function renderDashboard() {
                 </div>
             </div>
             
-            <!-- Intuitiver Trend (Angebunden an den globalen X-1 Anker) -->
-            <div style="padding: 0 5px;">
-                <div style="text-align: center; font-size: 0.95rem; color: ${trendColor}; font-weight: 900; margin-bottom: 2px;">
-                    ${trendText}
-                </div>
-                <div style="text-align: center; font-size: 0.65rem; color: #7f8c8d; font-weight: 700; margin-bottom: 8px;">
-                    ${distanceToTarget <= 0 ? `Ziel (&le; ${fmt(Math.max(0, strictTargetDebt))}) erreicht` : `Ziel: &le; ${fmt(Math.max(0, strictTargetDebt))} (Noch ${fmt(distanceToTarget)} zu tilgen)`}
-                </div>
-                
-                <div style="position: relative; width: 100%; height: 14px; background: linear-gradient(90deg, rgba(231,76,60,0.15) 0%, rgba(231,76,60,0.05) 49%, rgba(0,0,0,0.1) 50%, rgba(39,174,96,0.05) 51%, rgba(39,174,96,0.15) 100%); border-radius: 7px; margin-bottom: 5px; border: 1px solid rgba(0,0,0,0.05);">
-                    <div style="position: absolute; left: 50%; top: -2px; bottom: -2px; width: 2px; background: rgba(0,0,0,0.2);"></div>
-                    <div style="position: absolute; left: calc(${markerPos}% - 7px); top: -3px; width: 14px; height: 20px; background: ${trendColor}; border-radius: 7px; border: 2px solid #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.3); transition: left 0.5s ease-out;"></div>
-                </div>
-            </div>
+            <!-- Der neue Trend / Anker Bereich -->
+            ${trendBoxHtml}
         `);
         
         if (compBox) { 
@@ -2162,3 +2190,27 @@ function cycleCleanWindow() {
     currentCleanWindow = states[(idx + 1) % states.length];
     renderArchiv();
 }
+
+// --- Manuelle Fokus-Anker Funktionen ---
+window.setManualAnchor = function() {
+    const active = getActiveCycle();
+    if (!active || !active.base) return;
+    const res = activeSimResult;
+    if (!res || !res.dashState) return;
+    
+    let nirvanaBonus = (res.history && res.history.n) ? res.history.n.length : 0;
+    let effectiveDebt = res.dashState.debt - nirvanaBonus;
+    
+    active.base.manualAnchor = effectiveDebt;
+    saveData(true);
+    if(typeof updateUI === 'function') updateUI();
+};
+
+window.clearManualAnchor = function() {
+    const active = getActiveCycle();
+    if (active && active.base) {
+        delete active.base.manualAnchor;
+        saveData(true);
+        if(typeof updateUI === 'function') updateUI();
+    }
+};

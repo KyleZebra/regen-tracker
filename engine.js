@@ -215,10 +215,6 @@ function simulateCycle(cycle, skipEchoCheck = false) {
         // FIX V66: Tägliches Kassenbuch für das Diagramm
         let history = { t: [], r: [], b: [], a: [], n: [], logDetails: [], penaltyDict: {}, bonusDict: {}, dailyDebt: {} };
 
-        // FIX V67: Der klebende Anker (Sticky Anchor)
-        let stickyAnchor = initialDebtTotal + manualSurcharge; 
-        let hasSlipped = false;
-
         let cBase = parseLocal(cycle.base.start);
         let endBase = parseLocal(cycle.base.end);
         if (!cBase || isNaN(cBase.getTime())) {
@@ -277,14 +273,7 @@ function simulateCycle(cycle, skipEchoCheck = false) {
                 
             } else if (log && log.type === 'ausrutscher') {
                 
-                // FIX V67: Sticky Anchor Logik auslösen
-                let effectiveDebtBeforeSlip = debt - history.n.length;
-                // Wenn wir das alte Ziel (Anker - 1) erreicht hatten, setzt dieser Rückfall einen NEUEN Anker!
-                if (!hasSlipped || effectiveDebtBeforeSlip <= stickyAnchor - 1) {
-                    stickyAnchor = effectiveDebtBeforeSlip;
-                }
-                hasSlipped = true;
-
+                } else if (log && log.type === 'ausrutscher') {
                 activeAusrutscherDays = log.t - 1;
                 totalTDaysEver += log.t;
 
@@ -441,7 +430,7 @@ function simulateCycle(cycle, skipEchoCheck = false) {
             }
 
             if (dStr === lastRealDayStr && cycle.status === 'active') {
-                dashState = { debt, totalDebtEver, state, bewTimer, gotBonusToday: (isToday) ? gotBonusForToday : false, pendingBonus: false, activeReboundCharges: reboundCharges, recentEvents: JSON.parse(JSON.stringify(recentEvents)), stickyAnchor: stickyAnchor };
+                dashState = { debt, totalDebtEver, state, bewTimer, gotBonusToday: (isToday) ? gotBonusForToday : false, pendingBonus: false, activeReboundCharges: reboundCharges, recentEvents: JSON.parse(JSON.stringify(recentEvents)) };
             }
 
             if (isToday && !isLogged && cycle.status === 'active') {
@@ -467,7 +456,7 @@ function simulateCycle(cycle, skipEchoCheck = false) {
             // FIX V40.1: Insolvenz-Prüfung im Fallback des Dashboards ergänzt!
             let initialBewTimer = (isBaseSmall || isInsolvency) ? 0 : 3;
             let initialState = (isBaseSmall || isInsolvency) ? 'REGEN' : 'BEWAEHRUNG';
-            dashState = { debt: initialDebtTotal + manualSurcharge, totalDebtEver: initialDebtTotal + manualSurcharge, state: initialState, bewTimer: initialBewTimer, gotBonusToday: false, pendingBonus: false, activeReboundCharges: 0, recentEvents: JSON.parse(JSON.stringify(recentEvents)), stickyAnchor: stickyAnchor };
+            dashState = { debt: initialDebtTotal + manualSurcharge, totalDebtEver: initialDebtTotal + manualSurcharge, state: initialState, bewTimer: initialBewTimer, gotBonusToday: false, pendingBonus: false, activeReboundCharges: 0, recentEvents: JSON.parse(JSON.stringify(recentEvents)) };
         }
 
         let mFreeCurrent = 0;
