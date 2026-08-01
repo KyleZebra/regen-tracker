@@ -852,9 +852,9 @@ function renderDashboard() {
             
             trendBoxHtml = `
                 <div style="padding: 0 5px; position: relative;">
-                    <button onclick="if(typeof clearManualAnchor==='function') clearManualAnchor()" style="position: absolute; right: -2px; top: -10px; background: rgba(255,255,255,0.8); border: 1px solid #eee; border-radius: 50%; width: 22px; height: 22px; font-size: 0.65rem; cursor: pointer; color: #e74c3c; z-index: 10; display:flex; justify-content:center; align-items:center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);" title="Anker lösen">❌</button>
-                    <div style="text-align: center; font-size: 0.95rem; color: ${trendColor}; font-weight: 900; margin-bottom: 2px;">
-                        ${trendText}
+                    <div style="text-align: center; font-size: 0.95rem; color: ${trendColor}; font-weight: 900; margin-bottom: 2px; display: flex; justify-content: center; align-items: center; gap: 8px;">
+                        <span>${trendText}</span>
+                        <button onclick="window.clearManualAnchor()" style="background: rgba(255,255,255,0.9); border: 1px solid #fadbd8; border-radius: 50%; width: 22px; height: 22px; font-size: 0.65rem; cursor: pointer; color: #e74c3c; display:flex; justify-content:center; align-items:center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);" title="Anker lösen">❌</button>
                     </div>
                     <div style="text-align: center; font-size: 0.65rem; color: #7f8c8d; font-weight: 700; margin-bottom: 8px;">
                         ${distanceToTarget <= 0 ? `Ziel (&le; ${fmt(Math.max(0, strictTargetDebt))}) erreicht` : `Ziel: &le; ${fmt(Math.max(0, strictTargetDebt))} (Noch ${fmt(distanceToTarget)} zu tilgen)`}
