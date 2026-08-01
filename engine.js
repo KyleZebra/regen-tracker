@@ -271,8 +271,6 @@ function simulateCycle(cycle, skipEchoCheck = false) {
                 if (currentAusrutscherIsSmall && hasNirvanaEcho) reboundCharges = 2;
                 else reboundCharges = 0;
                 
-            } else if (log && log.type === 'ausrutscher') {
-                
                 } else if (log && log.type === 'ausrutscher') {
                 activeAusrutscherDays = log.t - 1;
                 totalTDaysEver += log.t;
