@@ -867,12 +867,16 @@ function renderDashboard() {
                 </div>
             `;
         } else {
+            let todayIso = toIsoString(new Date());
             trendBoxHtml = `
                 <div style="padding: 5px; text-align: center;">
-                    <button onclick="if(typeof setManualAnchor==='function') setManualAnchor()" style="background: #fdfafb; border: 1px dashed #8e44ad; color: #8e44ad; font-weight: bold; font-size: 0.75rem; padding: 6px 12px; border-radius: 8px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#f5eef8'" onmouseout="this.style.background='#fdfafb'">
-                        📍 Fokus-Anker setzen
-                    </button>
-                    <div style="font-size: 0.55rem; color: #95a5a6; margin-top: 6px; text-transform: uppercase; font-weight: bold;">
+                    <div style="display: flex; justify-content: center; align-items: center; gap: 8px; margin-bottom: 8px;">
+                        <input type="date" id="manual-anchor-date" value="${todayIso}" style="font-size: 0.75rem; padding: 4px; border: 1px solid #d2b4de; border-radius: 6px; color: #8e44ad; outline: none; background: #fff;" title="Datum für den Anker">
+                        <button onclick="if(typeof setManualAnchor==='function') setManualAnchor()" style="background: #fdfafb; border: 1px dashed #8e44ad; color: #8e44ad; font-weight: bold; font-size: 0.75rem; padding: 5px 10px; border-radius: 6px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#f5eef8'" onmouseout="this.style.background='#fdfafb'">
+                            📍 Setzen
+                        </button>
+                    </div>
+                    <div style="font-size: 0.55rem; color: #95a5a6; text-transform: uppercase; font-weight: bold;">
                         Freier Modus (Kein globaler Trend)
                     </div>
                 </div>
@@ -2196,21 +2200,29 @@ window.setManualAnchor = function() {
     const active = getActiveCycle();
     if (!active || !active.base) return;
     const res = activeSimResult;
-    if (!res || !res.dashState) return;
+    if (!res || !res.dashState || !res.history || !res.history.dailyDebt) return;
     
-    let nirvanaBonus = (res.history && res.history.n) ? res.history.n.length : 0;
-    let effectiveDebt = res.dashState.debt - nirvanaBonus;
+    // Datum aus dem neuen Feld auslesen (Fallback auf Heute)
+    const dateInput = document.getElementById('manual-anchor-date');
+    const targetDateStr = dateInput ? dateInput.value : toIsoString(new Date());
+    
+    if (!targetDateStr) return customAlert("Bitte ein Datum auswählen.");
+    
+    // Schuldenwert exakt an diesem Tag abfragen
+    let rawDebt = res.history.dailyDebt[targetDateStr];
+    if (rawDebt === undefined) {
+        return customAlert("Für dieses Datum liegen keine Berechnungsdaten vor. Liegt es in der Zukunft oder vor dem Start des Zyklus?");
+    }
+    
+    // Nirwana-Bonus bis zu genau diesem Tag berechnen
+    let nirvanaBonus = 0;
+    if (res.history.n) {
+        nirvanaBonus = res.history.n.filter(d => toIsoString(d) <= targetDateStr).length;
+    }
+    
+    let effectiveDebt = rawDebt - nirvanaBonus;
     
     active.base.manualAnchor = effectiveDebt;
     saveData(true);
     if(typeof updateUI === 'function') updateUI();
-};
-
-window.clearManualAnchor = function() {
-    const active = getActiveCycle();
-    if (active && active.base) {
-        delete active.base.manualAnchor;
-        saveData(true);
-        if(typeof updateUI === 'function') updateUI();
-    }
 };
