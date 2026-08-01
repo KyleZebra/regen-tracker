@@ -746,20 +746,24 @@ function renderDashboard() {
             totalSurplus += windowWater;
         }
 
-        // --- 2. Die X-1 Garantie & Der intuitive Netto-Trend ---
-        // Schulden direkt VOR dem Start des gesamten 3TA-Clusters
+        // --- 2. Die X-1 Garantie & Der Sticky Anchor (FIX V67) ---
+        // Der Anker kommt manipulationssicher direkt aus der Engine!
+        let stickyAnchor = ds.stickyAnchor !== undefined ? ds.stickyAnchor : (ds.totalDebtEver - totalPenalty); 
+        let strictTargetDebt = stickyAnchor - 1;
+        
+        let effectiveDebt = displayDebt - nirvanaBonus; 
+        let distanceToTarget = effectiveDebt - strictTargetDebt;
+        
+        // Der Trend ist simpel: Eingefrorener Anker minus Aktuelle Schuld.
+        // +1 bedeutet Freigabe erreicht. 0 bedeutet Nullrunde. Minus bedeutet Schuldenfalle.
+        let netTrend = stickyAnchor - effectiveDebt; 
+
+        // Schulden direkt VOR dem Start des sichtbaren 3TA-Clusters (für den Radar)
         let penaltiesAfterOldest = 0;
         for(let i=1; i<numEvents; i++) penaltiesAfterOldest += events[i].added;
         let totalDebtEverAtOldest = ds.totalDebtEver - penaltiesAfterOldest;
         let debtAfterOldest = totalDebtEverAtOldest - events[0].regenAtEvent;
         let debtBeforeOldest = Math.max(0, debtAfterOldest - events[0].added);
-        
-        let effectiveDebt = displayDebt - nirvanaBonus; 
-        
-        // Der Trend ist simpel: Schulden vorher minus Schulden nachher.
-        // +1 bedeutet, wir haben exakt 1 Tag Schulden abgebaut (Freigabe erreicht).
-        // 0 bedeutet Nullrunde. -2 bedeutet, wir haben mehr Schulden als vorher.
-        let netTrend = debtBeforeOldest - effectiveDebt; 
         
         let fmt = v => Number.isInteger(Math.round(v*10)/10) ? Math.round(v*10)/10 : (Math.round(v*10)/10).toFixed(1).replace('.', ',');
         
@@ -870,9 +874,9 @@ function renderDashboard() {
                 </div>
             </div>
             
-            <!-- NEU: Radar klickbar gemacht für das SVG-Diagramm -->
+            <!-- Radar: Optischer 3TA Fenster-Blick -->
             <div onclick="if(typeof openDebtChart === 'function') openDebtChart()" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(0,0,0,0.02); border-radius: 8px; border: 1px solid rgba(0,0,0,0.05); margin-bottom: 15px; font-size: 0.75rem; transition: background 0.2s, transform 0.1s;" onmouseover="this.style.background='rgba(0,0,0,0.05)'" onmouseout="this.style.background='rgba(0,0,0,0.02)'" onmousedown="this.style.transform='scale(0.98)'" onmouseup="this.style.transform='scale(1)'">
-                <div style="color: #7f8c8d; font-weight: 800; text-transform: uppercase;">Radar <span style="font-size: 0.85rem;" title="Schulden-Verlauf anzeigen">📈</span></div>
+                <div style="color: #7f8c8d; font-weight: 800; text-transform: uppercase;">Radar (Fenster) <span style="font-size: 0.85rem;" title="Schulden-Verlauf anzeigen">📈</span></div>
                 <div style="font-weight: 900; display: flex; align-items: center; gap: 10px;">
                     <div style="text-align: right;">
                         <span style="color: #7f8c8d; font-size: 0.55rem; display: block; text-transform: uppercase; line-height: 1; margin-bottom: 2px;">Vorher</span>
@@ -886,10 +890,13 @@ function renderDashboard() {
                 </div>
             </div>
             
-            <!-- Intuitiver Trend (Angebunden an X-1) -->
+            <!-- Intuitiver Trend (Angebunden an den globalen X-1 Anker) -->
             <div style="padding: 0 5px;">
-                <div style="text-align: center; font-size: 0.95rem; color: ${trendColor}; font-weight: 900; margin-bottom: 8px;">
+                <div style="text-align: center; font-size: 0.95rem; color: ${trendColor}; font-weight: 900; margin-bottom: 2px;">
                     ${trendText}
+                </div>
+                <div style="text-align: center; font-size: 0.65rem; color: #7f8c8d; font-weight: 700; margin-bottom: 8px;">
+                    ${distanceToTarget <= 0 ? `Ziel (&le; ${fmt(Math.max(0, strictTargetDebt))}) erreicht` : `Ziel: &le; ${fmt(Math.max(0, strictTargetDebt))} (Noch ${fmt(distanceToTarget)} zu tilgen)`}
                 </div>
                 
                 <div style="position: relative; width: 100%; height: 14px; background: linear-gradient(90deg, rgba(231,76,60,0.15) 0%, rgba(231,76,60,0.05) 49%, rgba(0,0,0,0.1) 50%, rgba(39,174,96,0.05) 51%, rgba(39,174,96,0.15) 100%); border-radius: 7px; margin-bottom: 5px; border: 1px solid rgba(0,0,0,0.05);">
