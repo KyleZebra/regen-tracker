@@ -716,6 +716,8 @@ function openDebtChart() {
     }
 
     let todayStr = toIsoString(new Date());
+    let activeCycle = getActiveCycle();
+    let isTodayLogged = activeCycle && activeCycle.logs && activeCycle.logs[todayStr] && activeCycle.logs[todayStr].type !== undefined;
     
     // NEU: Zeithorizont live aus dem Dropdown lesen (Fallback auf 30)
     let selectEl = document.getElementById('chart-days-select');
@@ -723,8 +725,10 @@ function openDebtChart() {
     
     let chartData = [];
 
-    // Nur Daten bis zum heutigen Tag holen
-    let allDates = Object.keys(res.history.dailyDebt).filter(d => d <= todayStr).sort();
+    // Nur Daten bis zum heutigen Tag holen (bzw. bis gestern, wenn heute nicht geloggt)
+    let maxDateStr = isTodayLogged ? todayStr : toIsoString(addDays(new Date(), -1));
+    let allDates = Object.keys(res.history.dailyDebt).filter(d => d <= maxDateStr).sort();
+    
     if (allDates.length === 0) return customAlert("Noch keine Daten für diesen Zyklus vorhanden.");
 
     // Die letzten X Tage abschneiden (wenn 9999 gewählt wurde, bleibt fast alles)
@@ -790,22 +794,32 @@ function openDebtChart() {
     });
 
     let svgHtml = `
-        <svg width="${svgW}" height="${svgH}" viewBox="0 0 ${svgW} ${svgH}" style="display:block;">
-            <defs>
-                <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stop-color="rgba(231, 76, 60, 0.15)" />
-                    <stop offset="100%" stop-color="rgba(231, 76, 60, 0.0)" />
-                </linearGradient>
-            </defs>
-            ${gridHtml}
-            <path d="${areaD}" fill="url(#areaGrad)" />
-            <path d="${pathD}" fill="none" stroke="#e74c3c" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
-            ${pointsHtml}
-            ${xLabelsHtml}
-        </svg>
-    `;
+            <svg width="${svgW}" height="${svgH}" viewBox="0 0 ${svgW} ${svgH}" style="display:block;">
+                <defs>
+                    <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="rgba(231, 76, 60, 0.15)" />
+                        <stop offset="100%" stop-color="rgba(231, 76, 60, 0.0)" />
+                    </linearGradient>
+                </defs>
+                ${gridHtml}
+                <path d="${areaD}" fill="url(#areaGrad)" />
+                <path d="${pathD}" fill="none" stroke="#e74c3c" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+                ${pointsHtml}
+                ${xLabelsHtml}
+            </svg>
+        `;
 
-    safeHTML('svg-chart-container', svgHtml);
-    const modal = document.getElementById('modal-debt-chart');
-    if(modal) modal.classList.add('active');
-}
+        safeHTML('svg-chart-container', svgHtml);
+        const modal = document.getElementById('modal-debt-chart');
+        if(modal) {
+            modal.classList.add('active');
+            
+            // Automatisches Scrollen nach ganz rechts (mit winziger Verzögerung, damit das SVG erst gerendert ist)
+            setTimeout(() => {
+                let container = document.getElementById('svg-chart-container');
+                if (container && container.parentElement) {
+                    container.parentElement.scrollLeft = container.parentElement.scrollWidth;
+                }
+            }, 10);
+        }
+    }
