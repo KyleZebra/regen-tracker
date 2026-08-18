@@ -713,6 +713,38 @@ function renderDashboard() {
         if (el) el.style.setProperty('display', val, 'important');
     };
 
+    // --- NEU: Langzeit-Ampel (Unabhängig von der Kurzzeit-Box!) ---
+    if (ds.tlState) {
+        let tl = ds.tlState;
+        let tlBg = tl.color === 'GRÜN' ? '#e8f8f5' : (tl.color === 'GELB' ? '#fef9e7' : '#fdedec');
+        let tlBorder = tl.color === 'GRÜN' ? '#27ae60' : (tl.color === 'GELB' ? '#f39c12' : '#e74c3c');
+        let tlText = tl.color === 'GRÜN' ? '#1e8449' : (tl.color === 'GELB' ? '#d68910' : '#c0392b');
+        let tlIcon = tl.color === 'GRÜN' ? '🟢' : (tl.color === 'GELB' ? '🟡' : '🔴');
+        
+        let tlTitle = tl.color === 'GRÜN' ? 'Langzeitmuster: Stabil' : (tl.color === 'GELB' ? 'Langzeitmuster: Warnung' : 'Langzeitmuster: Kritisch');
+        let tlDesc = tl.color === 'GRÜN' ? 'Dein Konsum-Rhythmus ist aktuell unauffällig.' : (tl.color === 'GELB' ? 'Empfehlung: Min. 7 Tage Pause!<br>Alle Rabatte sind derzeit gesperrt.' : 'Empfehlung: Min. 14 Tage Pause!<br>Schulden verdoppelt (x2), Rabatte gesperrt.');
+
+        let k28 = tl.window28.filter(x=>x).length;
+        let m28 = 0, cur = 0; for(let x of tl.window28) { if(x) {cur++; m28=Math.max(m28, cur);} else cur=0; }
+        
+        safeHTML('dash-pattern-box', `
+            <div style="background: ${tlBg}; border: 1px solid ${tlBorder}; border-radius: 12px; padding: 12px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
+                    <strong style="color:${tlText}; font-size: 0.95rem;">${tlIcon} ${tlTitle}</strong>
+                </div>
+                <div style="font-size: 0.75rem; color: #555; margin-bottom: 10px; line-height: 1.4;">${tlDesc}</div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.65rem; color: #7f8c8d; background: rgba(255,255,255,0.7); padding: 8px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.03);">
+                    <div style="text-align:center;"><strong style="font-size:0.8rem; color:#2c3e50;">${k28}</strong><br>Konsum (28T)</div>
+                    <div style="text-align:center; border-left: 1px solid rgba(0,0,0,0.05); border-right: 1px solid rgba(0,0,0,0.05); padding: 0 10px;"><strong style="font-size:0.8rem; color:#2c3e50;">${m28}</strong><br>Max. Serie</div>
+                    <div style="text-align:center;"><strong style="font-size:0.8rem; color:#2c3e50;">${tl.daysSinceLongPause}</strong><br>Tage seit Pause</div>
+                </div>
+            </div>
+        `);
+        forceDisplay('dash-pattern-box', 'block');
+    } else {
+        forceDisplay('dash-pattern-box', 'none');
+    }
+
     const compBox = document.getElementById('dash-compensation-box');
     
     if (!res.isOpen && ds.recentEvents && ds.recentEvents.length > 0) {
@@ -884,39 +916,7 @@ function renderDashboard() {
             `;
         }
 
-        // --- NEU: Langzeit-Ampel HTML ---
-        let tlHtml = '';
-        if (ds.tlState) {
-            let tl = ds.tlState;
-            let tlBg = tl.color === 'GRÜN' ? '#e8f8f5' : (tl.color === 'GELB' ? '#fef9e7' : '#fdedec');
-            let tlBorder = tl.color === 'GRÜN' ? '#27ae60' : (tl.color === 'GELB' ? '#f39c12' : '#e74c3c');
-            let tlText = tl.color === 'GRÜN' ? '#1e8449' : (tl.color === 'GELB' ? '#d68910' : '#c0392b');
-            let tlIcon = tl.color === 'GRÜN' ? '🟢' : (tl.color === 'GELB' ? '🟡' : '🔴');
-            
-            let tlTitle = tl.color === 'GRÜN' ? 'Langzeitmuster: Stabil' : (tl.color === 'GELB' ? 'Langzeitmuster: Warnung' : 'Langzeitmuster: Kritisch');
-            let tlDesc = tl.color === 'GRÜN' ? 'Dein Konsum-Rhythmus ist aktuell unauffällig.' : (tl.color === 'GELB' ? 'Empfehlung: Min. 7 Tage Pause!<br>Alle Rabatte sind derzeit gesperrt.' : 'Empfehlung: Min. 14 Tage Pause!<br>Schulden verdoppelt (x2), Rabatte gesperrt.');
-
-            let k28 = tl.window28.filter(x=>x).length;
-            let m28 = 0, cur = 0; for(let x of tl.window28) { if(x) {cur++; m28=Math.max(m28, cur);} else cur=0; }
-            
-            tlHtml = `
-                <div style="background: ${tlBg}; border: 1px solid ${tlBorder}; border-radius: 12px; padding: 12px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
-                        <strong style="color:${tlText}; font-size: 0.95rem;">${tlIcon} ${tlTitle}</strong>
-                    </div>
-                    <div style="font-size: 0.75rem; color: #555; margin-bottom: 10px; line-height: 1.4;">${tlDesc}</div>
-                    <div style="display: flex; justify-content: space-between; font-size: 0.65rem; color: #7f8c8d; background: rgba(255,255,255,0.7); padding: 8px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.03);">
-                        <div style="text-align:center;"><strong style="font-size:0.8rem; color:#2c3e50;">${k28}</strong><br>Konsum (28T)</div>
-                        <div style="text-align:center; border-left: 1px solid rgba(0,0,0,0.05); border-right: 1px solid rgba(0,0,0,0.05); padding: 0 10px;"><strong style="font-size:0.8rem; color:#2c3e50;">${m28}</strong><br>Max. Serie</div>
-                        <div style="text-align:center;"><strong style="font-size:0.8rem; color:#2c3e50;">${tl.daysSinceLongPause}</strong><br>Tage seit Pause</div>
-                    </div>
-                </div>
-            `;
-        }
-
         safeHTML('dash-compensation-box', `
-
-            ${tlHtml}
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                 <div class="outlook-title" style="color: #2c3e50; font-size: 1rem; margin: 0; font-weight: 900;">
                     ${numEvents} TA
