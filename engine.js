@@ -346,10 +346,14 @@ function simulateCycle(cycle, skipEchoCheck = false) {
                 if (currentAusrutscherIsSmall && hasNirvanaEcho) reboundCharges = 2;
                 else reboundCharges = 0;
                 
-                // --- NEU: Ampel-Sanktionen anwenden ---
+                // --- NEU: Ampel-Sanktionen anwenden (mit Stichtag-Schutz!) ---
                 let appliedSmall = isLogSmall;
                 let appliedActive = isLogActive;
-                if (tlState.color === 'GELB' || tlState.color === 'ROT') {
+                
+                // Die Ampel-Strafen gelten erst ab diesem Datum! Die Vergangenheit bleibt unberührt.
+                let applyAmpelPenalty = (dStr >= '2026-08-18'); 
+                
+                if (applyAmpelPenalty && (tlState.color === 'GELB' || tlState.color === 'ROT')) {
                     appliedSmall = false; // Rabatt gesperrt
                     appliedActive = false; // Rabatt gesperrt
                 }
@@ -375,8 +379,8 @@ function simulateCycle(cycle, skipEchoCheck = false) {
                     totalActiveDiscountEver += actualLogDiscount;
                 }
                 
-                // Der rote x2 Multiplikator
-                if (tlState.color === 'ROT') {
+                // Der rote x2 Multiplikator (mit Stichtag)
+                if (applyAmpelPenalty && tlState.color === 'ROT') {
                     penalty *= 2; 
                 }
 
@@ -419,10 +423,15 @@ function simulateCycle(cycle, skipEchoCheck = false) {
                     history.logDetails.push({ date: dStr, p: penalty, t: log.t, b: iBase, s: iS, a: iA, f: pauschale, active: appliedActive });
                     let smallInfo = isLogSmall ? (appliedSmall ? " (Kleiner Tag)" : " (Kl. Tag ignoriert)") : " (Standardtag)";
                     let activeInfo = isLogActive ? (appliedActive ? ` 🏃‍♂️ (Aktivbonus enthalten: -${actualLogDiscount})` : " 🏃‍♂️ (Aktiv ignoriert)") : "";
-                    let tlInfo = tlState.color === 'ROT' ? ' 🔴x2' : (tlState.color === 'GELB' ? ' 🟡Kein Rabatt' : '');
+                    let tlInfo = (applyAmpelPenalty && tlState.color === 'ROT') ? ' 🔴x2' : ((applyAmpelPenalty && tlState.color === 'GELB') ? ' 🟡Kein Rabatt' : '');
                     pStr = actualLogDiscount > 0 ? `+${penalty} Tage netto` : `+${penalty} Tage`;
                     history.penaltyDict[dStr] = pauschale > 0 ? pStr + ` (inkl. Setup)${smallInfo}${activeInfo}${tlInfo}` : pStr + ` (Stottern)${smallInfo}${activeInfo}${tlInfo}`;
                 }
+                
+                // FIX V62.3: Diese lebenswichtige Zeile hat gefehlt!
+                // Sie sorgt dafür, dass die Tage wieder im Kalender gemalt werden.
+                history.a.push(new Date(simDate));
+                
             } else {
                 if (debt > 0) {
                     if (state === 'BEWAEHRUNG') {
