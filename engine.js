@@ -316,7 +316,7 @@ function simulateCycle(cycle, skipEchoCheck = false) {
             
             let colA = konsum28 >= 9 ? 'ROT' : (konsum28 >= 5 ? 'GELB' : 'GRÜN');
             let colB = maxSer >= 4 ? 'ROT' : (maxSer >= 2 ? 'GELB' : 'GRÜN');
-            let colC = tlState.daysSinceLongPause >= 85 ? 'ROT' : (tlState.daysSinceLongPause >= 43 ? 'GELB' : 'GRÜN');
+            let colC = tlState.daysSinceLongPause >= 42 ? 'ROT' : (tlState.daysSinceLongPause >= 28 ? 'GELB' : 'GRÜN');
             
             let rawColor = 'GRÜN';
             if (colA === 'ROT' || colB === 'ROT' || colC === 'ROT') rawColor = 'ROT';
