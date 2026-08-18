@@ -66,9 +66,6 @@
                 <div id="dash-sub" class="eta-subtext"></div>
             </div>
 
-            <!-- NEU: Eigenständiger Container für die Langzeit-Ampel -->
-            <div id="dash-pattern-box" style="display:none;"></div>
-
             <div class="ring-wrapper" onclick="openSandbox()" title="Geheimes Labor öffnen">
                 <svg viewBox="0 0 36 36" class="circular-chart">
                     <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
@@ -82,6 +79,9 @@
                     <div id="dash-target-date" class="ring-target">Ziel: --.--.----</div>
                 </div>
             </div>
+
+            <!-- NEU: Eigenständiger Container für die Langzeit-Ampel -->
+            <div id="dash-pattern-box" style="display:none;"></div>
 
             <div id="dash-budget-box" class="outlook-box" style="display:none; background:#fdfafb; border: 2px dashed #9b59b6; cursor:pointer;" onclick="openTargetModal()" title="Ziel & Budget bearbeiten">
                 <div id="budget-content-active" style="display:none;">

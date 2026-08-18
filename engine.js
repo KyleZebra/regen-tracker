@@ -299,7 +299,7 @@ function simulateCycle(cycle, skipEchoCheck = false) {
             
             if (!isConsumptionDay) {
                 tlState.cleanStreak++;
-                if (tlState.cleanStreak >= 14) {
+                if (tlState.cleanStreak >= 16) {
                     tlState.daysSinceLongPause = 0;
                     tlState.isStickyRed = false; // Sticky ROT aufheben!
                 } else {

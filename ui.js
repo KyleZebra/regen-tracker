@@ -722,7 +722,7 @@ function renderDashboard() {
         let tlIcon = tl.color === 'GRÜN' ? '🟢' : (tl.color === 'GELB' ? '🟡' : '🔴');
         
         let tlTitle = tl.color === 'GRÜN' ? 'Langzeitmuster: Stabil' : (tl.color === 'GELB' ? 'Langzeitmuster: Warnung' : 'Langzeitmuster: Kritisch');
-        let tlDesc = tl.color === 'GRÜN' ? 'Dein Konsum-Rhythmus ist aktuell unauffällig.' : (tl.color === 'GELB' ? 'Empfehlung: Min. 7 Tage Pause!<br>Alle Rabatte sind derzeit gesperrt.' : 'Empfehlung: Min. 14 Tage Pause!<br>Schulden verdoppelt (x2), Rabatte gesperrt.');
+        let tlDesc = tl.color === 'GRÜN' ? 'Dein Konsum-Rhythmus ist aktuell unauffällig.' : (tl.color === 'GELB' ? 'Empfehlung: Min. 7 Tage Pause!<br>Alle Rabatte sind derzeit gesperrt.' : 'Empfehlung: Min. 16 Tage Pause!<br>Schulden verdoppelt (x2), Rabatte gesperrt.');
 
         let k28 = tl.window28.filter(x=>x).length;
         let m28 = 0, cur = 0; for(let x of tl.window28) { if(x) {cur++; m28=Math.max(m28, cur);} else cur=0; }
