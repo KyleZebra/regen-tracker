@@ -215,8 +215,35 @@ function simulateCycle(cycle, skipEchoCheck = false) {
         // FIX V66: Tägliches Kassenbuch für das Diagramm
         let history = { t: [], r: [], b: [], a: [], n: [], logDetails: [], penaltyDict: {}, bonusDict: {}, dailyDebt: {} };
 
+        // --- NEU: Langzeit-Ampel State (Initialisierung) ---
+        let tlState = { window28: [], cleanStreak: 0, daysSinceLongPause: 0, isStickyRed: false, color: 'GRÜN' };
+        
         let cBase = parseLocal(cycle.base.start);
         let endBase = parseLocal(cycle.base.end);
+        
+        // Die initiale Basis-Phase wird vorab als Konsum in die Ampel geladen
+        if (cBase && endBase && !isNaN(cBase.getTime())) {
+            let tempD = new Date(cBase);
+            while (tempD <= endBase) {
+                tlState.window28.push(true);
+                if (tlState.window28.length > 28) tlState.window28.shift();
+                tlState.cleanStreak = 0;
+                tlState.daysSinceLongPause++;
+                
+                let konsum28 = tlState.window28.filter(x => x).length;
+                let maxSer = 0, curSer = 0;
+                for (let x of tlState.window28) { if (x) { curSer++; maxSer = Math.max(maxSer, curSer); } else { curSer = 0; } }
+                
+                let colA = konsum28 >= 9 ? 'ROT' : (konsum28 >= 5 ? 'GELB' : 'GRÜN');
+                let colB = maxSer >= 4 ? 'ROT' : (maxSer >= 2 ? 'GELB' : 'GRÜN');
+                let colC = tlState.daysSinceLongPause >= 85 ? 'ROT' : (tlState.daysSinceLongPause >= 43 ? 'GELB' : 'GRÜN');
+                
+                if (colA === 'ROT' || colB === 'ROT' || colC === 'ROT') tlState.isStickyRed = true;
+                
+                tempD.setDate(tempD.getDate() + 1);
+            }
+        }
+
         if (!cBase || isNaN(cBase.getTime())) {
             return { failed: true, cycleId: cycle.id, errorMessage: `Ungültiges Startdatum` };
         }
@@ -263,26 +290,59 @@ function simulateCycle(cycle, skipEchoCheck = false) {
             isLogged = log && typeof log === 'object' && log.type !== undefined;
             isPhantom = log && log.isSimulated === true;
 
+            // --- NEU: Langzeit-Ampel tägliches Update ---
+            let isConsumptionDay = false;
+            if (activeAusrutscherDays > 0 || (log && log.type === 'ausrutscher')) isConsumptionDay = true;
+            
+            tlState.window28.push(isConsumptionDay);
+            if (tlState.window28.length > 28) tlState.window28.shift();
+            
+            if (!isConsumptionDay) {
+                tlState.cleanStreak++;
+                if (tlState.cleanStreak >= 14) {
+                    tlState.daysSinceLongPause = 0;
+                    tlState.isStickyRed = false; // Sticky ROT aufheben!
+                } else {
+                    tlState.daysSinceLongPause++;
+                }
+            } else {
+                tlState.cleanStreak = 0;
+                tlState.daysSinceLongPause++;
+            }
+            
+            let konsum28 = tlState.window28.filter(x => x).length;
+            let maxSer = 0, curSer = 0;
+            for (let x of tlState.window28) { if (x) { curSer++; maxSer = Math.max(maxSer, curSer); } else { curSer = 0; } }
+            
+            let colA = konsum28 >= 9 ? 'ROT' : (konsum28 >= 5 ? 'GELB' : 'GRÜN');
+            let colB = maxSer >= 4 ? 'ROT' : (maxSer >= 2 ? 'GELB' : 'GRÜN');
+            let colC = tlState.daysSinceLongPause >= 85 ? 'ROT' : (tlState.daysSinceLongPause >= 43 ? 'GELB' : 'GRÜN');
+            
+            let rawColor = 'GRÜN';
+            if (colA === 'ROT' || colB === 'ROT' || colC === 'ROT') rawColor = 'ROT';
+            else if (colA === 'GELB' || colB === 'GELB' || colC === 'GELB') rawColor = 'GELB';
+            
+            if (rawColor === 'ROT') tlState.isStickyRed = true;
+            tlState.color = tlState.isStickyRed ? 'ROT' : rawColor;
+            // --- ENDE Ampel Update ---
+
             if (activeAusrutscherDays > 0) {
                 history.a.push(new Date(simDate));
                 activeAusrutscherDays--;
                 
-                // Echo-Ladungen jeden Tag des Ausrutschers frisch halten (NUR wenn Echo aktiv ist!)
-                if (currentAusrutscherIsSmall && hasNirvanaEcho) reboundCharges = 2;
-                else reboundCharges = 0;
-                
-                } else if (log && log.type === 'ausrutscher') {
-                activeAusrutscherDays = log.t - 1;
-                totalTDaysEver += log.t;
-
-                currentAusrutscherIsSmall = log.isSmall === true;
-                isLogSmall = currentAusrutscherIsSmall;
-                let isLogActive = log.isActive === true; // NEU
-                
                 // Echo-Ladungen beim initialen Log setzen (NUR wenn Echo aktiv ist!)
                 if (currentAusrutscherIsSmall && hasNirvanaEcho) reboundCharges = 2;
                 else reboundCharges = 0;
-                iBase = isLogSmall ? (log.t * 2) : (log.t * 3);
+                
+                // --- NEU: Ampel-Sanktionen anwenden ---
+                let appliedSmall = isLogSmall;
+                let appliedActive = isLogActive;
+                if (tlState.color === 'GELB' || tlState.color === 'ROT') {
+                    appliedSmall = false; // Rabatt gesperrt
+                    appliedActive = false; // Rabatt gesperrt
+                }
+
+                iBase = appliedSmall ? (log.t * 2) : (log.t * 3);
                 expectedBaseDebt += iBase;
 
                 iS = log.t < 4 ? (log.s===1 ? 1 : log.s===2 ? 2 : 0) : Math.ceil(iBase * (log.s===1 ? 0.1 : log.s===2 ? 0.25 : 0));
@@ -292,15 +352,20 @@ function simulateCycle(cycle, skipEchoCheck = false) {
                 pauschale = hasPaidPauschaleThisCluster ? 0 : 1;
                 penalty = iBase + iS + iA + iC + pauschale;
                 
-                // FIX V44: Aktiv-Rabatt für das Log (darf Strafe nie unter die Anzahl der Konsumtage drücken)
+                // FIX V44: Aktiv-Rabatt für das Log
                 let logActiveDiscount = 0;
                 let actualLogDiscount = 0;
-                if (isLogActive) {
+                if (appliedActive) {
                     logActiveDiscount = log.t;
                     let grossPenalty = penalty;
                     penalty = Math.max(log.t, penalty - logActiveDiscount);
                     actualLogDiscount = grossPenalty - penalty;
                     totalActiveDiscountEver += actualLogDiscount;
+                }
+                
+                // Der rote x2 Multiplikator
+                if (tlState.color === 'ROT') {
+                    penalty *= 2; 
                 }
 
                 debt += penalty;
@@ -313,7 +378,7 @@ function simulateCycle(cycle, skipEchoCheck = false) {
                 finalDebtZeroDate = null;
 
                 if (!hasPaidPauschaleThisCluster) {
-                    currentBlockTargetBew = isLogSmall ? 0 : (log.t * 3);
+                    currentBlockTargetBew = isLogSmall ? 0 : (log.t * 3); // Bewährung ignoriert Ampel für Konsistenz
                     currentBlockServed = 0;
                     hasPaidPauschaleThisCluster = true;
                 } else {
@@ -339,14 +404,13 @@ function simulateCycle(cycle, skipEchoCheck = false) {
                 withheldBonus = 0;
 
                 if (!isPhantom) {
-                    history.logDetails.push({ date: dStr, p: penalty, t: log.t, b: iBase, s: iS, a: iA, f: pauschale, active: isLogActive });
-                    let smallInfo = isLogSmall ? " (Kleiner Tag)" : " (Standardtag)";
-                    let activeInfo = isLogActive ? ` 🏃‍♂️ (Aktivbonus enthalten: -${actualLogDiscount})` : "";
+                    history.logDetails.push({ date: dStr, p: penalty, t: log.t, b: iBase, s: iS, a: iA, f: pauschale, active: appliedActive });
+                    let smallInfo = isLogSmall ? (appliedSmall ? " (Kleiner Tag)" : " (Kl. Tag ignoriert)") : " (Standardtag)";
+                    let activeInfo = isLogActive ? (appliedActive ? ` 🏃‍♂️ (Aktivbonus enthalten: -${actualLogDiscount})` : " 🏃‍♂️ (Aktiv ignoriert)") : "";
+                    let tlInfo = tlState.color === 'ROT' ? ' 🔴x2' : (tlState.color === 'GELB' ? ' 🟡Kein Rabatt' : '');
                     pStr = actualLogDiscount > 0 ? `+${penalty} Tage netto` : `+${penalty} Tage`;
-                    history.penaltyDict[dStr] = pauschale > 0 ? pStr + ` (inkl. Setup)${smallInfo}${activeInfo}` : pStr + ` (Stottern)${smallInfo}${activeInfo}`;
+                    history.penaltyDict[dStr] = pauschale > 0 ? pStr + ` (inkl. Setup)${smallInfo}${activeInfo}${tlInfo}` : pStr + ` (Stottern)${smallInfo}${activeInfo}${tlInfo}`;
                 }
-
-                history.a.push(new Date(simDate));
             } else {
                 if (debt > 0) {
                     if (state === 'BEWAEHRUNG') {
@@ -428,7 +492,7 @@ function simulateCycle(cycle, skipEchoCheck = false) {
             }
 
             if (dStr === lastRealDayStr && cycle.status === 'active') {
-                dashState = { debt, totalDebtEver, state, bewTimer, gotBonusToday: (isToday) ? gotBonusForToday : false, pendingBonus: false, activeReboundCharges: reboundCharges, recentEvents: JSON.parse(JSON.stringify(recentEvents)) };
+                dashState = { debt, totalDebtEver, state, bewTimer, gotBonusToday: (isToday) ? gotBonusForToday : false, pendingBonus: false, activeReboundCharges: reboundCharges, recentEvents: JSON.parse(JSON.stringify(recentEvents)), tlState: JSON.parse(JSON.stringify(tlState)) };
             }
 
             if (isToday && !isLogged && cycle.status === 'active') {
@@ -454,7 +518,7 @@ function simulateCycle(cycle, skipEchoCheck = false) {
             // FIX V40.1: Insolvenz-Prüfung im Fallback des Dashboards ergänzt!
             let initialBewTimer = (isBaseSmall || isInsolvency) ? 0 : 3;
             let initialState = (isBaseSmall || isInsolvency) ? 'REGEN' : 'BEWAEHRUNG';
-            dashState = { debt: initialDebtTotal + manualSurcharge, totalDebtEver: initialDebtTotal + manualSurcharge, state: initialState, bewTimer: initialBewTimer, gotBonusToday: false, pendingBonus: false, activeReboundCharges: 0, recentEvents: JSON.parse(JSON.stringify(recentEvents)) };
+            dashState = { debt: initialDebtTotal + manualSurcharge, totalDebtEver: initialDebtTotal + manualSurcharge, state: initialState, bewTimer: initialBewTimer, gotBonusToday: false, pendingBonus: false, activeReboundCharges: 0, recentEvents: JSON.parse(JSON.stringify(recentEvents)), tlState: JSON.parse(JSON.stringify(tlState)) };
         }
 
         let mFreeCurrent = 0;
