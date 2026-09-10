@@ -248,8 +248,8 @@ function simulateCycle(cycle, skipEchoCheck = false, forceInheritedTlState = nul
         // FIX V66: Tägliches Kassenbuch für das Diagramm
         let history = { t: [], r: [], b: [], a: [], n: [], logDetails: [], penaltyDict: {}, bonusDict: {}, dailyDebt: {} };
 
-        // --- NEU: Langzeit-Ampel State (Initialisierung) ---
-        let tlState = { window28: [], cleanStreak: 0, daysSinceLongPause: 0, isStickyRed: false, color: 'GRÜN' };
+        // Die Langzeit-Ampel wurde bereits oben per Cross-Cycle-Rucksack initialisiert!
+        // Wir dürfen sie hier nicht überschreiben.
         
         let cBase = parseLocal(cycle.base.start);
         let endBase = parseLocal(cycle.base.end);
