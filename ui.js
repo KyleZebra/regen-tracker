@@ -1152,59 +1152,12 @@ function renderHistorie() {
         <div class="stat-box" style="padding: 10px;"><div class="stat-val blue" style="font-size: 1.4rem; color: var(--nirvana-blue);">${totalRegenDebt}</div><div class="stat-label" style="font-size: 0.65rem;">Gesamtschuld</div></div>
     </div>`;
     
-    // --- NEU: Schatten-Rechner für das Regen-o-Meter ---
-    if (!res.isOpen && active && active.base && active.base.end) {
-        let regenM = 0;
-        let regenA = 0;
-        
-        // 1. Startwerte anhand der Basisphase ermitteln
-        let baseEnd = parseLocal(active.base.end);
-        let baseStart = parseLocal(active.base.start);
-        let baseDays = diffDays(baseStart, baseEnd) + 1;
-        
-        regenM = baseDays * 2; 
-        
-        // Typ-Sicherheit & Neues Strafmaß für die Startphase
-            let baseAlk = parseInt(active.base.aLevel) || 0;
-            if (baseAlk === 1) regenA = 2; // Moderat
-            else if (baseAlk === 2) regenA = 5; // Hoch (Erhöht auf 5)
-        
-        // 2. Kalender vom Tag nach der Basisphase bis heute durchblättern
-        let simDate = addDays(baseEnd, 1);
-        let todayDate = new Date();
-        todayDate.setHours(0,0,0,0);
-        
-        while (simDate <= todayDate) {
-            let dStr = toIsoString(simDate);
-            
-            // Täglicher Abbau (Becher leert sich)
-            let mDecayed = false;
-            if (regenM > 0) { 
-                regenM--; 
-                mDecayed = true; 
-            }
-            if (regenA > 0) regenA--;
-            
-            // Heutigen Log auf Strafen prüfen (Becher füllt sich)
-            let log = (active.logs || {})[dStr];
-            if (log && log.type !== undefined && !log.isSimulated) {
-                // FIX: Typ-Sicherheit (Strings in echte Zahlen umwandeln)
-                let mVal = parseInt(log.m) || 0;
-                let aVal = parseInt(log.a) || 0;
+    // --- NEU: Cross-Cycle Regen-o-Meter (Aus der mächtigen Engine importiert!) ---
+    if (!res.isOpen && res.dashState && res.dashState.regen) {
+        let regenM = res.dashState.regen.m;
+        let regenA = res.dashState.regen.a;
 
-                // Der +1 Trick ist hier bereits eingerechnet!
-                if (mVal === 1) regenM += 2;
-                else if (mVal === 2) regenM += 3;
-                else if (mVal === 3 && mDecayed) regenM += 1; // Der Gefrier-Effekt
-                
-                if (aVal === 1) regenA += 3;
-                else if (aVal === 2) regenA += 5; // NEU: Starker Alk erhöht um 5 Tage!
-            }
-            
-            simDate = addDays(simDate, 1);
-        }
-
-        // 3. Regen-o-Meter HTML anfügen (Ersetzt die alte Anzeige)
+        // Regen-o-Meter HTML anfügen
         let colorM = regenM === 0 ? '#155724' : '#721c24';
         let colorA = regenA === 0 ? '#155724' : '#721c24';
         let bgM = regenM === 0 ? '#d4edda' : '#fadbd8';

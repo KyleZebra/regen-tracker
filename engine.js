@@ -77,7 +77,22 @@ function calculateBudget(targetETAStr) {
 function runAllSimulations() {
     try {
         const app = getApp();
-        globalSimResults = (app.cycles || []).map(cycle => simulateCycle(cycle));
+        let newResults = [];
+        let currentTlState = null;
+        let currentRegen = null;
+
+        (app.cycles || []).forEach(cycle => {
+            // Wir übergeben den Rucksack aus dem vorherigen Zyklus
+            let res = simulateCycle(cycle, false, currentTlState, currentRegen);
+            if (res && !res.failed) {
+                // Den Rucksack für den nächsten Zyklus packen
+                currentTlState = res.finalTlState;
+                currentRegen = res.finalRegen;
+            }
+            newResults.push(res);
+        });
+
+        globalSimResults = newResults;
 
         let activeIdx = (app.cycles || []).findIndex(c => c.status === 'active');
         activeSimResult = activeIdx !== -1 ? globalSimResults[activeIdx] : null;
@@ -91,11 +106,29 @@ function runAllSimulations() {
 }
 
 // FIX V22: Skip-Parameter hinzugefügt für das Nirwana-Echo
-function simulateCycle(cycle, skipEchoCheck = false) {
+function simulateCycle(cycle, skipEchoCheck = false, forceInheritedTlState = null, forceInheritedRegen = null) {
     try {
         if (!cycle || !cycle.base || !cycle.base.start || !cycle.base.end) {
             return { failed: true, cycleId: cycle ? cycle.id : 'unknown', errorMessage: "Daten unvollständig." };
         }
+
+        // --- NEU: Automatischer Cross-Cycle State Lookup (Für Phantom-Simulationen) ---
+        let inheritedTlState = forceInheritedTlState;
+        let inheritedRegen = forceInheritedRegen;
+
+        if (!inheritedTlState && !inheritedRegen) {
+            let app = getApp();
+            let cycleIndex = app.cycles.findIndex(c => c.id === cycle.id);
+            if (cycleIndex > 0 && globalSimResults[cycleIndex - 1]) {
+                inheritedTlState = globalSimResults[cycleIndex - 1].finalTlState;
+                inheritedRegen = globalSimResults[cycleIndex - 1].finalRegen;
+            }
+        }
+
+        // --- NEU: Cross-Cycle Initialisierung ---
+        let tlState = inheritedTlState ? JSON.parse(JSON.stringify(inheritedTlState)) : { window28: [], cleanStreak: 0, daysSinceLongPause: 0, isStickyRed: false, color: 'GRÜN' };
+        let regenM = inheritedRegen ? inheritedRegen.m : 0;
+        let regenA = inheritedRegen ? inheritedRegen.a : 0;
 
         // FIX V40: Isolvenz-Erkennung
         let isInsolvency = cycle.base.isInsolvency === true;
@@ -280,6 +313,15 @@ function simulateCycle(cycle, skipEchoCheck = false) {
         let currentAusrutscherIsSmall = isBaseSmall;
 
         // FIX V40.2: Archivierte Zyklen dürfen niemals in die Zukunft "fabulieren" (nur der aktive Zyklus darf das)
+        // Die Basis-Sanktionen für das Regen-o-Meter aufladen (Einmalig pro Zyklus)
+        if (!isInsolvency && cBase && endBase && !isNaN(cBase.getTime())) {
+            let baseDays = diffDays(cBase, endBase) + 1;
+            regenM += baseDays * 2;
+            let baseAlk = parseInt(cycle.base.aLevel) || 0;
+            if (baseAlk === 1) regenA += 2;
+            else if (baseAlk === 2) regenA += 5;
+        }
+
         while ((toIsoString(simDate) <= endSimLimit || (cycle.status === 'active' && debt > 0)) && safety < 25000) {
             safety++;
             dStr = toIsoString(simDate);
@@ -289,6 +331,23 @@ function simulateCycle(cycle, skipEchoCheck = false) {
             isToday = dStr === todayStr;
             isLogged = log && typeof log === 'object' && log.type !== undefined;
             isPhantom = log && log.isSimulated === true;
+
+            // --- NEU: Regen-o-Meter tägliches Update (Cross-Cycle tauglich) ---
+            let mDecayed = false;
+            if (regenM > 0) { regenM--; mDecayed = true; }
+            if (regenA > 0) { regenA--; }
+
+            if (log && log.type !== undefined && !isPhantom) {
+                let mVal = parseInt(log.m) || 0;
+                let aVal = parseInt(log.a) || 0;
+
+                if (mVal === 1) regenM += 2;
+                else if (mVal === 2) regenM += 3;
+                else if (mVal === 3 && mDecayed) regenM += 1; 
+
+                if (aVal === 1) regenA += 3;
+                else if (aVal === 2) regenA += 5;
+            }
 
             // --- NEU: Langzeit-Ampel tägliches Update ---
             let isConsumptionDay = false;
@@ -513,7 +572,7 @@ function simulateCycle(cycle, skipEchoCheck = false) {
             }
 
             if (dStr === lastRealDayStr && cycle.status === 'active') {
-                dashState = { debt, totalDebtEver, state, bewTimer, gotBonusToday: (isToday) ? gotBonusForToday : false, pendingBonus: false, activeReboundCharges: reboundCharges, recentEvents: JSON.parse(JSON.stringify(recentEvents)), tlState: JSON.parse(JSON.stringify(tlState)) };
+                dashState = { debt, totalDebtEver, state, bewTimer, gotBonusToday: (isToday) ? gotBonusForToday : false, pendingBonus: false, activeReboundCharges: reboundCharges, recentEvents: JSON.parse(JSON.stringify(recentEvents)), tlState: JSON.parse(JSON.stringify(tlState)), regen: { m: regenM, a: regenA } };
             }
 
             if (isToday && !isLogged && cycle.status === 'active') {
@@ -539,7 +598,7 @@ function simulateCycle(cycle, skipEchoCheck = false) {
             // FIX V40.1: Insolvenz-Prüfung im Fallback des Dashboards ergänzt!
             let initialBewTimer = (isBaseSmall || isInsolvency) ? 0 : 3;
             let initialState = (isBaseSmall || isInsolvency) ? 'REGEN' : 'BEWAEHRUNG';
-            dashState = { debt: initialDebtTotal + manualSurcharge, totalDebtEver: initialDebtTotal + manualSurcharge, state: initialState, bewTimer: initialBewTimer, gotBonusToday: false, pendingBonus: false, activeReboundCharges: 0, recentEvents: JSON.parse(JSON.stringify(recentEvents)), tlState: JSON.parse(JSON.stringify(tlState)) };
+            dashState = { debt: initialDebtTotal + manualSurcharge, totalDebtEver: initialDebtTotal + manualSurcharge, state: initialState, bewTimer: initialBewTimer, gotBonusToday: false, pendingBonus: false, activeReboundCharges: 0, recentEvents: JSON.parse(JSON.stringify(recentEvents)), tlState: JSON.parse(JSON.stringify(tlState)), regen: { m: Math.max(0, regenM), a: Math.max(0, regenA) } };
         }
 
         let mFreeCurrent = 0;
@@ -562,6 +621,8 @@ function simulateCycle(cycle, skipEchoCheck = false) {
             manualSurcharge: manualSurcharge, // FIX V20.1: Exportiert für UI
             totalActiveDiscountEver: totalActiveDiscountEver, // NEU: Exportiert für Reporting
             dashState: dashState,
+            finalTlState: tlState,
+            finalRegen: { m: regenM, a: regenA },
             nirvanaStreak: history.n.length,
             initialDebtTotal: initialDebtTotal,
             basePenaltyStr: basePenaltyStr,
