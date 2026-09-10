@@ -2037,6 +2037,120 @@ function renderArchiv() {
     }
     safeHTML('archive-months-container', archMonthsHtml);
 
+    // --- NEU: Ewiger Kalender (Cross-Cycle Mapping) ---
+    let eCalData = {};
+    // 1. Phasenfarben aus den Engine-Simulationen aller Zyklen abgreifen
+    globalSimResults.forEach(res => {
+        if(!res || res.failed) return;
+        res.history.t.forEach(d => eCalData[toIsoString(d)] = { cls: 'tday', txt: 'Konsum' });
+        res.history.a.forEach(d => eCalData[toIsoString(d)] = { cls: 'ausrutscher', txt: 'Rauchen' });
+        res.history.b.forEach(d => eCalData[toIsoString(d)] = { cls: 'bewaehrung', txt: 'Bew.' });
+        res.history.r.forEach(d => eCalData[toIsoString(d)] = { cls: 'regen', txt: 'Regen.' });
+        res.history.n.forEach(d => eCalData[toIsoString(d)] = { cls: 'nirvana', txt: 'Nirwana' });
+    });
+
+    // 2. Roh-Logs für M und Alk drüberlegen (um die lückenlose Kette zu sichern)
+    let minE = "9999-99-99";
+    (getApp().cycles || []).forEach(cycle => {
+        if(cycle.base && cycle.base.start && cycle.base.end) {
+            let cDate = parseLocal(cycle.base.start);
+            let eDate = parseLocal(cycle.base.end);
+            if(cDate && eDate) {
+                while(cDate <= eDate) {
+                    let s = toIsoString(cDate);
+                    if(s < minE) minE = s;
+                    if(!eCalData[s]) eCalData[s] = { cls: '', txt: '' };
+                    eCalData[s].a = Math.max(eCalData[s].a || 0, cycle.base.aLevel || 0);
+                    eCalData[s].m = Math.max(eCalData[s].m || 0, cycle.base.mLevel || 0);
+                    cDate.setDate(cDate.getDate() + 1);
+                }
+            }
+        }
+        if(cycle.logs) {
+            Object.entries(cycle.logs).forEach(([s, log]) => {
+                if(s < minE) minE = s;
+                if(!eCalData[s]) eCalData[s] = { cls: '', txt: '' };
+                eCalData[s].a = Math.max(eCalData[s].a || 0, log.a || 0);
+                eCalData[s].m = Math.max(eCalData[s].m || 0, log.m || 0);
+            });
+        }
+    });
+
+    let eternalHtml = '';
+    if(minE !== "9999-99-99") {
+        eternalHtml = '<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px;">';
+        let curr = parseLocal(minE);
+        curr.setDate(1); // Kalender startet sauber am 1. des ältesten Monats
+        let endObj = new Date();
+        let endMonth = new Date(endObj.getFullYear(), endObj.getMonth() + 1, 0);
+
+        while(curr <= endMonth) {
+            let m = curr.getMonth();
+            let y = curr.getFullYear();
+            
+            eternalHtml += `<div class="archive-card" style="padding:10px; border-left: 3px solid #3498db; background:#fff;">
+                <div style="font-weight:900; color:#2c3e50; text-align:center; margin-bottom:10px;">${monthNames[m]} ${y}</div>
+                <div class="calendar-wrapper" style="overflow-x:auto;">
+                    <table style="width:100%; font-size:0.8rem; border-collapse: collapse;">
+                        <thead><tr>
+                            <th style="padding:2px; text-align:center; font-weight:normal; color:#7f8c8d;">Mo</th>
+                            <th style="padding:2px; text-align:center; font-weight:normal; color:#7f8c8d;">Di</th>
+                            <th style="padding:2px; text-align:center; font-weight:normal; color:#7f8c8d;">Mi</th>
+                            <th style="padding:2px; text-align:center; font-weight:normal; color:#7f8c8d;">Do</th>
+                            <th style="padding:2px; text-align:center; font-weight:normal; color:#7f8c8d;">Fr</th>
+                            <th style="padding:2px; text-align:center; font-weight:normal; color:#7f8c8d;">Sa</th>
+                            <th style="padding:2px; text-align:center; font-weight:normal; color:#7f8c8d;">So</th>
+                        </tr></thead>
+                        <tbody><tr>`;
+            
+            let firstDay = new Date(y, m, 1);
+            let lastDay = new Date(y, m + 1, 0);
+            let startDay = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1;
+            
+            for(let i=0; i<startDay; i++) eternalHtml += "<td style='border:1px solid #f9f9f9;'></td>";
+            
+            for(let d=1; d<=lastDay.getDate(); d++) {
+                let iterDate = new Date(y, m, d);
+                let iterIso = toIsoString(iterDate);
+                let dayData = eCalData[iterIso];
+                let isTodayClass = iterIso === todayStr ? "background:#ebf5fb;" : ""; // Heutiger Tag leicht blau
+                
+                let contentHtml = "";
+                let tdStyle = `padding:2px; vertical-align:top; height:45px; border:1px solid #eee; text-align:center; position:relative; ${isTodayClass}`;
+                
+                if(dayData) {
+                    let tags = "";
+                    if (dayData.cls) {
+                        tags += `<span class="tag ${dayData.cls}" style="font-size:0.5rem; padding:1px 2px; display:block; margin-bottom:2px; text-align:center; border-radius:3px; overflow:hidden; text-overflow:ellipsis;">${dayData.txt}</span>`;
+                    }
+                    let icons = "";
+                    if (dayData.a > 0) icons += "🍷";
+                    if (dayData.m > 0) icons += "✊";
+                    if (icons) tags += `<div style="font-size:0.6rem; text-align:center; letter-spacing:-2px; margin-top:2px;">${icons}</div>`;
+                    contentHtml = tags;
+                }
+                
+                eternalHtml += `<td style="${tdStyle}">
+                    <span style="font-size:0.65rem; color:#7f8c8d; font-weight:bold; display:block; margin-bottom:2px;">${d}.</span>
+                    ${contentHtml}
+                </td>`;
+                
+                if(iterDate.getDay() === 0 && d < lastDay.getDate()) eternalHtml += "</tr><tr>";
+            }
+            
+            let endPad = lastDay.getDay() === 0 ? 0 : 8 - lastDay.getDay();
+            for(let i=0; i<endPad; i++) eternalHtml += "<td style='border:1px solid #f9f9f9;'></td>";
+            
+            eternalHtml += `</tr></tbody></table></div></div>`;
+            curr.setMonth(curr.getMonth() + 1);
+        }
+        eternalHtml += '</div>';
+    } else {
+        eternalHtml = '<p style="color:#7f8c8d; text-align:center;">Noch keine Kalenderdaten vorhanden.</p>';
+    }
+    
+    safeHTML('eternal-calendar-container', eternalHtml);
+
     // FIX V41: The Over 5s - Globale Streak-Auswertung
     let dayData = {};
     let minDateStr = "9999-99-99";

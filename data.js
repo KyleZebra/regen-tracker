@@ -2,7 +2,7 @@
 // data.js - State Management & Core Helpers
 // ==========================================
 
-const APP_VERSION = '63 (AmpelInfo)';
+const APP_VERSION = '63 (EterCal)';
 
 // --- Defensive DOM Helpers ---
 const safeVal = (id) => { 
