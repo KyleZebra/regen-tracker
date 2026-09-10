@@ -739,10 +739,22 @@ function openDebtChart() {
     let futureDates = showFuture ? allDatesStr.filter(d => d > maxDateStr) : [];
     let combinedDates = [...pastDates, ...futureDates];
 
-    combinedDates.forEach(dStr => {
+   combinedDates.forEach(dStr => {
         let dObj = parseLocal(dStr);
         let formattedDate = dObj ? dObj.toLocaleDateString('de-DE', {day: '2-digit', month: '2-digit'}) : dStr;
-        chartData.push({ rawDate: dStr, date: formattedDate, debt: res.history.dailyDebt[dStr] });
+        
+        // NEU: Wir suchen die echten Schulden von Gestern aus der Datenbank, um den ersten Punkt richtig zu färben!
+        let prevDateObj = new Date(dObj);
+        prevDateObj.setDate(prevDateObj.getDate() - 1);
+        let prevDateStr = toIsoString(prevDateObj);
+        
+        let prevDebt = res.history.dailyDebt[prevDateStr];
+        if (prevDebt === undefined) {
+            // Fallback: Wenn es der allererste Tag des Zyklus ist, vergleichen wir mit der Initalschuld
+            prevDebt = res.initialDebtTotal + (res.manualSurcharge || 0);
+        }
+        
+        chartData.push({ rawDate: dStr, date: formattedDate, debt: res.history.dailyDebt[dStr], prevDebt: prevDebt });
     });
 
     if (chartData.length === 0) return;
@@ -779,11 +791,11 @@ function openDebtChart() {
         let y = getY(pt.debt);
         let fmtVal = Number.isInteger(pt.debt) ? pt.debt : pt.debt.toFixed(1).replace('.', ',');
 
-        // Smarte Farbgebung
-        let circleColor = '#e74c3c';
-        if (idx > 0 && pt.debt < chartData[idx-1].debt) circleColor = '#27ae60';
-        else if (idx > 0 && pt.debt === chartData[idx-1].debt) circleColor = '#f39c12';
-        if (pt.debt === 0) circleColor = '#3498db';
+        // Smarte Farbgebung: Vergleicht jetzt mit pt.prevDebt anstatt mit dem Vorgänger-Index!
+        let circleColor = '#e74c3c'; // Standard: Rot
+        if (pt.debt < pt.prevDebt) circleColor = '#27ae60'; // Grün (Schulden gesunken)
+        else if (pt.debt === pt.prevDebt && pt.debt > 0) circleColor = '#f39c12'; // Orange (Stagnation)
+        if (pt.debt === 0) circleColor = '#3498db'; // Blau (Nirwana)
 
         // Styling für die Zukunfts-Projektion
         let isFuturePt = pt.rawDate > maxDateStr;
