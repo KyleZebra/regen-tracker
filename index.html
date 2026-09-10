@@ -818,6 +818,40 @@
     </div>
   </div>
 
+  <!-- NEU: Info-Modal für die Langzeit-Ampel -->
+  <div id="modal-pattern-info" class="modal-overlay">
+    <div class="modal-card">
+      <h3 style="color:#2c3e50; margin-bottom: 10px;">🚦 Langzeit-Ampel</h3>
+      <p style="font-size:0.8rem; color:#666; margin-top:0; margin-bottom: 15px;">Die Ampel bewertet dein Konsummuster rückwirkend. Die Gesamtfarbe entspricht immer der schlechtesten Einzelbewertung.</p>
+      
+      <div style="font-size:0.85rem; line-height: 1.5; color: #2c3e50;">
+          <div style="margin-bottom: 8px;"><strong>1. Konsumtage (28T Fenster)</strong><br>
+          🟢 0-4 Tage | 🟡 5-8 Tage | 🔴 ab 9 Tagen</div>
+          
+          <div style="margin-bottom: 8px;"><strong>2. Ketten-Konsum (Max. Serie)</strong><br>
+          🟢 0-1 Tag | 🟡 2-3 Tage | 🔴 ab 4 Tagen</div>
+          
+          <div style="margin-bottom: 12px;"><strong>3. Tage seit letzter Pause</strong><br>
+          🟢 0-27 Tage | 🟡 28-41 Tage | 🔴 ab 42 Tagen</div>
+          
+          <div style="background: #fdfafb; padding: 10px; border-radius: 8px; border: 1px solid #eee; margin-bottom: 12px;">
+              <strong>⚠️ Konsequenzen:</strong><br>
+              🟡 <strong>GELB:</strong> Alle Rabatte (Aktiv, Klein) werden gesperrt.<br>
+              🔴 <strong>ROT:</strong> Rabatte gesperrt & Strafe verdoppelt (x2).
+          </div>
+          
+          <div style="background: #fff5f5; padding: 10px; border-radius: 8px; border: 1px solid #f5c6cb; color: #c0392b;">
+              <strong>🔒 Sticky-Rot (Intervention):</strong><br>
+              Einmal ROT bleibt zwingend ROT, bis du physisch <strong>exakt 16 Tage am Stück</strong> clean warst. Erst dann wird die Sperre aufgehoben.
+          </div>
+      </div>
+      
+      <div class="modal-actions-row" style="margin-top:20px;">
+        <button class="btn-quick btn-pausiert" style="width:100%; background: #2c3e50;" onclick="closeModal('modal-pattern-info')">Verstanden</button>
+      </div>
+    </div>
+  </div>
+
   <script src="data.js"></script>
   <script src="engine.js"></script>
   <script src="ui.js"></script>

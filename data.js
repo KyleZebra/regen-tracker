@@ -2,7 +2,7 @@
 // data.js - State Management & Core Helpers
 // ==========================================
 
-const APP_VERSION = '62 (Ampel)';
+const APP_VERSION = '63 (AmpelInfo)';
 
 // --- Defensive DOM Helpers ---
 const safeVal = (id) => { 

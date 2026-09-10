@@ -727,10 +727,13 @@ function renderDashboard() {
         let k28 = tl.window28.filter(x=>x).length;
         let m28 = 0, cur = 0; for(let x of tl.window28) { if(x) {cur++; m28=Math.max(m28, cur);} else cur=0; }
         
-        safeHTML('dash-pattern-box', `
+       safeHTML('dash-pattern-box', `
             <div style="background: ${tlBg}; border: 1px solid ${tlBorder}; border-radius: 12px; padding: 12px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
-                    <strong style="color:${tlText}; font-size: 0.95rem;">${tlIcon} ${tlTitle}</strong>
+                    <strong style="color:${tlText}; font-size: 0.95rem; display: flex; align-items: center; gap: 6px;">
+                        ${tlIcon} ${tlTitle}
+                        <span onclick="document.getElementById('modal-pattern-info').classList.add('active')" style="cursor: pointer; display: inline-flex; justify-content: center; align-items: center; width: 18px; height: 18px; background: rgba(0,0,0,0.08); border-radius: 50%; color: ${tlText}; font-size: 0.65rem; font-weight: bold; padding-bottom: 1px;" title="Regeln anzeigen">i</span>
+                    </strong>
                 </div>
                 <div style="font-size: 0.75rem; color: #555; margin-bottom: 10px; line-height: 1.4;">${tlDesc}</div>
                 <div style="display: flex; justify-content: space-between; font-size: 0.65rem; color: #7f8c8d; background: rgba(255,255,255,0.7); padding: 8px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.03);">
