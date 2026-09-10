@@ -742,6 +742,7 @@ function openDebtChart() {
    combinedDates.forEach(dStr => {
         let dObj = parseLocal(dStr);
         let formattedDate = dObj ? dObj.toLocaleDateString('de-DE', {day: '2-digit', month: '2-digit'}) : dStr;
+        let weekdayStr = dObj ? dObj.toLocaleDateString('de-DE', {weekday: 'short'}) : ""; // NEU: Wochentag holen
         
         // NEU: Wir suchen die echten Schulden von Gestern aus der Datenbank, um den ersten Punkt richtig zu färben!
         let prevDateObj = new Date(dObj);
@@ -754,7 +755,8 @@ function openDebtChart() {
             prevDebt = res.initialDebtTotal + (res.manualSurcharge || 0);
         }
         
-        chartData.push({ rawDate: dStr, date: formattedDate, debt: res.history.dailyDebt[dStr], prevDebt: prevDebt });
+        // NEU: Wochentag mit ins Array speichern
+        chartData.push({ rawDate: dStr, date: formattedDate, weekday: weekdayStr, debt: res.history.dailyDebt[dStr], prevDebt: prevDebt });
     });
 
     if (chartData.length === 0) return;
@@ -764,7 +766,7 @@ function openDebtChart() {
     const svgH = 220; // Kompakte Höhe
     const padX = 25;
     const padTop = 35;
-    const padBot = 25;
+    const padBot = 35; // NEU: Von 25 auf 35 erhöht, um Platz für die 2. Textzeile zu schaffen
 
     // Y-Achse skalieren
     let maxDebt = Math.max(...chartData.map(d => d.debt), 5); // Mindestens Skala bis 5
@@ -813,7 +815,10 @@ function openDebtChart() {
 
         let labelWeight = isTodayPt ? "900" : "bold";
         let labelColor = isTodayPt ? "#2c3e50" : (isFuturePt ? "#bdc3c7" : "#7f8c8d");
-        xLabelsHtml += `<text x="${x}" y="${svgH - 8}" fill="${labelColor}" font-size="10" font-weight="${labelWeight}" font-family="sans-serif" text-anchor="middle">${pt.date}</text>`;
+        
+        // NEU: Zwei Zeilen für Datum und Wochentag (y-Achse leicht versetzt)
+        xLabelsHtml += `<text x="${x}" y="${svgH - 18}" fill="${labelColor}" font-size="10" font-weight="${labelWeight}" font-family="sans-serif" text-anchor="middle">${pt.date}</text>`;
+        xLabelsHtml += `<text x="${x}" y="${svgH - 6}" fill="${labelColor}" font-size="8" font-weight="normal" font-family="sans-serif" text-anchor="middle" ${isFuturePt ? 'opacity="0.5"' : 'opacity="0.8"'}>${pt.weekday}</text>`;
     });
 
     // Hilfslinien im Hintergrund (0, 50%, 100%)
