@@ -708,7 +708,7 @@ function openArchiveDiary() {
     if (m) m.classList.add('active');
 }
 
-// --- SVG Chart Generator (Dynamischer Zeithorizont) ---
+// --- SVG Chart Generator (Dynamischer Zeithorizont & Prognose) ---
 function openDebtChart() {
     const res = activeSimResult;
     if (!res || res.failed || !res.history || !res.history.dailyDebt) {
@@ -719,26 +719,33 @@ function openDebtChart() {
     let activeCycle = getActiveCycle();
     let isTodayLogged = activeCycle && activeCycle.logs && activeCycle.logs[todayStr] && activeCycle.logs[todayStr].type !== undefined;
     
-    // NEU: Zeithorizont live aus dem Dropdown lesen (Fallback auf 30)
+    // NEU: Zeithorizont & Prognose-Toggle auslesen
     let selectEl = document.getElementById('chart-days-select');
-    let daysToShow = selectEl ? parseInt(selectEl.value) : 30;
+    let daysToShow = selectEl ? parseInt(selectEl.value) : 28;
+    
+    let futureToggle = document.getElementById('chart-show-future');
+    let showFuture = futureToggle ? futureToggle.checked : true;
     
     let chartData = [];
 
-    // Nur Daten bis zum heutigen Tag holen (bzw. bis gestern, wenn heute nicht geloggt)
+    // Der Stichtag für "Heute" (oder gestern, falls noch nicht geloggt)
     let maxDateStr = isTodayLogged ? todayStr : toIsoString(addDays(new Date(), -1));
-    let allDates = Object.keys(res.history.dailyDebt).filter(d => d <= maxDateStr).sort();
+    let allDatesStr = Object.keys(res.history.dailyDebt).sort();
     
-    if (allDates.length === 0) return customAlert("Noch keine Daten für diesen Zyklus vorhanden.");
+    if (allDatesStr.length === 0) return customAlert("Noch keine Daten für diesen Zyklus vorhanden.");
 
-    // Die letzten X Tage abschneiden (wenn 9999 gewählt wurde, bleibt fast alles)
-    let recentDates = allDates.slice(-daysToShow);
+    // Historie + Zukunftsplanning kombinieren
+    let pastDates = allDatesStr.filter(d => d <= maxDateStr).slice(-daysToShow);
+    let futureDates = showFuture ? allDatesStr.filter(d => d > maxDateStr) : [];
+    let combinedDates = [...pastDates, ...futureDates];
 
-    recentDates.forEach(dStr => {
+    combinedDates.forEach(dStr => {
         let dObj = parseLocal(dStr);
         let formattedDate = dObj ? dObj.toLocaleDateString('de-DE', {day: '2-digit', month: '2-digit'}) : dStr;
-        chartData.push({ date: formattedDate, debt: res.history.dailyDebt[dStr] });
+        chartData.push({ rawDate: dStr, date: formattedDate, debt: res.history.dailyDebt[dStr] });
     });
+
+    if (chartData.length === 0) return;
 
     // --- Dynamische SVG Geometrie ---
     const svgW = Math.max(500, chartData.length * 40); // Skaliert mit, wird nie gequetscht
@@ -772,18 +779,29 @@ function openDebtChart() {
         let y = getY(pt.debt);
         let fmtVal = Number.isInteger(pt.debt) ? pt.debt : pt.debt.toFixed(1).replace('.', ',');
 
-        // Smarte Farbgebung: Hoch=Rot, Runter=Grün, 0=Nirwana-Blau
+        // Smarte Farbgebung
         let circleColor = '#e74c3c';
         if (idx > 0 && pt.debt < chartData[idx-1].debt) circleColor = '#27ae60';
         else if (idx > 0 && pt.debt === chartData[idx-1].debt) circleColor = '#f39c12';
         if (pt.debt === 0) circleColor = '#3498db';
 
+        // Styling für die Zukunfts-Projektion
+        let isFuturePt = pt.rawDate > maxDateStr;
+        let isTodayPt = pt.rawDate === maxDateStr;
+        
+        let fillCol = isFuturePt ? '#fff' : circleColor;
+        let strokeCol = isFuturePt ? circleColor : '#fff';
+        let r = isTodayPt ? "6" : "5";
+        let strokeW = isTodayPt ? "3" : "2";
+
         pointsHtml += `
-            <circle cx="${x}" cy="${y}" r="5" fill="${circleColor}" stroke="#fff" stroke-width="2" />
-            <text x="${x}" y="${y - 12}" fill="${circleColor}" font-size="11" font-weight="900" font-family="sans-serif" text-anchor="middle">${fmtVal}</text>
+            <circle cx="${x}" cy="${y}" r="${r}" fill="${fillCol}" stroke="${strokeCol}" stroke-width="${strokeW}" />
+            <text x="${x}" y="${y - 12}" fill="${circleColor}" font-size="11" font-weight="900" font-family="sans-serif" text-anchor="middle" ${isFuturePt ? 'opacity="0.5"' : ''}>${fmtVal}</text>
         `;
 
-        xLabelsHtml += `<text x="${x}" y="${svgH - 8}" fill="#7f8c8d" font-size="10" font-weight="bold" font-family="sans-serif" text-anchor="middle">${pt.date}</text>`;
+        let labelWeight = isTodayPt ? "900" : "bold";
+        let labelColor = isTodayPt ? "#2c3e50" : (isFuturePt ? "#bdc3c7" : "#7f8c8d");
+        xLabelsHtml += `<text x="${x}" y="${svgH - 8}" fill="${labelColor}" font-size="10" font-weight="${labelWeight}" font-family="sans-serif" text-anchor="middle">${pt.date}</text>`;
     });
 
     // Hilfslinien im Hintergrund (0, 50%, 100%)
@@ -792,34 +810,49 @@ function openDebtChart() {
         let yGuide = getY(maxDebt * frac);
         gridHtml += `<line x1="${padX}" y1="${yGuide}" x2="${svgW - padX}" y2="${yGuide}" stroke="#ecf0f1" stroke-width="1.5" stroke-dasharray="4,4" />`;
     });
+    
+    // Vertikale Markierung für "Heute"
+    let todayIdx = chartData.findIndex(pt => pt.rawDate === maxDateStr);
+    if (todayIdx !== -1) {
+        let tx = getX(todayIdx);
+        gridHtml += `<line x1="${tx}" y1="${padTop - 15}" x2="${tx}" y2="${svgH - padBot}" stroke="#3498db" stroke-width="2" stroke-dasharray="4,4" opacity="0.5" />`;
+        gridHtml += `<text x="${tx}" y="${padTop - 20}" fill="#3498db" font-size="10" font-weight="900" text-anchor="middle">HEUTE</text>`;
+    }
 
     let svgHtml = `
-            <svg width="${svgW}" height="${svgH}" viewBox="0 0 ${svgW} ${svgH}" style="display:block;">
-                <defs>
-                    <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stop-color="rgba(231, 76, 60, 0.15)" />
-                        <stop offset="100%" stop-color="rgba(231, 76, 60, 0.0)" />
-                    </linearGradient>
-                </defs>
-                ${gridHtml}
-                <path d="${areaD}" fill="url(#areaGrad)" />
-                <path d="${pathD}" fill="none" stroke="#e74c3c" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
-                ${pointsHtml}
-                ${xLabelsHtml}
-            </svg>
-        `;
+        <svg width="${svgW}" height="${svgH}" viewBox="0 0 ${svgW} ${svgH}" style="display:block;">
+            <defs>
+                <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="rgba(231, 76, 60, 0.15)" />
+                    <stop offset="100%" stop-color="rgba(231, 76, 60, 0.0)" />
+                </linearGradient>
+            </defs>
+            ${gridHtml}
+            <path d="${areaD}" fill="url(#areaGrad)" />
+            <path d="${pathD}" fill="none" stroke="#e74c3c" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+            ${pointsHtml}
+            ${xLabelsHtml}
+        </svg>
+    `;
 
-        safeHTML('svg-chart-container', svgHtml);
-        const modal = document.getElementById('modal-debt-chart');
-        if(modal) {
-            modal.classList.add('active');
-            
-            // Automatisches Scrollen nach ganz rechts (mit winziger Verzögerung, damit das SVG erst gerendert ist)
-            setTimeout(() => {
-                let container = document.getElementById('svg-chart-container');
-                if (container && container.parentElement) {
+    safeHTML('svg-chart-container', svgHtml);
+    const modal = document.getElementById('modal-debt-chart');
+    if(modal) {
+        modal.classList.add('active');
+        
+        // Zentriere das Chart exakt auf "Heute"
+        setTimeout(() => {
+            let container = document.getElementById('svg-chart-container');
+            if (container && container.parentElement) {
+                if (todayIdx !== -1) {
+                    let targetX = getX(todayIdx);
+                    // Den aktuellen Punkt in die Bildschirmmitte rücken
+                    let scrollPos = targetX - (container.parentElement.clientWidth / 2);
+                    container.parentElement.scrollLeft = Math.max(0, scrollPos);
+                } else {
                     container.parentElement.scrollLeft = container.parentElement.scrollWidth;
                 }
-            }, 10);
-        }
+            }
+        }, 10);
     }
+}

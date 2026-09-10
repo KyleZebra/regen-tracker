@@ -798,13 +798,19 @@
               <h3 style="color:#2c3e50; margin-bottom: 5px; margin-top: 5px;">📈 Schulden-Verlauf</h3>
               <p style="font-size:0.8rem; color:#7f8c8d; margin: 0;">(Links/rechts wischbar)</p>
           </div>
-          <select id="chart-days-select" onchange="openDebtChart()" style="background: #fdfafb; border: 1px solid #d2b4de; border-radius: 6px; padding: 5px 8px; font-size: 0.8rem; color: #8e44ad; font-weight: bold; outline: none; cursor: pointer;">
-              <option value="15">15 Tage</option>
-              <option value="30" selected>30 Tage</option>
-              <option value="60">60 Tage</option>
-              <option value="90">90 Tage</option>
-              <option value="9999">Gesamter Zyklus</option>
-          </select>
+          <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
+              <select id="chart-days-select" onchange="openDebtChart()" style="background: #fdfafb; border: 1px solid #d2b4de; border-radius: 6px; padding: 5px 8px; font-size: 0.8rem; color: #8e44ad; font-weight: bold; outline: none; cursor: pointer; height: auto;">
+                  <option value="15">15 Tage</option>
+                  <option value="28" selected>28 Tage</option>
+                  <option value="60">60 Tage</option>
+                  <option value="90">90 Tage</option>
+                  <option value="9999">Gesamter Zyklus</option>
+              </select>
+              <label style="font-size:0.75rem; color:#8e44ad; font-weight:bold; display:flex; align-items:center; gap:4px; cursor:pointer;">
+                  <input type="checkbox" id="chart-show-future" onchange="openDebtChart()" checked style="width:14px; height:14px; margin:0; accent-color:#8e44ad;">
+                  Prognose zeigen
+              </label>
+          </div>
       </div>
 
       <!-- Hier ist der Container, der vorhin fehlte! -->
