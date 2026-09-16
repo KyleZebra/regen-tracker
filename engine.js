@@ -270,13 +270,7 @@ function simulateCycle(cycle, skipEchoCheck = false, forceInheritedTlState = nul
                 let colA = konsum28 >= 9 ? 'ROT' : (konsum28 >= 5 ? 'GELB' : 'GRÜN');
                 let colB = maxSer >= 4 ? 'ROT' : (maxSer >= 2 ? 'GELB' : 'GRÜN');
                 let colC = tlState.daysSinceLongPause >= 42 ? 'ROT' : (tlState.daysSinceLongPause >= 28 ? 'GELB' : 'GRÜN');
-                
-                // NEU: Der 7-Tage-Beweis (Fast-Track für Gelb bei Fühler A & B)
-                if (tlState.cleanStreak >= 7) {
-                    if (colA === 'GELB') colA = 'GRÜN';
-                    if (colB === 'GELB') colB = 'GRÜN';
-                }
-                
+                               
                 if (colA === 'ROT' || colB === 'ROT' || colC === 'ROT') tlState.isStickyRed = true;
                 
                 tempD.setDate(tempD.getDate() + 1);
@@ -382,13 +376,7 @@ function simulateCycle(cycle, skipEchoCheck = false, forceInheritedTlState = nul
             let colA = konsum28 >= 9 ? 'ROT' : (konsum28 >= 5 ? 'GELB' : 'GRÜN');
             let colB = maxSer >= 4 ? 'ROT' : (maxSer >= 2 ? 'GELB' : 'GRÜN');
             let colC = tlState.daysSinceLongPause >= 42 ? 'ROT' : (tlState.daysSinceLongPause >= 28 ? 'GELB' : 'GRÜN');
-            
-            // NEU: Der 7-Tage-Beweis (Fast-Track für Gelb bei Fühler A & B)
-            if (tlState.cleanStreak >= 7) {
-                if (colA === 'GELB') colA = 'GRÜN';
-                if (colB === 'GELB') colB = 'GRÜN';
-            }
-            
+                       
             let rawColor = 'GRÜN';
             if (colA === 'ROT' || colB === 'ROT' || colC === 'ROT') rawColor = 'ROT';
             else if (colA === 'GELB' || colB === 'GELB' || colC === 'GELB') rawColor = 'GELB';
