@@ -2,7 +2,7 @@
 // data.js - State Management & Core Helpers
 // ==========================================
 
-const APP_VERSION = '63 (EterCal)';
+const APP_VERSION = '64 (FastTrack)';
 
 // --- Defensive DOM Helpers ---
 const safeVal = (id) => { 
