@@ -2,7 +2,7 @@
 // data.js - State Management & Core Helpers
 // ==========================================
 
-const APP_VERSION = '64 (FastTrack)';
+const APP_VERSION = '65 (BetterLight)';
 
 // --- Defensive DOM Helpers ---
 const safeVal = (id) => { 

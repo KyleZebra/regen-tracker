@@ -267,8 +267,8 @@ function simulateCycle(cycle, skipEchoCheck = false, forceInheritedTlState = nul
                 let maxSer = 0, curSer = 0;
                 for (let x of tlState.window28) { if (x) { curSer++; maxSer = Math.max(maxSer, curSer); } else { curSer = 0; } }
                 
-                let colA = konsum28 >= 9 ? 'ROT' : (konsum28 >= 5 ? 'GELB' : 'GRÜN');
-                let colB = maxSer >= 4 ? 'ROT' : (maxSer >= 2 ? 'GELB' : 'GRÜN');
+                let colA = konsum28 >= 10 ? 'ROT' : (konsum28 >= 7 ? 'GELB' : 'GRÜN');
+                let colB = maxSer >= 5 ? 'ROT' : (maxSer >= 2 ? 'GELB' : 'GRÜN');
                 let colC = tlState.daysSinceLongPause >= 42 ? 'ROT' : (tlState.daysSinceLongPause >= 28 ? 'GELB' : 'GRÜN');
                                
                 if (colA === 'ROT' || colB === 'ROT' || colC === 'ROT') tlState.isStickyRed = true;
@@ -336,6 +336,9 @@ function simulateCycle(cycle, skipEchoCheck = false, forceInheritedTlState = nul
             let mDecayed = false;
             if (regenM > 0) { regenM--; mDecayed = true; }
             if (regenA > 0) { regenA--; }
+
+            // NEU: Snapshot der Ampelfarbe von gestern (für faire Bestrafung heute)
+            let effectiveTlColor = tlState.color;
 
             if (log && log.type !== undefined && !isPhantom) {
                 let mVal = parseInt(log.m) || 0;
@@ -412,7 +415,8 @@ function simulateCycle(cycle, skipEchoCheck = false, forceInheritedTlState = nul
                 // Die Ampel-Strafen gelten erst ab diesem Datum! Die Vergangenheit bleibt unberührt.
                 let applyAmpelPenalty = (dStr >= '2026-08-18'); 
                 
-                if (applyAmpelPenalty && (tlState.color === 'GELB' || tlState.color === 'ROT')) {
+                // Wir nutzen effectiveTlColor, damit die Strafe dem entspricht, was der User vor dem Loggen sah!
+                if (applyAmpelPenalty && (effectiveTlColor === 'GELB' || effectiveTlColor === 'ROT')) {
                     appliedSmall = false; // Rabatt gesperrt
                     appliedActive = false; // Rabatt gesperrt
                 }
@@ -439,7 +443,7 @@ function simulateCycle(cycle, skipEchoCheck = false, forceInheritedTlState = nul
                 }
                 
                 // Der rote x2 Multiplikator (mit Stichtag)
-                if (applyAmpelPenalty && tlState.color === 'ROT') {
+                if (applyAmpelPenalty && effectiveTlColor === 'ROT') {
                     penalty *= 2; 
                 }
 
@@ -482,7 +486,7 @@ function simulateCycle(cycle, skipEchoCheck = false, forceInheritedTlState = nul
                     history.logDetails.push({ date: dStr, p: penalty, t: log.t, b: iBase, s: iS, a: iA, f: pauschale, active: appliedActive });
                     let smallInfo = isLogSmall ? (appliedSmall ? " (Kleiner Tag)" : " (Kl. Tag ignoriert)") : " (Standardtag)";
                     let activeInfo = isLogActive ? (appliedActive ? ` 🏃‍♂️ (Aktivbonus enthalten: -${actualLogDiscount})` : " 🏃‍♂️ (Aktiv ignoriert)") : "";
-                    let tlInfo = (applyAmpelPenalty && tlState.color === 'ROT') ? ' 🔴x2' : ((applyAmpelPenalty && tlState.color === 'GELB') ? ' 🟡Kein Rabatt' : '');
+                    let tlInfo = (applyAmpelPenalty && effectiveTlColor === 'ROT') ? ' 🔴x2' : ((applyAmpelPenalty && effectiveTlColor === 'GELB') ? ' 🟡Kein Rabatt' : '');
                     pStr = actualLogDiscount > 0 ? `+${penalty} Tage netto` : `+${penalty} Tage`;
                     history.penaltyDict[dStr] = pauschale > 0 ? pStr + ` (inkl. Setup)${smallInfo}${activeInfo}${tlInfo}` : pStr + ` (Stottern)${smallInfo}${activeInfo}${tlInfo}`;
                 }
