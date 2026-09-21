@@ -267,7 +267,7 @@ function simulateCycle(cycle, skipEchoCheck = false, forceInheritedTlState = nul
                 let maxSer = 0, curSer = 0;
                 for (let x of tlState.window28) { if (x) { curSer++; maxSer = Math.max(maxSer, curSer); } else { curSer = 0; } }
                 
-                let colA = konsum28 >= 10 ? 'ROT' : (konsum28 >= 7 ? 'GELB' : 'GRÜN');
+                let colA = konsum28 >= 9 ? 'ROT' : (konsum28 >= 6 ? 'GELB' : 'GRÜN');
                 let colB = maxSer >= 5 ? 'ROT' : (maxSer >= 2 ? 'GELB' : 'GRÜN');
                 let colC = tlState.daysSinceLongPause >= 42 ? 'ROT' : (tlState.daysSinceLongPause >= 28 ? 'GELB' : 'GRÜN');
                                
@@ -376,15 +376,22 @@ function simulateCycle(cycle, skipEchoCheck = false, forceInheritedTlState = nul
             let maxSer = 0, curSer = 0;
             for (let x of tlState.window28) { if (x) { curSer++; maxSer = Math.max(maxSer, curSer); } else { curSer = 0; } }
             
-            let colA = konsum28 >= 9 ? 'ROT' : (konsum28 >= 5 ? 'GELB' : 'GRÜN');
-            let colB = maxSer >= 4 ? 'ROT' : (maxSer >= 2 ? 'GELB' : 'GRÜN');
+            let colA = konsum28 >= 9 ? 'ROT' : (konsum28 >= 6 ? 'GELB' : 'GRÜN');
+            let colB = maxSer >= 5 ? 'ROT' : (maxSer >= 2 ? 'GELB' : 'GRÜN');
             let colC = tlState.daysSinceLongPause >= 42 ? 'ROT' : (tlState.daysSinceLongPause >= 28 ? 'GELB' : 'GRÜN');
                        
             let rawColor = 'GRÜN';
             if (colA === 'ROT' || colB === 'ROT' || colC === 'ROT') rawColor = 'ROT';
             else if (colA === 'GELB' || colB === 'GELB' || colC === 'GELB') rawColor = 'GELB';
-            
-            if (rawColor === 'ROT') tlState.isStickyRed = true;
+
+            // Wenn nach den aktuellen Kriterien kein Fühler mehr ROT auslöst,
+            // wird die Altlast aufgehoben:
+            if (rawColor !== 'ROT' && colC !== 'ROT') {
+                tlState.isStickyRed = false;
+            } else if (rawColor === 'ROT') {
+                tlState.isStickyRed = true;
+            }
+
             tlState.color = tlState.isStickyRed ? 'ROT' : rawColor;
             // --- ENDE Ampel Update ---
 
