@@ -364,6 +364,10 @@ function simulateCycle(cycle, skipEchoCheck = false, forceInheritedTlState = nul
                 if (tlState.cleanStreak >= 16) {
                     tlState.daysSinceLongPause = 0;
                     tlState.isStickyRed = false; // Sticky ROT aufheben!
+                    // NEU: Vollständiger Reset von Fühler A & B am 16. Tag
+                    if (tlState.cleanStreak === 16) {
+                        tlState.window28 = [];
+                    }
                 } else {
                     tlState.daysSinceLongPause++;
                 }
