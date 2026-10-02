@@ -1621,6 +1621,10 @@ function renderArchiv() {
     safeText('stat-large-smoked', winLargeSmoked); // NEU
     safeText('stat-small-large-ratio', winSlRatio); // NEU
     
+    if (typeof updateLongPauseStats === 'function') {
+        updateLongPauseStats();
+    }
+    
     // -- 4er Nirwana Grid --
     safeText('stat-max-nirvana', maxNirvana); 
     safeText('stat-total-nirvana', totalNirvanaDays); // NEU: Gesamte Nirwana Tage
@@ -2337,3 +2341,82 @@ window.clearManualAnchor = function() {
         saveData(); // Standard-Speicher-Zyklus (triggert Engine & UI automatisch)
     }
 };
+
+// ==========================================
+// Langpausen Statistiken (>= 16 Tage)
+// ==========================================
+function updateLongPauseStats() {
+    let app = getApp();
+    if (!app || !app.cycles) return;
+
+    let limitStr = null;
+    if (typeof currentCleanWindow !== 'undefined' && currentCleanWindow !== 'all') {
+        let d = new Date();
+        if (currentCleanWindow === 'cycle') {
+            let active = getActiveCycle();
+            if (active && active.base && active.base.start) limitStr = active.base.start;
+        } else {
+            d.setDate(d.getDate() - parseInt(currentCleanWindow));
+            limitStr = toIsoString(d);
+        }
+    }
+
+    let dayMap = {};
+    (app.cycles || []).forEach(cycle => {
+        let res = globalSimResults.find(r => r.cycleId === cycle.id);
+        if (res && res.history) {
+            let smoked = [...(res.history.t || []), ...(res.history.a || [])].map(d => toIsoString(d));
+            let clean = [...(res.history.b || []), ...(res.history.r || []), ...(res.history.n || [])].map(d => toIsoString(d));
+            
+            clean.forEach(dStr => {
+                if (!limitStr || dStr >= limitStr) {
+                    if (dayMap[dStr] === undefined) dayMap[dStr] = false;
+                }
+            });
+            smoked.forEach(dStr => {
+                if (!limitStr || dStr >= limitStr) {
+                    dayMap[dStr] = true; 
+                }
+            });
+        }
+    });
+
+    let sortedDates = Object.keys(dayMap).sort();
+    let longPauses = [];
+    let intervals = [];
+    
+    let currentStreak = 0;
+    let currentPauseStartIdx = null;
+    let lastPauseEndIdx = null;
+
+    for (let i = 0; i < sortedDates.length; i++) {
+        let isSmoked = dayMap[sortedDates[i]];
+        
+        if (!isSmoked) {
+            if (currentStreak === 0) currentPauseStartIdx = i;
+            currentStreak++;
+        } else {
+            if (currentStreak >= 16) {
+                longPauses.push(currentStreak);
+                if (lastPauseEndIdx !== null) {
+                    intervals.push(currentPauseStartIdx - lastPauseEndIdx - 1);
+                }
+                lastPauseEndIdx = i - 1; 
+            }
+            currentStreak = 0;
+        }
+    }
+    
+    if (currentStreak >= 16) {
+        longPauses.push(currentStreak);
+        if (lastPauseEndIdx !== null) {
+            intervals.push(currentPauseStartIdx - lastPauseEndIdx - 1);
+        }
+    }
+
+    let avgLen = longPauses.length > 0 ? (longPauses.reduce((a,b)=>a+b,0)/longPauses.length).toFixed(1) : "--";
+    let avgInt = intervals.length > 0 ? (intervals.reduce((a,b)=>a+b,0)/intervals.length).toFixed(1) : "--";
+
+    safeText('stat-avg-long-pause', avgLen !== "--" ? avgLen + " T" : "--");
+    safeText('stat-avg-pause-interval', avgInt !== "--" ? avgInt + " T" : "--");
+}
