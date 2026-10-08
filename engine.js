@@ -268,7 +268,7 @@ function simulateCycle(cycle, skipEchoCheck = false, forceInheritedTlState = nul
                 for (let x of tlState.window28) { if (x) { curSer++; maxSer = Math.max(maxSer, curSer); } else { curSer = 0; } }
                 
                 let colA = konsum28 >= 9 ? 'ROT' : (konsum28 >= 6 ? 'GELB' : 'GRÜN');
-                let colB = maxSer >= 5 ? 'ROT' : (maxSer >= 2 ? 'GELB' : 'GRÜN');
+                let colB = maxSer >= 5 ? 'ROT' : (maxSer >= 3 ? 'GELB' : 'GRÜN');
                 let colC = tlState.daysSinceLongPause >= 42 ? 'ROT' : (tlState.daysSinceLongPause >= 28 ? 'GELB' : 'GRÜN');
                                
                 if (colA === 'ROT' || colB === 'ROT' || colC === 'ROT') tlState.isStickyRed = true;
@@ -334,7 +334,7 @@ function simulateCycle(cycle, skipEchoCheck = false, forceInheritedTlState = nul
 
             // --- NEU: Regen-o-Meter tägliches Update (Cross-Cycle tauglich) ---
             let mDecayed = false;
-            if (regenM > 0) { regenM--; mDecayed = true; }
+            if (regenM > 0) { regenM = Math.max(0, regenM - 2); mDecayed = true; }
             if (regenA > 0) { regenA--; }
 
             // NEU: Snapshot der Ampelfarbe von gestern (für faire Bestrafung heute)
@@ -381,7 +381,7 @@ function simulateCycle(cycle, skipEchoCheck = false, forceInheritedTlState = nul
             for (let x of tlState.window28) { if (x) { curSer++; maxSer = Math.max(maxSer, curSer); } else { curSer = 0; } }
             
             let colA = konsum28 >= 9 ? 'ROT' : (konsum28 >= 6 ? 'GELB' : 'GRÜN');
-            let colB = maxSer >= 5 ? 'ROT' : (maxSer >= 2 ? 'GELB' : 'GRÜN');
+            let colB = maxSer >= 5 ? 'ROT' : (maxSer >= 3 ? 'GELB' : 'GRÜN');
             let colC = tlState.daysSinceLongPause >= 42 ? 'ROT' : (tlState.daysSinceLongPause >= 28 ? 'GELB' : 'GRÜN');
                        
             let rawColor = 'GRÜN';

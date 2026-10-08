@@ -2,7 +2,7 @@
 // data.js - State Management & Core Helpers
 // ==========================================
 
-const APP_VERSION = '65 (BetterLight)';
+const APP_VERSION = '66 (Numbers)';
 
 // --- Defensive DOM Helpers ---
 const safeVal = (id) => { 
